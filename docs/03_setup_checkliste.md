@@ -16,9 +16,9 @@
 ## Schritte (in dieser Reihenfolge)
 1. (erledigt, Ort weicht vom Vorschlag ab: `D:` statt `E:`) **Epic Games Launcher** installieren, dann **Unreal Engine 5.8** (braucht viele GB freien Platz). Der Installer liegt schon in `D:\gamer\programme`. Ziel für Launcher und Engine: `E:` (NVMe, 321 GB frei), nicht `C:` (nur 22,7 GB frei) und nicht die SATA-SSD `D:`. Die Engine lädt der Launcher erst nach deinem Epic-Login herunter.
 2. **Visual Studio 2022** mit der Komponente „Spieleentwicklung mit C++“ (inkl. Windows SDK) – bei vorhandenem VS im Visual Studio Installer prüfen/ergänzen.
-3. (erledigt 2026-11-12: `git init -b main`, `git lfs install --local`, noch kein Commit) **Git LFS** prüfen bzw. installieren (Git selbst ist vorhanden) und in `D:\gamer\gamer` ein Repository anlegen (`git init`, `git lfs install`).
+3. (erledigt 2026-11-12: `git init -b main`, `git lfs install --local`, erster Commit 1d32729) **Git LFS** prüfen bzw. installieren (Git selbst ist vorhanden) und in `D:\gamer\gamer` ein Repository anlegen (`git init`, `git lfs install`).
 4. (erledigt, Version 2.1.177) **Claude Code lokal** installieren (PowerShell, ohne Administrator: `irm https://claude.ai/install.ps1 | iex`) und in `D:\gamer\gamer` starten (so kann es direkt bauen und den Editor ansteuern).
-5. Privates **GitHub-Repository** anlegen (dient auch zur Abstimmung zwischen den Agenten).
+5. (erledigt 2026-11-12: `https://github.com/wking-game/RPG`, **öffentlich** nach Entscheidung des Nutzers, Push als Konto `wking-game`; LFS-Lock-Prüfung lokal abgeschaltet: `lfs.<remote>/info/lfs.locksverify false`) Privates **GitHub-Repository** anlegen (dient auch zur Abstimmung zwischen den Agenten).
 6. (angelegt, VS-Projektdateien erzeugt über `Engine\Build\BatchFiles\Build.bat -projectfiles`, `GamerEditor Win64 Development` am 2026-11-12 erfolgreich gebaut, Editor damit noch nicht geöffnet) **Unreal-Projekt** in `game/`: C++, leere Vorlage `TP_Blank` als `Gamer`, kein Starter Content. Erster Start: siehe `game/README.md`.
 7. Erst danach **MCP/Editor-Anbindung** (Epics experimentelles MCP-Plugin oder ein geprüftes Drittprojekt).
 
