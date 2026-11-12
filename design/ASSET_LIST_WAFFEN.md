@@ -20,7 +20,7 @@ Vorschlag mit nordisch-historischer Abfolge statt der üblichen Bronze/Eisen/Sil
 | `tier_3` | Schmiedeeisen | sauber geschmiedetes Eisen | Boss 1 / Schmiede Stufe 2 | mittelgrau, glattere Flächen |
 | `tier_4` | Stahl | aufgekohlte, gehärtete Schneide | Boss 2 / Schmiede Stufe 3 | **helle Schneidenkante** als Band |
 | `tier_5` | Damast (Schweißverbund) | sichtbares Wellenmuster im Stahl | Boss 3 | **Wellenmuster** über Maske, Messing-Akzente |
-| `tier_6` | Relikt *(Ausbau, offen)* | Bossmaterialien, eigenständige Formen | späte Bosse | eigene Akzentfarbe, eigene Silhouette |
+| `tier_6` | Relikt *(bestätigt, Ausbau)* | Bossmaterialien, eigenständige Formen | späte Bosse | eigene Akzentfarbe, eigene Silhouette |
 
 **Stufenfarben für UI und Icons** (Rahmen, nicht die Waffe selbst): T1 Knochenweiß `#E5D8BC`, T2 Rostbraun `#8A5A3C`, T3 Schieferblau `#607C8B`, T4 Fjordgrün `#3E6655`, T5 Ocker `#D2A64F`, T6 Ziegelrot `#A95D48`.
 
@@ -40,8 +40,11 @@ Vorschlag mit nordisch-historischer Abfolge statt der üblichen Bronze/Eisen/Sil
 | `weapon_axe_dane` | Breitaxt (zweihändig) | beidhändig | | – | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `weapon_spear_throw` | Wurfspeer | Fernkampf | | ✓ | ✓ | ✓ | ✓ | – | – |
 | `weapon_sling` | Schleuder | Fernkampf | | ✓ | – | – | – | – | – |
+| `weapon_crossbow` | Armbrust | Fernkampf | | – | – | ✓ | ✓ | ✓ | ✓ |
+| `ammo_bolt` | Bolzen | Munition | | – | – | ✓ | ✓ | ✓ | ✓ |
 
 Schwert erst ab T3: Schwerter waren teuer und selten. Das gibt dem Fortschritt ein Ziel.
+Armbrust erst ab T3 (Vorschlag): Abzugsmechanik und Bogen brauchen Schmiedeeisen. Langsamer als der Bogen, dafür mehr Haltungsschaden.
 Werkzeuge aus Phase 1 (`tool_axe`, `tool_pickaxe`) bleiben eigene Assets. Die Kampfaxt darf deren Stiel-Mesh wiederverwenden.
 
 ## 4. Mesh-Strategie pro Typ
@@ -57,8 +60,10 @@ Jede Waffe besteht aus **Teilen**, die kombiniert werden. Material-Instanzen erz
 | Bogen | Bogen, Sehne, Griffwicklung | T1 einfacher Holzbogen · T2–T5 verstärkter Bogen (Hornbeläge als Zusatzteil ab T4) · T6 eigen |
 | Pfeil | Schaft, Spitze, Federn | 1 Schaft, 3 Spitzen (Stein, Eisen, Stahl/Damast) |
 | Breitaxt | Kopf, langer Stiel | T2–T5 ein Kopf · T6 eigen |
+| Armbrust | Säule, Bogen, Sehne, Abzug | T3–T5 eine Säule und ein Bogen (Horn-Komposit als Zusatzteil ab T4) · T6 eigen |
+| Bolzen | Schaft, Spitze | 1 Schaft, 2 Spitzen (Eisen, Stahl/Damast) |
 
-**Schild-Bemalung:** Farbe als Material-Parameter plus 4–6 eigene Muster-Masken (keine historischen Wappen nachbilden). Vorschlag: Standardfarbe = **Koop-Spielerfarbe**, damit sich Spieler im Kampf auseinanderhalten lassen.
+**Schild-Gestaltung (bestätigt):** individuell gestaltbar. Spieler gestalten ihren Schild im **Charakter-Editor**, die Siedlung bekommt im **Lager-Editor** eigene Farben und ein Wappen (Deutung von Claude). Technik: 2–3 Farben als Material-Parameter plus **8–12 eigene Muster-Masken** und ein Wappen-Feld; keine historischen Wappen nachbilden. Dieselben Farben können Umhang und Banner nutzen.
 
 ## 5. Budgets
 | Asset-Art | Dreiecke Ziel | Obergrenze | Texturen |
@@ -87,15 +92,34 @@ Jede Waffe besteht aus **Teilen**, die kombiniert werden. Material-Instanzen erz
 | UI | **ein Icon pro Waffentyp** plus Stufen-Rahmen in der Stufenfarbe (statt einem Icon pro Typ und Stufe), Haltungsleiste der Gegner, Ausrüstungs-Slots | A |
 | Schmiede | Werkstücke (Rohling, Klinge), Amboss, Esse – gehört zur Schmiede-Station | B |
 | Köcher, Scheide, Schildgurt | am Körper getragen | B |
+| Editor | Muster-Masken (8–12), Wappen-Bausteine, Farbpaletten für Charakter- und Lager-Editor | B |
+
+### Gewaltdarstellung (bestätigt: einstellbar)
+Vorschlag für die Menü-Stufen: **Aus** (keine Blutspuren) · **Blut** · **Blut + abtrennbare Körperteile**. Jede Stufe braucht eigene Assets:
+
+| Stufe | Assets | Aufwand |
+|---|---|---|
+| Blut | Blut-Effekt bei Treffern (Niagara), 4–6 Wund-Decals, Blutspuren am Boden | klein |
+| Abtrennbare Körperteile | Schnittstellen an Figuren (Kopf, Arme, Beine), Stumpf-Kappen je Schnittstelle, abgetrennte Teile aus den vorhandenen Modulteilen der Figur, eigener Effekt | **groß**: betrifft jede Figur und jeden Gegnertyp |
+
+Hinweise von Claude:
+- Abtrennbare Körperteile sollten ein **Ausbau nach der ersten Kampf-Version** sein. Die modularen Figuren aus dem Asset-Plan helfen, weil Körperteile schon getrennt sind.
+- **Altersfreigabe:** Nach meinem Wissen richtet sich die Einstufung nach dem stärksten einstellbaren Inhalt, nicht nach der Voreinstellung. Das sollte vor der Veröffentlichung für das Zielland geprüft werden (für Deutschland USK).
 
 ## 8. Mengenabschätzung (MVP Phase 3)
 7 Typen im MVP · rund **25 Meshes** (Köpfe, Klingen, Stiele, Zusatzteile) · **3 Textursätze** + Masken · **7 Icons** + 6 Stufenrahmen.
 Zum Vergleich: ohne Teile-Strategie wären es 7 Typen × 6 Stufen = 42 Einzelwaffen mit eigenen Texturen.
 
-## 9. Entscheidungen, die der Nutzer treffen muss
-1. **Stufen-Leiter:** nordisch-historisch (Rohstufe → Raseneisen → Schmiedeeisen → Stahl → Damast) wie vorgeschlagen, oder klassisch mit Bronze?
-2. **Relikt-Stufe T6** mit Bossmaterialien: ja, nein, später?
-3. **Waffentypen im MVP:** Ist die Liste mit 7 Typen passend, oder kleiner anfangen (z. B. Axt, Speer, Schild, Bogen)?
-4. **Gewaltdarstellung:** Blut ja/nein, wie stark? Das beeinflusst Effekte und die Altersfreigabe.
-5. **Schildfarbe = Spielerfarbe** im Koop?
-6. **Fernkampf:** nur Bogen, oder später auch Armbrust (eher Hochmittelalter)?
+## 9. Entscheidungen
+**Beantwortet am 2026-11-12** (eingetragen in `docs/01_entscheidungen.md`):
+1. Stufen-Leiter: nordisch-historisch wie vorgeschlagen.
+2. Relikt-Stufe T6: ja.
+3. Waffentypen im MVP: die 7 Typen (Antwort „ja“, von Claude als „passend“ gedeutet).
+4. Gewaltdarstellung: einstellbar, auch ob Körperteile abgetrennt werden.
+5. Schild: individuell gestaltbar im Charakter- und Lager-Editor.
+6. Fernkampf: Bogen und Armbrust.
+
+**Noch offen:**
+1. Ist „Lager-Editor“ der Editor für Farben und Wappen der **Siedlung**?
+2. Abtrennbare Körperteile schon in der ersten Kampf-Version oder als Ausbau danach (Empfehlung: Ausbau)?
+3. Ziel-Altersfreigabe (z. B. USK 16 oder 18)?

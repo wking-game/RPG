@@ -54,4 +54,16 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Dachdeckung Holzstufe | Holz mit schmaler Turf-Kante (kein vollständiges Turf-Dach, wegen Lesbarkeit in der Vogelperspektive) | bestätigt (2026-11-12) |
 | Lagergröße (Vertical Slice) | 300 × 600 cm, First in Längsrichtung, passt zum 300-cm-Dachbaukasten; geschlossener Raum + offene Regalbucht | bestätigt (2026-11-12) |
 | Kochstelle (Vertical Slice) | offenes Lagerfeuer mit Holzgalgen und Kessel | bestätigt (2026-11-12) |
+| Waffen: Stufen-Leiter | T1 Rohstufe → T2 Raseneisen → T3 Schmiedeeisen → T4 Stahl → T5 Damast → T6 Relikt; gilt auch für Werkzeuge, Rüstung und Rohstoffe | bestätigt (2026-11-12) |
+| Relikt-Stufe T6 | ja (Bossmaterialien, eigene Formen) | bestätigt (2026-11-12) |
+| Waffentypen MVP Phase 3 | 7 Typen: Bartaxt, Sax, Speer, Schwert (ab T3), Rundschild, Bogen, Pfeile | bestätigt (2026-11-12; Antwort „ja“ auf „passend?“, von Claude so gedeutet) |
+| Fernkampf | Bogen und Armbrust (Armbrust ab T3) | bestätigt (2026-11-12; „ab T3“ ist Vorschlag) |
+| Gewaltdarstellung | im Menü einstellbar: Blut und abtrennbare Körperteile, jeweils schaltbar | bestätigt (2026-11-12) |
+| Farb- und Wappengestaltung | Schild u. a. individuell gestaltbar im Charakter-Editor und im „Lager-Editor“ (von Claude gedeutet als Siedlungs-Editor für Farben/Wappen der Siedlung) | bestätigt (2026-11-12; Deutung „Lager-Editor“ zu bestätigen) |
+| Verderben von Nahrung | nur Rohes (Fleisch, Fisch) verdirbt, langsam | bestätigt (2026-11-12) |
+| Haltbarkeit | Werkzeuge und Waffen haben Haltbarkeit, einfach gehalten (Reparatur) | bestätigt (2026-11-12) |
+| Handel | Händler; nachts zusätzlich ein Schwarzmarkt-Händler. Währung Hacksilber | bestätigt (2026-11-12; Hacksilber ist Vorschlag) |
+| Tierhaltung | ja, einfach gehalten; Tierarten passend zu den Tier-Stufen (von Claude so gedeutet) | bestätigt (2026-11-12) |
+| Schmuck-Slot | nein; Schmuck ist nur Handelsware | bestätigt (2026-11-12) |
+| Feldbau (Gerste, Flachs) ab Phase 2 | – | offen |
 | Herkunft 3D-Assets | Mittelweg: Baukasten (Wände, Böden, Dächer, Pfosten, Türen) erzeugt Claude per Python-Skript in Blender nach den Steckbriefen; organische Einzelobjekte (Felsen, Stümpfe, Werkzeuge, Items, Kessel …) aus einem KI-3D-Werkzeug mit automatischer Nachbearbeitung in Blender; Texturen (z. B. Trim-Sheet) per KI-Bildgenerator, vom Nutzer geprüft; Figuren später. Welcher KI-3D-Dienst: offen (Lizenzvergleich vorher). Alle KI-Inhalte ins Asset-Log | bestätigt (2026-11-12) |

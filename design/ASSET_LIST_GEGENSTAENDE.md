@@ -7,7 +7,7 @@
 ## 1. Grundidee
 - **Nicht jeder Gegenstand braucht ein 3D-Modell.** Die meisten Gegenstände sieht man nur als **Icon** im Inventar. Ein Mesh bekommt nur, was sichtbar **getragen, gestapelt oder abgelegt** wird.
 - **Sammelbehälter statt Einzelmodelle:** Im Lager und beim Tragen stehen Nahrung und Kleinkram in **Sack, Korb, Fass oder Kiste**. Fallengelassene Gegenstände erscheinen als **ein gemeinsames Bündel-Mesh** mit Icon darüber.
-- **Stufen wie bei den Waffen:** T1 Rohstufe · T2 Raseneisen · T3 Schmiedeeisen · T4 Stahl · T5 Damast · T6 Relikt (Ausbau, offen). Die Rohstoffe einer Stufe schalten die Waffen und Werkzeuge dieser Stufe frei.
+- **Stufen wie bei den Waffen:** T1 Rohstufe · T2 Raseneisen · T3 Schmiedeeisen · T4 Stahl · T5 Damast · T6 Relikt (bestätigt, Ausbau). Die Rohstoffe einer Stufe schalten die Waffen und Werkzeuge dieser Stufe frei.
 - **IDs:** Alle Inventar-Gegenstände beginnen mit `item_`, Werkzeuge mit `tool_`, Behälter-Props mit `prop_`. Die Phase-1-IDs aus dem Asset-Plan bleiben unverändert.
 
 Spalten: **Mesh** = eigenes 3D-Modell nötig (✓) oder nur Icon (–) bzw. Behälter (Sack/Korb/Fass/Kiste) · **Phase** = ab wann gebraucht.
@@ -28,7 +28,11 @@ Spalten: **Mesh** = eigenes 3D-Modell nötig (✓) oder nur Icon (–) bzw. Beh�
 | `item_turf` | Grassoden | T1 | ✓ | 2 | Stapel; für Turf-Dächer |
 | `item_bog_ore` | Raseneisenerz | T2 | ✓ | 3 | Haufen im Lager |
 | `item_charcoal` | Holzkohle | T2 | – | 3 | Sack |
-| `item_wool` | Wolle | T2 | – | 2 | Korb; braucht Schafe (Tierhaltung offen) |
+| `item_wool` | Wolle | T2 | – | 2 | Korb; von Schafen (Tierhaltung bestätigt) |
+| `item_feather` | Federn | T1 | – | 2 | Hühner und Jagd; für Pfeile |
+| `item_egg` | Eier | T1 | – | 2 | Hühner; Zutat |
+| `item_milk` | Milch | T2 | – | 3 | Ziegen; nur Zutat (verdirbt nicht, gilt als verarbeitet) |
+| `item_dye_*` | Färbemittel (Waid blau, Krapp rot, Wau gelb) | T2 | – | 3 | für Charakter- und Lager-Editor (Kleidung, Schild, Banner) |
 | `item_flax` | Flachs | T2 | – | 2 | Bündel |
 | `item_iron_ore` | Eisenerz (Fels) | T4 | ✓ | 4 | Biom 2; Grundlage für Stahl |
 | `item_antler` | Geweih | T3 | – | 3 | Griffe, Bogenbeläge |
@@ -73,7 +77,9 @@ Essen gibt Buffs auf **Gesundheit, Regeneration, Traglast, Resistenzen oder Scha
 | `item_mead` | Met | T3 | – | 3 | Schaden (kurz) |
 | `item_feast_*` | Festmahl je Biom | T4–T5 | – | 4 | mehrere Buffs |
 
-**Hinweis zur Regel „kein Zeitdruck“:** Verderbendes Essen würde Zeitdruck erzeugen. Vorschlag: **kein Verderben**, oder nur rohes Fleisch und Fisch sehr langsam.
+| `item_food_spoiled` | verdorbenes Essen | T1 | – | 2 | kein Buff; Dünger für den Feldbau (falls es Feldbau gibt) |
+
+**Verderben (bestätigt):** Nur **rohes Fleisch und roher Fisch** verderben, und zwar langsam. Alles Gekochte und Verarbeitete hält unbegrenzt. So bleibt die Regel „kein Zeitdruck“ gewahrt: Wer kocht, muss sich nicht beeilen.
 
 ## 5. Werkzeuge mit Stufen
 Gleiche Teile-Strategie wie bei den Waffen: Kopf-Mesh je Material (T1 Stein, ab T2 Metall), Stiel geteilt, Stufen über Materialinstanzen.
@@ -99,13 +105,14 @@ Dorfbewohner nutzen dieselben Werkzeug-Meshes. Ihre Arbeitsgeschwindigkeit häng
 | `item_salve` | Kräutersalbe | T2 | – | 3 | stärkere Heilung |
 | `item_antidote` | Gegengift | T3 | – | 4 | Biom mit Gift |
 | `item_firestarter` | Zunder | T1 | – | 2 | Lagerfeuer entzünden |
-| `item_repair_kit` | Flickzeug | T2 | – | 3 | Ausrüstung unterwegs reparieren (nur wenn es Haltbarkeit gibt) |
+| `item_repair_kit` | Flickzeug | T2 | – | 3 | Ausrüstung unterwegs reparieren. Haltbarkeit bestätigt, **einfach gehalten** (Vorschlag: ein Wert pro Gegenstand, Reparatur an Werkbank/Schmiede oder mit Flickzeug, kein Totalverlust) |
 
 ## 7. Wertgegenstände, Handel, Quest
 | ID | Gegenstand | Mesh | Phase | Hinweis |
 |---|---|:-:|:-:|---|
-| `item_hacksilver` | Hacksilber (Währung) | – | 4 | nur wenn es Handel gibt |
-| `item_jewelry_*` | Schmuck (Fibel, Armring) | – | 4 | Handel, Ausrüstungs-Slot „Schmuck“ (offen) |
+| `item_hacksilver` | Hacksilber (Währung) | – | 4 | Handel bestätigt: Händler, nachts zusätzlich ein Schwarzmarkt-Händler |
+| `item_contraband_*` | Schwarzmarkt-Ware (seltene Bauteile, Rezepte, Bossmaterial-Splitter) | – | 4 | nur beim Nacht-Händler; Inhalte offen |
+| `item_jewelry_*` | Schmuck (Fibel, Armring) | – | 4 | nur Handelsware, **kein Ausrüstungs-Slot** (bestätigt) |
 | `item_trophy_boss_*` | Trophäe je Boss | ✓ | 4 | **eigenes Design**, platzierbar in der Siedlung |
 | `item_quest_*` | Quest-Gegenstände | – | 4 | pro Questlinie |
 | `item_portal_key_*` | Portal-Fokus | ✓ | 5 | für das Portalsystem im Spätspiel |
@@ -119,6 +126,17 @@ Dorfbewohner nutzen dieselben Werkzeug-Meshes. Ihre Arbeitsgeschwindigkeit häng
 | `prop_crate` | Kiste | ✓ | 2 | Leder, Stoffe, Knochen, Nieten |
 | `prop_item_bundle` | Bündel für abgelegte Gegenstände | ✓ | 2 | eins für alles, Icon schwebt darüber |
 | `prop_drying_rack` | Trockengestell | ✓ | 2 | Häute, Fisch |
+
+## 8a. Tierhaltung (bestätigt, einfach gehalten)
+Tierarten passend zu den Tier-Stufen (Deutung von Claude). Die Tiere selbst sind Figuren-Assets und kommen in eine spätere Liste „Tiere und Gegner“. Hier nur, was sie für Gegenstände bedeuten:
+
+| Stufe | Tier (Vorschlag) | liefert | Gebäude/Prop |
+|---|---|---|---|
+| T1 | Hühner | `item_egg`, `item_feather` | `building_coop` (Hühnerstall) |
+| T2 | Schafe, Ziegen | `item_wool`, `item_milk`, `item_hide_raw` | `building_pen` (Pferch) |
+| T3 | Rinder | `item_milk`, `item_hide_raw`, Zugkraft (offen) | `building_byre` (Stall) |
+
+Einfach gehalten heißt (Vorschlag): Tiere brauchen nur Futter und einen Stall, keine Zucht-Genetik, kein Tierwohl-Zeitdruck. Ein Dorfbewohner-Job „Hirte“ kümmert sich darum.
 
 ## 9. Budgets
 | Asset-Art | Dreiecke Ziel | Obergrenze | Textur |
@@ -141,11 +159,16 @@ Dorfbewohner nutzen dieselben Werkzeug-Meshes. Ihre Arbeitsgeschwindigkeit häng
 
 Der größte Aufwand sind die **Icons**, nicht die Modelle. Deshalb lohnt sich früh ein festes Icon-Raster (Blickwinkel, Licht, Rahmen, Stufenfarbe).
 
-## 11. Entscheidungen, die der Nutzer treffen muss
-1. **Verderben von Nahrung:** keins (Empfehlung, wegen „kein Zeitdruck“) oder langsam nur für Rohes?
-2. **Haltbarkeit von Werkzeugen und Waffen:** ja (dann Reparatur und Flickzeug) oder nein?
-3. **Handel und Währung** (Hacksilber): Gibt es Händler?
-4. **Tierhaltung** (Schafe, Ziegen, Hühner) für Wolle, Milch, Eier: ja, später, nein?
-5. **Feldbau** (Gerste, Flachs): ab Phase 2?
-6. **Schmuck-Slot** in der Ausrüstung: ja oder nein?
-7. **Rüstung und Kleidung** fehlen hier noch. Soll als Nächstes eine eigene Liste dafür entstehen?
+## 11. Entscheidungen
+**Beantwortet am 2026-11-12** (eingetragen in `docs/01_entscheidungen.md`):
+1. Verderben: nur Rohes.
+2. Haltbarkeit: ja, einfach gehalten.
+3. Handel: Händler und nachts ein Schwarzmarkt-Händler.
+4. Tierhaltung: ja, einfach gehalten, passend zu den Tier-Stufen.
+5. Schmuck-Slot: nein.
+6. Rüstung und Kleidung: eigene Liste → `design/ASSET_LIST_RUESTUNG.md`.
+
+**Noch offen:**
+1. **Feldbau** (Gerste, Flachs): ab Phase 2?
+2. Was verkauft der **Schwarzmarkt-Händler**, und gibt es dafür ein Risiko (z. B. Ruf in der Siedlung)?
+3. Sind die Tierarten pro Stufe (Hühner → Schafe/Ziegen → Rinder) so richtig gedeutet?
