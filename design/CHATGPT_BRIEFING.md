@@ -38,6 +38,7 @@ Du lieferst Design: Art Direction, Siedlungs- und UI-Konzepte, Looks, Stimmung. 
 - Markdown-Dateien, benannt `NN_thema.md` (z. B. `01_art_direction.md`). Bilder als PNG mit Beschreibung dazu.
 - Alles, was später in Daten übergehen soll (Gebäude, Berufe, Ausrüstungsstufen, UI-Elemente), als **Tabelle mit stabilen IDs** in `snake_case` (z. B. `building_longhouse`, `job_woodcutter`). So kann Claude es direkt in Datentabellen überführen.
 - Am Ende jeder Lieferung ein Abschnitt **„Entscheidungen, die der Nutzer treffen muss“**.
+- **Prompts für KI-Generatoren** (Konzeptbilder, Texturen, Icons, 3D) immer als vollständiges Prompt-Paket nach `design/PROMPT_STANDARD.md`: alle Pflichtfelder, Stil-, Licht-, Hintergrund- und Ausschlussblock wörtlich, Proportionen als Verhältnisse, Farben als Hex-Werte aus der Palette, messbare Abnahme-Kriterien. Ein Prompt pro Objekt. Beispiele: `design/prompts/`.
 - Alles KI-Generierte (Bild, Text, Audio) im Format `Datei | Werkzeug | Datum | Lizenz/Quelle` melden; der Nutzer trägt es in `design/asset_log.md` ein.
 
 ## Ablauf

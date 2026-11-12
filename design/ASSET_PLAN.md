@@ -185,6 +185,7 @@ Pro Asset (oder Gruppe) **ein Abschnitt** in einer Markdown-Datei `NN_assets_<gr
 | MVP / Ausbau | was zuerst reicht, was später dazukommt |
 | Budget-Check | geschätzte Dreiecke und Texturgröße laut 4.2 |
 | KI-Hinweis | ob Bild/Text KI-generiert ist, als Eintrag: Datei / Werkzeug / Datum / Lizenz oder Quelle |
+| Prompt-Paket | **Pflicht, sobald ein Asset per KI erzeugt werden soll:** vollständiges Paket nach `design/PROMPT_STANDARD.md` (alle Pflichtfelder, feste Blöcke S1/L1/H1/N1 wörtlich, Abnahme-Kriterien). Beispiele in `design/prompts/` |
 
 Am Ende jeder Datei: **„Entscheidungen, die der Nutzer treffen muss“**.
 
