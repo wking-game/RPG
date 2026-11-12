@@ -1,0 +1,23 @@
+# Unreal Engine
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/
+.vs/
+.idea/
+*.sln
+*.slnx
+*.suo
+*.VC.db
+*.opensdf
+*.sdf
+*.xcodeproj
+*.code-workspace
+
+# Fremd-Referenzen nicht mit einchecken (bei Bedarf entfernen)
+reference/
+
+# System
+.DS_Store
+Thumbs.db
