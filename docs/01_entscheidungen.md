@@ -49,3 +49,4 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Server-Hosting (Spieler hosten selbst oder gemieteter Server) | – | offen |
 | Veröffentlichung (Steam?) | – | offen |
 | GitHub-Repository | `wking-game/RPG`, öffentlich (bewusst, statt privat wie in der Setup-Checkliste geplant) | bestätigt (2026-11-12) |
+| GitHub-Konto für Engine-Quellcode (Source-Build) | `wking-game` | bestätigt (2026-11-12) |
