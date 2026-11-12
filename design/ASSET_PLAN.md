@@ -196,6 +196,8 @@ Am Ende jeder Datei: **„Entscheidungen, die der Nutzer treffen muss“**.
 - **Umfang bremsen:** Wenn ein Asset das Budget sprengt oder für den Slice nicht nötig ist, sag es und schlage eine kleinere Variante vor.
 
 ## 8. Ausblick (noch nicht bearbeiten)
+Vorbereitete Detail-Listen: Waffen mit Tier-Stufen in `design/ASSET_LIST_WAFFEN.md`, Gegenstände, Werkzeuge und Behälter in `design/ASSET_LIST_GEGENSTAENDE.md`.
+
 | Phase | Assets |
 |---|---|
 | 2 Siedlung ausbauen | Materialstufe Stein, ca. 10 Jobs und deren Arbeitsstätten, Kommandoansicht-UI, Miliz-Ausrüstung |
