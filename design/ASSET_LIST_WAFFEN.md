@@ -44,7 +44,7 @@ Vorschlag mit nordisch-historischer Abfolge statt der üblichen Bronze/Eisen/Sil
 | `ammo_bolt` | Bolzen | Munition | | – | – | ✓ | ✓ | ✓ | ✓ |
 
 Schwert erst ab T3: Schwerter waren teuer und selten. Das gibt dem Fortschritt ein Ziel.
-Armbrust erst ab T3 (Vorschlag): Abzugsmechanik und Bogen brauchen Schmiedeeisen. Langsamer als der Bogen, dafür mehr Haltungsschaden.
+Armbrust: **Freischaltung über bestimmte Attribute plus eine Fähigkeit im Skilltree** (bestätigt). Ab welcher Stufe ist offen: Claude schlägt T3 vor (Mechanik braucht Schmiedeeisen), ChatGPT/Codex T4 als seltene Import- oder Schwarzmarktware (`design/inbox/05_assets_armbrust.md`). Die T4-Variante passt gut zum bestätigten Nacht-Händler. Langsamer als der Bogen, dafür mehr Haltungsschaden. Ausgestaltung der Teile siehe 05.
 Werkzeuge aus Phase 1 (`tool_axe`, `tool_pickaxe`) bleiben eigene Assets. Die Kampfaxt darf deren Stiel-Mesh wiederverwenden.
 
 ## 4. Mesh-Strategie pro Typ
@@ -119,7 +119,10 @@ Zum Vergleich: ohne Teile-Strategie wären es 7 Typen × 6 Stufen = 42 Einzelwaf
 5. Schild: individuell gestaltbar im Charakter- und Lager-Editor.
 6. Fernkampf: Bogen und Armbrust.
 
+**Nachtrag 2026-11-12:** Armbrust wird über Attribute plus eine Fähigkeit freigeschaltet.
+
 **Noch offen:**
-1. Ist „Lager-Editor“ der Editor für Farben und Wappen der **Siedlung**?
-2. Abtrennbare Körperteile schon in der ersten Kampf-Version oder als Ausbau danach (Empfehlung: Ausbau)?
-3. Ziel-Altersfreigabe (z. B. USK 16 oder 18)?
+1. Armbrust ab **T3 oder T4** (siehe Abschnitt 3)?
+2. Ist „Lager-Editor“ der Editor für Farben und Wappen der **Siedlung**?
+3. Abtrennbare Körperteile schon in der ersten Kampf-Version oder als Ausbau danach (Empfehlung: Ausbau)?
+4. Ziel-Altersfreigabe (z. B. USK 16 oder 18)?

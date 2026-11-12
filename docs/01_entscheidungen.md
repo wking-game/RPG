@@ -60,10 +60,19 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Fernkampf | Bogen und Armbrust (Armbrust ab T3) | bestätigt (2026-11-12; „ab T3“ ist Vorschlag) |
 | Gewaltdarstellung | im Menü einstellbar: Blut und abtrennbare Körperteile, jeweils schaltbar | bestätigt (2026-11-12) |
 | Farb- und Wappengestaltung | Schild u. a. individuell gestaltbar im Charakter-Editor und im „Lager-Editor“ (von Claude gedeutet als Siedlungs-Editor für Farben/Wappen der Siedlung) | bestätigt (2026-11-12; Deutung „Lager-Editor“ zu bestätigen) |
-| Verderben von Nahrung | nur Rohes (Fleisch, Fisch) verdirbt, langsam | bestätigt (2026-11-12) |
+| Verderben von Nahrung | nur Rohes (Fleisch, Fisch) verdirbt, langsam | bestätigt (2026-11-12), präzisiert durch „Verderben – Dauer“ weiter unten |
 | Haltbarkeit | Werkzeuge und Waffen haben Haltbarkeit, einfach gehalten (Reparatur) | bestätigt (2026-11-12) |
 | Handel | Händler; nachts zusätzlich ein Schwarzmarkt-Händler. Währung Hacksilber | bestätigt (2026-11-12; Hacksilber ist Vorschlag) |
 | Tierhaltung | ja, einfach gehalten; Tierarten passend zu den Tier-Stufen (von Claude so gedeutet) | bestätigt (2026-11-12) |
 | Schmuck-Slot | nein; Schmuck ist nur Handelsware | bestätigt (2026-11-12) |
-| Feldbau (Gerste, Flachs) ab Phase 2 | – | offen |
+| Feldbau (Gerste, Flachs) | ab Phase 2 | bestätigt (2026-11-12) |
+| Armbrust: Freischaltung | über bestimmte Attribute plus eine Fähigkeit im Skilltree (nicht über einen Meilenstein) | bestätigt (2026-11-12) |
+| Armbrust: ab welcher Stufe | T3 (Claude) oder T4 als seltene Import-/Schwarzmarktware (ChatGPT/Codex, `design/inbox/05_assets_armbrust.md`) | offen |
+| Haltbarkeit Rüstung | ja (einfach gehalten wie Waffen und Werkzeuge) | bestätigt (2026-11-12) |
+| Ausrüstungs-Slots | Helm, Schulter, Hände, 2 × Ring, Beine, Füße, Umhang. Der Umhang wird nach dem ersten Winter freigeschaltet | bestätigt (2026-11-12) |
+| Ausrüstungs-Slot Oberkörper (Brust/Rüstung) | in der Slot-Antwort nicht genannt – vermutlich vergessen? | offen |
+| Ring-Slots vs. „kein Schmuck-Slot“ | Widerspruch: oben „Schmuck-Slot: nein“, jetzt „2 × Ring“. Sind Ringe eine Ausnahme (z. B. besondere Ringe mit Wirkung) und Fibeln/Armringe bleiben Handelsware? | offen |
+| Jahreszeiten | Es gibt Winter; der erste Winter ist nicht hart (abgeleitet aus der Slot-Antwort) | bestätigt (2026-11-12) |
+| Verderben – Dauer | Fleisch 4 Tage, Obst und Gemüse 2,5 Tage, wenn nicht trocken gelagert; sonstige Lebensmittel 3 Tage | bestätigt (2026-11-12) |
+| Verderben – Auslegung | Spieltage? Hält trockene Lagerung unbegrenzt oder nur länger? Verderben auch gekochte Speisen („sonstige Lebensmittel 3 Tage“) – das widerspricht „nur Rohes“? | offen |
 | Herkunft 3D-Assets | Mittelweg: Baukasten (Wände, Böden, Dächer, Pfosten, Türen) erzeugt Claude per Python-Skript in Blender nach den Steckbriefen; organische Einzelobjekte (Felsen, Stümpfe, Werkzeuge, Items, Kessel …) aus einem KI-3D-Werkzeug mit automatischer Nachbearbeitung in Blender; Texturen (z. B. Trim-Sheet) per KI-Bildgenerator, vom Nutzer geprüft; Figuren später. Welcher KI-3D-Dienst: offen (Lizenzvergleich vorher). Alle KI-Inhalte ins Asset-Log | bestätigt (2026-11-12) |

@@ -30,9 +30,9 @@
 
 - **Füllzustände:**
   - **Leer:** freie, leere Regalbucht mit sichtbaren Ablageböden.
-  - **Gefüllt:** gestapelte, wiederverwendete Meshes der Ressourcen `item_log`, `item_plank`, `item_stone`, `item_berries` und `item_meal`. Holz, Bretter und Stein liegen getrennt; Beeren und Mahlzeiten stehen auf einem geschützten Regal.
-  - Zwei Zustände (leer/gefüllt) reichen für den MVP. Feine Füllstufen sind Ausbau.
-- **Materialien:** Holz-Trim-Sheet; dunklere Holzinstanz für Sockel und Dach. Vorhandene Steinmaterialfamilie nur für wenige Bodenanker. Keine zusätzliche 1024²-Textur vorgesehen.
+  - **Gefüllt:** Stämme, Bretter und Steine liegen als wiederverwendete Ressourcen-Meshes in getrennten Zonen. Beeren und Mahlzeiten erhalten keine Einzel-Meshes: Beeren stehen in `prop_basket`, Mahlzeiten in `prop_sack` oder einem gemeinsamen Nahrungssack.
+  - **Phase-1-Abhängigkeiten:** `item_log`, `item_plank`, `item_stone`, `prop_basket` und `prop_sack`. `item_berries` und `item_meal` werden in der UI als Icons dargestellt und im Gebäude über Behälter angedeutet.
+  - Zwei Zustände (leer/gefüllt) reichen für den MVP. Feine Füllstufen sind Ausbau.- **Materialien:** Holz-Trim-Sheet; dunklere Holzinstanz für Sockel und Dach. Vorhandene Steinmaterialfamilie nur für wenige Bodenanker. Keine zusätzliche 1024²-Textur vorgesehen.
 - **MVP / Ausbau:** optimierte Hülle, geschlossener 3 × 3-m-Raum, offene 3 × 3-m-Regalbucht, ein Türblatt und zwei Füllzustände / später abgestufte Füllstände, Materialstufen und Reparaturzustand.
 - **Budget-Check:** Ziel max. 8.000 Dreiecke, harte Obergrenze 15.000 für die eigene Hülle. Item-Meshes werden wiederverwendet und separat gezählt. Holz-Trim-Sheet; keine eigene Textur.
 - **Ursprung/Pivot:** Empfehlung für die Gebäudehülle: Mitte der 300 × 600-cm-Grundfläche auf Geländehöhe, Längsachse parallel zum 600-cm-Raster. Die Tür bleibt ein separates Mesh mit Scharnier-Pivot.
@@ -83,5 +83,7 @@ Laut dem eingereichten Review sind folgende Entscheidungen übernommen und in di
 
 | Datei | Werkzeug | Datum | Lizenz/Quelle |
 |---|---|---|---|
-| `04_assets_arbeitsstaetten.md` | OpenAI Codex | 2026-11-12 | KI-generierter Konzepttext auf Basis des Nutzer-Briefings und des eingereichten Reviews; keine externen Assets verwendet |
+| `04_assets_arbeitsstaetten.md` | OpenAI Codex | 2026-11-12 | KI-generierter Konzepttext auf Basis des Nutzer-Briefings, des Reviews und der Gegenstandsliste; keine externen Assets verwendet |
+
+
 

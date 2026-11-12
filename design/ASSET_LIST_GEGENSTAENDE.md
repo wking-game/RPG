@@ -79,7 +79,15 @@ Essen gibt Buffs auf **Gesundheit, Regeneration, Traglast, Resistenzen oder Scha
 
 | `item_food_spoiled` | verdorbenes Essen | T1 | – | 2 | kein Buff; Dünger für den Feldbau (falls es Feldbau gibt) |
 
-**Verderben (bestätigt):** Nur **rohes Fleisch und roher Fisch** verderben, und zwar langsam. Alles Gekochte und Verarbeitete hält unbegrenzt. So bleibt die Regel „kein Zeitdruck“ gewahrt: Wer kocht, muss sich nicht beeilen.
+| `item_meat_dried` / `item_fish_dried` | Trockenfleisch, Stockfisch | T2 | – | 2 | am Trockengestell hergestellt; verdirbt nicht (Vorschlag) |
+
+**Verderben (bestätigt, präzisiert am 2026-11-12):** Fleisch **4 Tage**, Obst und Gemüse **2,5 Tage**, wenn sie nicht trocken gelagert werden; sonstige Lebensmittel **3 Tage**.
+Vorschläge von Claude dazu (offen, siehe `docs/01_entscheidungen.md`):
+- Gemeint sind **Spieltage**.
+- **Trockene Lagerung** = der geschlossene Raum des Lagers (`building_storage`) bzw. später eine Vorratskammer. Dort verdirbt nichts oder deutlich langsamer.
+- **Trocknen und Räuchern** (Trockengestell) machen Fleisch und Fisch haltbar. Das passt zum nordischen Setting.
+- **Erst ab Phase 2.** Im Vertical Slice verdirbt nichts, damit die Dorfbewohner-KI zuerst ohne diese Zusatzregel stabil läuft.
+- Spannung zur Regel „kein Zeitdruck“: 2,5 bis 4 Tage sind spürbar. Trockene Lagerung und Trocknen sollen den Druck herausnehmen.
 
 ## 5. Werkzeuge mit Stufen
 Gleiche Teile-Strategie wie bei den Waffen: Kopf-Mesh je Material (T1 Stein, ab T2 Metall), Stiel geteilt, Stufen über Materialinstanzen.
@@ -113,6 +121,7 @@ Dorfbewohner nutzen dieselben Werkzeug-Meshes. Ihre Arbeitsgeschwindigkeit häng
 | `item_hacksilver` | Hacksilber (Währung) | – | 4 | Handel bestätigt: Händler, nachts zusätzlich ein Schwarzmarkt-Händler |
 | `item_contraband_*` | Schwarzmarkt-Ware (seltene Bauteile, Rezepte, Bossmaterial-Splitter) | – | 4 | nur beim Nacht-Händler; Inhalte offen |
 | `item_jewelry_*` | Schmuck (Fibel, Armring) | – | 4 | nur Handelsware, **kein Ausrüstungs-Slot** (bestätigt) |
+| `item_ring_*` | Ringe für die 2 Ring-Slots | – | 3 | Ring-Slots am 2026-11-12 bestätigt; Verhältnis zu „kein Schmuck-Slot“ noch offen. Nur Icon, kein Mesh |
 | `item_trophy_boss_*` | Trophäe je Boss | ✓ | 4 | **eigenes Design**, platzierbar in der Siedlung |
 | `item_quest_*` | Quest-Gegenstände | – | 4 | pro Questlinie |
 | `item_portal_key_*` | Portal-Fokus | ✓ | 5 | für das Portalsystem im Spätspiel |
@@ -168,7 +177,9 @@ Der größte Aufwand sind die **Icons**, nicht die Modelle. Deshalb lohnt sich f
 5. Schmuck-Slot: nein.
 6. Rüstung und Kleidung: eigene Liste → `design/ASSET_LIST_RUESTUNG.md`.
 
+**Nachtrag 2026-11-12:** Feldbau ab Phase 2 (bestätigt). Verderben präzisiert (Abschnitt 4).
+
 **Noch offen:**
-1. **Feldbau** (Gerste, Flachs): ab Phase 2?
+1. **Verderben – Auslegung:** Spieltage? Hält trockene Lagerung unbegrenzt? Verderben auch gekochte Speisen („sonstige Lebensmittel 3 Tage“)?
 2. Was verkauft der **Schwarzmarkt-Händler**, und gibt es dafür ein Risiko (z. B. Ruf in der Siedlung)?
 3. Sind die Tierarten pro Stufe (Hühner → Schafe/Ziegen → Rinder) so richtig gedeutet?
