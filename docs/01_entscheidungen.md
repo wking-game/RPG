@@ -50,3 +50,7 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Veröffentlichung (Steam?) | – | offen |
 | GitHub-Repository | `wking-game/RPG`, öffentlich (bewusst, statt privat wie in der Setup-Checkliste geplant) | bestätigt (2026-11-12) |
 | GitHub-Konto für Engine-Quellcode (Source-Build) | `wking-game` | bestätigt (2026-11-12) |
+| Art Direction | „Klarform-Saga“ (`style_klarform_saga`): stilisiert, klare Formen, kräftige Farben, nordisch-frühmittelalterlich, zurückhaltende Abnutzung. Löst die offene Zeile „Art-Stil“ oben. Details: `design/inbox/01_art_direction.md` | bestätigt (2026-11-12, vom Nutzer in ChatGPT gewählt) |
+| Dachdeckung Holzstufe | Holz mit schmaler Turf-Kante (kein vollständiges Turf-Dach, wegen Lesbarkeit in der Vogelperspektive) | bestätigt (2026-11-12) |
+| Lagergröße (Vertical Slice) | 300 × 600 cm, First in Längsrichtung, passt zum 300-cm-Dachbaukasten; geschlossener Raum + offene Regalbucht | bestätigt (2026-11-12) |
+| Kochstelle (Vertical Slice) | offenes Lagerfeuer mit Holzgalgen und Kessel | bestätigt (2026-11-12) |
