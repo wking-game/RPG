@@ -11,6 +11,15 @@ Grundsatz: erst ein kleiner, spielbarer Vertical Slice, dann ausbauen. Reihenfol
 | 4 Welt | Biome, Questlinien, Bosse, Schwierigkeitsstufen | Erste zwei Biome mit Boss spielbar |
 | 5 Spätspiel | Portale, optionale Angriffswellen, Weltoptionen/Modi, Skalierungstests bis 16 Spieler | Weltoptionen kombinierbar, Portale transportieren zwischen Lagern |
 
+## Stand Phase 0 (2026-11-12)
+- Erledigt: Projekt baut (`GamerEditor Win64 Development`), Git + GitHub, MCP-Anbindung (siehe `docs/03_setup_checkliste.md`).
+- **Verbindungstest Listen-Server + 1 Client bestanden** (Launcher-Build, beide Prozesse ohne Grafik auf demselben PC):
+  Host `UnrealEditor.exe Gamer.uproject /Engine/Maps/Templates/Template_Default?listen -game -nullrhi -nosound`,
+  Client `UnrealEditor.exe Gamer.uproject 127.0.0.1:7777 -game -nullrhi -nosound`.
+  Host-Log: „Join succeeded“, Client-Log: „Welcomed by server“. Getestet nur lokal (127.0.0.1), nicht über zwei PCs oder das Internet.
+- Auffällig: Im `-game`-Modus melden die Python-Skripte der Editor-Toolsets Fehler (`module 'unreal' has no attribute 'AgentSkill'` u. a.), weil es dort keine Editor-Klassen gibt. Für den Test folgenlos.
+- Offen in Phase 0: Build-Pipeline (Skript für Build/Cook), Dedicated-Server-Target (braucht Source-Build, siehe unten).
+
 ## Hinweis zum Dedicated-Server-Target (Phase 0)
 Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es einen Source-Build der Engine (Epic-Doku „Setting Up Dedicated Servers“). Das „Dedicated-Server-Target“ in Phase 0 geht deshalb erst mit Source-Build. Bis dahin kann mit dem Launcher-Build entwickelt und mit Listen-Server getestet werden. Die Entscheidung ist offen (siehe `docs/01_entscheidungen.md`).
 
