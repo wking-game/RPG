@@ -18,7 +18,9 @@ Grundsatz: erst ein kleiner, spielbarer Vertical Slice, dann ausbauen. Reihenfol
   Client `UnrealEditor.exe Gamer.uproject 127.0.0.1:7777 -game -nullrhi -nosound`.
   Host-Log: „Join succeeded“, Client-Log: „Welcomed by server“. Getestet nur lokal (127.0.0.1), nicht über zwei PCs oder das Internet.
 - Auffällig: Im `-game`-Modus melden die Python-Skripte der Editor-Toolsets Fehler (`module 'unreal' has no attribute 'AgentSkill'` u. a.), weil es dort keine Editor-Klassen gibt. Für den Test folgenlos.
-- Offen in Phase 0: Build-Pipeline (Skript für Build/Cook), Dedicated-Server-Target (braucht Source-Build, siehe unten).
+- **Build-Pipeline:** `tools/build.ps1` mit den Schritten `Editor`, `Game`, `Package`, `ProjectFiles` (Aufruf siehe Kopf des Skripts). Getestet 2026-11-12:
+  Editor-Sperre greift bei offenem Editor; `Game` baut `Gamer.exe` in ca. 130 s; `Package -Config Development` in ca. 150 s, 0 Fehler, **0,96 GB** (leeres Projekt mit Engine-Karte `OpenWorld`); das gepackte Spiel startet (ohne Grafik geprüft) und lädt die Karte.
+- Offen in Phase 0: Dedicated-Server-Target (braucht Source-Build, siehe unten).
 
 ## Hinweis zum Dedicated-Server-Target (Phase 0)
 Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es einen Source-Build der Engine (Epic-Doku „Setting Up Dedicated Servers“). Das „Dedicated-Server-Target“ in Phase 0 geht deshalb erst mit Source-Build. Bis dahin kann mit dem Launcher-Build entwickelt und mit Listen-Server getestet werden. Die Entscheidung ist offen (siehe `docs/01_entscheidungen.md`).
