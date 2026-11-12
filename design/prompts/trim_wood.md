@@ -1,7 +1,7 @@
 # Prompt-Paket `trim_wood` – Holz-Trim-Sheet (Phase 1, Prio A)
 
-*Nach `design/PROMPT_STANDARD.md`. Status: Entwurf von Claude, noch nicht erzeugt.*
-*Layout verbindlich aus `art/wood_kit/README.md`: 2048 × 2048 px, 1 UV = 200 cm, u kachelt waagerecht.*
+*Nach `design/PROMPT_STANDARD.md`. Status: Prompts nicht verwendet. Das Trim-Sheet wurde am 2026-11-12 **prozedural in Blender** erzeugt (`Assets/Textures/T_Trim_Wood_BC/_N/_ORM.png`, Layout exakt wie unten). Die Prompts bleiben für eine spätere KI-Fassung erhalten.*
+*Layout verbindlich (umgesetzt in `tools/blender/build_wood_kit.py`, `STRIPS`): 2048 × 2048 px, 1 UV = 200 cm, u kachelt waagerecht.*
 
 | Feld | Inhalt |
 |---|---|
@@ -97,4 +97,4 @@ right edges. Aspect ratio 10:1.
 | A | Farben innerhalb ΔE ≤ 10 der Sollwerte | offen |
 | A | keine Nägel, keine Farbe, keine Schnitzereien, kein Text | offen |
 | B | fertiger Atlas 2048 × 2048, Streifengrenzen exakt laut Tabelle | offen |
-| B | auf den Bauteilen aus `art/wood_kit/` getestet: Bretter laufen richtig, keine Verzerrung | offen |
+| B | auf den Bauteilen aus `Assets/Buildings/WoodKit/` getestet: Bretter laufen richtig, keine Verzerrung | offen |

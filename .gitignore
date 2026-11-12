@@ -15,6 +15,10 @@ Build/
 *.xcodeproj
 *.code-workspace
 
+# Blender-Sicherungskopien
+*.blend1
+*.blend2
+
 # Fremd-Referenzen nicht mit einchecken (bei Bedarf entfernen)
 reference/
 

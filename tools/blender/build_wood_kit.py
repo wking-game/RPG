@@ -1,7 +1,8 @@
 """Erzeugt den Holzbaukasten (Phase 1, Prioritaet A) nach design/inbox/03_assets_baukasten.md.
 
-Aufruf (Blender headless):
-  E:\\Blender\\blender.exe --background --factory-startup --python tools/blender/build_wood_kit.py -- art/wood_kit
+Normalerweise wird dieses Modul von tools/blender/build_assets.py benutzt (Ausgabe nach Assets/).
+Einzelaufruf nur zum Testen, mit Platzhalter-Texturen (Blender headless):
+  E:\\Blender\\blender.exe --background --factory-startup --python tools/blender/build_wood_kit.py -- <Testordner>
 
 Ergebnis im Zielordner:
   SM_Building_*.fbx            je ein Bauteil, Ursprung laut Steckbrief, 1 Einheit = 1 cm
@@ -16,7 +17,6 @@ from mathutils import Vector, Matrix
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = os.path.abspath(argv[0]) if argv else os.path.abspath('wood_kit_out')
-os.makedirs(OUT, exist_ok=True)
 
 # ---------------------------------------------------------------- Trim-Sheet-Layout
 CM_PER_UV = 200.0  # 1 UV-Einheit = 200 cm  -> 2048 px Textur = ca. 10 px/cm
@@ -387,6 +387,7 @@ def material(name, image):
 
 # ---------------------------------------------------------------- Ablauf
 def main():
+    os.makedirs(OUT, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.unit_settings.system = 'METRIC'
@@ -530,4 +531,5 @@ def render_previews(scene, objs, m_turf):
     print('PREVIEWS', os.path.join(OUT, 'preview_house.png'), os.path.join(OUT, 'preview_modules.png'))
 
 
-main()
+if __name__ == '__main__':
+    main()

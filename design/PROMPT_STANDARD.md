@@ -140,8 +140,8 @@ Der **Stufen-Rahmen wird nicht generiert**, sondern in der Engine darübergelegt
 
 ## 6. Ablage
 - Prompt-Pakete: `design/prompts/<id>.md`
-- Rohausgaben der KI: `art/raw/<id>/` (nicht ins Spiel)
-- Abgenommene, normalisierte Assets: `art/<gruppe>/`
+- Rohausgaben der KI: `Assets/_Raw/<id>/` (nicht ins Spiel)
+- Abgenommene, normalisierte Assets: `Assets/<Gruppe>/` (Struktur und `manifest.json` wie von `tools/blender/build_assets.py` erzeugt)
 
 ## 7. Abnahme-Kriterien (messbar)
 **Teil A – Bild (Konzeptblatt, Textur, Icon):**

@@ -1,6 +1,6 @@
 # Prompt-Paket `ui_icon_res_wood` – Icon Baumstamm (Phase 1, Prio A)
 
-*Nach `design/PROMPT_STANDARD.md`. Status: Entwurf von Claude, noch nicht erzeugt.*
+*Nach `design/PROMPT_STANDARD.md`. Status: Prompt nicht verwendet. Das Icon wurde am 2026-11-12 **in Blender gerendert** (`Assets/UI/Icons/T_Icon_Res_Wood.png`, Kamera und Kontur wie unten, Füllgrad 0,80). Der Prompt bleibt für eine spätere KI-Fassung erhalten.*
 *Dieses Icon legt das **Icon-Raster** fest. Alle weiteren Icons verwenden dieselbe Kamera, dasselbe Licht und dieselbe Kontur.*
 
 | Feld | Inhalt |

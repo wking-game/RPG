@@ -1,6 +1,6 @@
 # Prompt-Paket `item_log` – Baumstamm (Phase 1, Prio A)
 
-*Nach `design/PROMPT_STANDARD.md`. Status: Entwurf von Claude, noch nicht erzeugt.*
+*Nach `design/PROMPT_STANDARD.md`. Status: Prompt nicht verwendet. Das Asset wurde am 2026-11-12 **prozedural in Blender** erzeugt (`Assets/Items/SM_Item_Log.fbx`, 70 Dreiecke, 200 × Ø 30 cm). Der Prompt bleibt für eine spätere KI-Fassung erhalten.*
 
 | Feld | Inhalt |
 |---|---|

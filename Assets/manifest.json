@@ -1,0 +1,340 @@
+{
+  "generator": "tools/blender/build_assets.py",
+  "units": "1 unit = 1 cm, Z up",
+  "normal_maps": "DirectX (Unreal)",
+  "orm": "R=AO, G=Roughness, B=Metallic",
+  "meshes": [
+    {
+      "id": "SM_Building_Foundation_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Foundation_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 58,
+      "tris_target": 500,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -150.0,
+        -120.0
+      ],
+      "bbox_max_cm": [
+        150.0,
+        150.0,
+        0.0
+      ],
+      "pivot": "Mitte der Oberseite (Oberseite 20 cm ueber Gelaende, Sockel bis 120 cm darunter)",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Floor_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Floor_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 50,
+      "tris_target": 500,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -150.0,
+        -35.0
+      ],
+      "bbox_max_cm": [
+        150.0,
+        150.0,
+        0.0
+      ],
+      "pivot": "Mitte der Oberseite",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Wall_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Wall_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 70,
+      "tris_target": 800,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -10.0,
+        0.0
+      ],
+      "bbox_max_cm": [
+        150.0,
+        10.0,
+        300.0
+      ],
+      "pivot": "unten mittig auf der Rasterlinie",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Wall_Door_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Wall_Door_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 106,
+      "tris_target": 800,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -10.0,
+        0.0
+      ],
+      "bbox_max_cm": [
+        150.0,
+        10.0,
+        300.0
+      ],
+      "pivot": "unten mittig auf der Rasterlinie",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Door_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Door_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 80,
+      "tris_target": 400,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        0.0,
+        -9.0,
+        0.0
+      ],
+      "bbox_max_cm": [
+        126.0,
+        7.0,
+        226.0
+      ],
+      "pivot": "untere Scharnierkante (Tuer liegt bei +X)",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Pillar_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Pillar_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 28,
+      "tris_target": 200,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -12.5,
+        -12.5,
+        0.0
+      ],
+      "bbox_max_cm": [
+        12.5,
+        12.5,
+        300.0
+      ],
+      "pivot": "unten mittig",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Beam_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Beam_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 28,
+      "tris_target": 200,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -10.0,
+        -12.5
+      ],
+      "bbox_max_cm": [
+        150.0,
+        10.0,
+        12.5
+      ],
+      "pivot": "Mitte der Laengsachse",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Roof_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Roof_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 78,
+      "tris_target": 600,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -14.1,
+        -10.6
+      ],
+      "bbox_max_cm": [
+        150.0,
+        160.6,
+        158.5
+      ],
+      "pivot": "Traufkante unten mittig (Dach steigt Richtung +Y)",
+      "materials": [
+        "M_Trim_Wood",
+        "M_Turf"
+      ]
+    },
+    {
+      "id": "SM_Building_Roof_Ridge_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Roof_Ridge_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 20,
+      "tris_target": 200,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -21.2,
+        -0.7
+      ],
+      "bbox_max_cm": [
+        150.0,
+        21.2,
+        24.0
+      ],
+      "pivot": "Firstlinie der Dach-Unterseite, mittig",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "SM_Building_Roof_Gable_Wood",
+      "file": "Buildings/WoodKit/SM_Building_Roof_Gable_Wood.fbx",
+      "group": "Buildings/WoodKit",
+      "tris": 34,
+      "tris_target": 400,
+      "tris_cap": 2000,
+      "bbox_min_cm": [
+        -150.0,
+        -10.0,
+        -14.1
+      ],
+      "bbox_max_cm": [
+        150.0,
+        10.0,
+        150.0
+      ],
+      "pivot": "unten mittig auf der Rasterlinie",
+      "materials": [
+        "M_Trim_Wood"
+      ]
+    },
+    {
+      "id": "item_log",
+      "unreal_name": "SM_Item_Log",
+      "file": "Items/SM_Item_Log.fbx",
+      "group": "Items",
+      "tris": 70,
+      "tris_target": 300,
+      "tris_cap": 1000,
+      "bbox_min_cm": [
+        -100.0,
+        -15.0,
+        -15.0
+      ],
+      "bbox_max_cm": [
+        100.0,
+        15.0,
+        15.0
+      ],
+      "pivot": "Mitte des Stamms, Laengsachse X",
+      "materials": [
+        "M_Item_Log"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "T_Trim_Wood_BC",
+      "file": "Textures/T_Trim_Wood_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Trim_Wood_N",
+      "file": "Textures/T_Trim_Wood_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Trim_Wood_ORM",
+      "file": "Textures/T_Trim_Wood_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Turf_BC",
+      "file": "Textures/T_Turf_BC.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Turf_N",
+      "file": "Textures/T_Turf_N.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Item_Log_BC",
+      "file": "Textures/T_Item_Log_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Item_Log_N",
+      "file": "Textures/T_Item_Log_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Item_Log_ORM",
+      "file": "Textures/T_Item_Log_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    }
+  ],
+  "icons": [
+    {
+      "name": "T_Icon_Res_Wood",
+      "for": "item_log",
+      "file": "UI/Icons/T_Icon_Res_Wood.png",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8,
+      "source": "Source/T_Icon_Res_Wood_512.png"
+    }
+  ],
+  "source_blend": "Source/Gamer_Assets.blend"
+}
