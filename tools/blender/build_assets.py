@@ -18,6 +18,7 @@ import bpy, bmesh, sys, os, math, json
 import numpy as np
 from mathutils import Vector, Matrix
 
+sys.dont_write_bytecode = True   # keine __pycache__-Dateien im Repo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_wood_kit as wk  # noqa: E402
 

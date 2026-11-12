@@ -19,6 +19,10 @@ Build/
 *.blend1
 *.blend2
 
+# Python-Zwischendateien
+__pycache__/
+*.pyc
+
 # Fremd-Referenzen nicht mit einchecken (bei Bedarf entfernen)
 reference/
 
