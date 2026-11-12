@@ -56,6 +56,19 @@ Terrain-Materialien (Landscape-Schichten) lassen sich nicht direkt auf Meshes le
 - Ansichten: Der Asset-Plan wünscht bei Gebäuden Vorder- und Seitenansicht. Für die Übergabe an einen 3D-Artist hilft je Modul eine einfache Skizze (vorne/seitlich/oben). KI-Bilder bitte mit Nachweis.
 - Türwand: Öffnung 130 × 230 cm und Türblatt 126 × 226 cm passen. Die Tür muss nach innen aufgehen können, ohne einen 120 cm breiten Durchgang zu versperren.
 
+## Nachprüfung der überarbeiteten Fassung (2026-11-12)
+Überarbeitete `03_assets_baukasten.md` und `04_assets_arbeitsstaetten.md` geprüft und in `design/inbox/` übernommen.
+
+| Punkt | Ergebnis |
+|---|---|
+| 1 Lager/Dach | erledigt: 300 × 600 cm, Wand 300, First 450, nutzt das 45°-Dachmodul |
+| 2 Budgets | erledigt: Zielwerte wie vorgeschlagen, 2.000 als harte Obergrenze; Lager als eigene optimierte Hülle (Ziel 8.000) |
+| 3 Fundament | erledigt: 20 cm sichtbar, mind. 100 cm Sockel; Stelzenmodul als späterer Ausbau |
+| 4 Pivots/Ecken | erledigt: Tabelle übernommen, Eckpfosten-Regel eingearbeitet |
+| 5 Turf | erledigt: eigene geteilte Materialinstanz, Draw-Call-Kosten als Messpunkt notiert |
+
+**Offen, klein:** Das Lager hat seinen Ursprung „auf Geländehöhe“, beschreibt aber keinen Sockel nach unten wie das Fundament. Auf Hängen würde es schweben. Beim Modellieren gleiche Sockelregel anwenden (mind. 100 cm unter Gelände). Kein neuer Durchlauf nötig.
+
 ## Entscheidungen des Nutzers
 **Am 2026-11-12 entschieden: alle drei Empfehlungen übernommen** (Holzdach mit Turf-Kante, Lager 300 × 600 cm, Lagerfeuer). Eingetragen in `docs/01_entscheidungen.md`.
 Für ChatGPT: Bitte 03 und 04 entsprechend überarbeiten (Punkte 1–5 oben, Lager auf 300 × 600 cm umplanen).
