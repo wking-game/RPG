@@ -30,7 +30,7 @@ Regeln 1, 3, 4, 7 sind Vorschläge von Claude; ihr Status steht in `docs/01_ents
    Im Vertical Slice klein bleiben: 3–4 Jobs, 3 Bedürfnisse.
 8. **Weltoptionen** (freies Bauen, Horden, „Survivor“, Portale, Angriffe …) sind ein kombinierbares Modifier-Set pro Welt.
 9. **Umfang klein halten:** erst Vertical Slice, dann ausbauen. Neue Features nur, wenn der Slice stabil läuft.
-10. **Dedicated-Server-fähig ab Phase 0.** Kein Code darf einen Listen-Server voraussetzen. Die Spielerzahl ist konfigurierbar (Ziel bis 16, Start mit 2–4), nie fest verdrahtet.
+10. **Dedicated-Server-fähig ab Phase 0.** Kein Code darf einen Listen-Server voraussetzen. Die Spielerzahl ist konfigurierbar (höchstens 8, Start mit 2–4; `MaxPlayers` in `game/Config/DefaultGame.ini`), nie fest verdrahtet.
 11. **Budgets:** fertiges Spiel höchstens ca. 20 GB, läuft mit mindestens 8 GB RAM (empfohlen 16 GB). Installationsgröße und Client-RAM ab Phase 1 laufend messen.
 
 ## Arbeitsweise

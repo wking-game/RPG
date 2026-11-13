@@ -155,7 +155,7 @@ Jobs und Bedürfnisse sind Vorschläge; endgültig legt sie der Nutzer fest.
 | `ui_icons_resources` | Icons für alle Items aus 5.5 | A |
 | `ui_icons_jobs` | Icons für die 3–4 Jobs (Vorschlag: Holzfäller, Steinmetz, Koch, Träger) | A |
 | `ui_icons_needs` | Icons für 3 Bedürfnisse (Vorschlag: Hunger, Schlaf, Wärme) mit 3 Zuständen (gut/mittel/kritisch) | A |
-| `ui_hud` | HUD: Gesundheit, Schnellleiste, Koop-Spielerliste (bis 16 Namen) – **kein Ausdauerbalken** | A |
+| `ui_hud` | HUD: Gesundheit, Schnellleiste, Koop-Spielerliste (bis 8 Namen) – **kein Ausdauerbalken** | A |
 | `ui_build_menu` | Baumenü mit Kategorien | A |
 | `ui_storage` | Lageransicht: Bestand auf einen Blick, wenige Klicks | A |
 | `ui_villager_panel` | Dorfbewohner-Übersicht: Job, Bedürfnisse, Priorität ändern | A |

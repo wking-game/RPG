@@ -5,7 +5,7 @@
 |---|---|---|
 | RAM | mindestens 8 GB, optimal 16 GB | Anforderung an den Spieler-PC des fertigen Spiels |
 | Speicherplatz | höchstens ca. 20 GB auf SSD (pauschal, vorläufig) | Installationsgröße des fertigen Spiels |
-| Spielerzahl | später bis zu 16 Spieler | technisches Maximum; Start mit 2–4 |
+| Spielerzahl | höchstens 8 Spieler (bis 2026-11-12: bis zu 16) | technisches Maximum (`MaxPlayers=8`); Start mit 2–4 |
 
 Falls die 20 GB den Platz für die **Entwicklung** meinen: das reicht nicht, allein Unreal Engine 5.8 braucht mehr.
 
@@ -20,9 +20,9 @@ Folgen: Unreal auf eine NVMe-SSD installieren. 16 GB RAM sind für den Editor kn
 
 ## Einschätzung zu den Vorgaben (Claudes Einschätzung, keine Messwerte)
 
-### Bis zu 16 Spieler
-- 16 ist in Unreal ohnehin der Standardwert für die Spielerobergrenze (`MaxPlayers=16` in `BaseGame.ini`, laut einem älteren Epic-Forenbeitrag).
-- **Ein Spieler-PC als Host für 16 Spieler plus Dorfbewohner-Simulation ist unrealistisch**, besonders mit 8 GB RAM. Deshalb: **Dedicated-Server-fähig ab Phase 0**, Listen-Server höchstens für kleine Gruppen.
+### Höchstens 8 Spieler (bis 2026-11-12: bis zu 16)
+- Unreals Standardwert ist 16 (`MaxPlayers=16` in `Engine/Config/BaseGame.ini`, am 2026-11-13 in der Source-Engine 5.8.4 nachgesehen). Das Projekt setzt ihn in `game/Config/DefaultGame.ini` auf 8; der 9. Spieler bekommt vom Server „Server full.“
+- **Ein Spieler-PC als Host für 8 Spieler plus Dorfbewohner-Simulation ist weiterhin anspruchsvoll**, besonders mit 8 GB RAM. Deshalb: **Dedicated-Server-fähig ab Phase 0**, Listen-Server höchstens für kleine Gruppen.
 - Die Server-Tickzeit wächst grob linear mit der Zahl der Verbindungen (Forenbeitrag zu UE 5.1 ohne Iris/Push-Model). Ein Spielerbericht zu Conan Exiles Enhanced (UE5) nennt Lags ab etwa 15–18 Spielern, auch bei KI und Kampf. Das ist ein Einzelbericht, ungeprüft, zeigt aber das Risiko.
 - Iris (Epics neues Replikationssystem) ist optional. Laut einem Blog war es in UE 5.7 noch experimentell; den Stand in 5.8 habe ich nicht verifiziert. Entscheidung erst nach Messungen.
 - Folgen fürs Design: Dorfbewohner-Simulation serverseitig und billig (Zustandsmaschinen statt aufwendiger KI), Bauteile ruhend (dormant), Relevanzradien, Spielerzahl konfigurierbar statt fest verdrahtet.

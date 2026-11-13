@@ -32,7 +32,7 @@ Du lieferst Design: Art Direction, Siedlungs- und UI-Konzepte, Looks, Stimmung. 
 ## Technische Budgets (gelten auch fürs Design)
 - **Gesamtgröße des fertigen Spiels: höchstens ca. 20 GB.** Plane sparsam: wenige, wiederverwendbare Materialien, keine 4K-Texturen für Nebensächliches, Variation über Farbe und Kombination statt über neue Assets.
 - **Mindest-PC mit 8 GB RAM, empfohlen 16 GB.** Der Look muss auch in niedrigen Qualitätsstufen funktionieren.
-- **Bis zu 16 Spieler und viele Dorfbewohner gleichzeitig im Bild:** Figuren müssen günstig sein (wenige Varianten, die sich kombinieren lassen). Die UI muss mit bis zu 16 Spielern lesbar bleiben (Spielerliste).
+- **Bis zu 8 Spieler (seit 2026-11-13, vorher 16) und viele Dorfbewohner gleichzeitig im Bild:** Figuren müssen günstig sein (wenige Varianten, die sich kombinieren lassen). Die UI muss mit bis zu 8 Spielern lesbar bleiben (Spielerliste).
 
 ## Format der Ergebnisse
 - Markdown-Dateien, benannt `NN_thema.md` (z. B. `01_art_direction.md`). Bilder als PNG mit Beschreibung dazu.

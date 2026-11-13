@@ -9,8 +9,9 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Engine-Version | 5.8 | Vorschlag |
 | Koop | Mehrspieler-Koop | bestätigt |
 | Spielerzahl, Netzwerk (alter Vorschlag) | 2–4 Spieler, Listen-Server zuerst | ersetzt am 2026-11-12 (siehe die Zeilen darunter) |
-| Maximale Spielerzahl | später bis zu 16 Spieler unterstützen | bestätigt (2026-11-12) |
-| Start-Spielerzahl | zuerst mit 2–4 Spielern entwickeln und testen, danach 8, dann 16 | Vorschlag |
+| Maximale Spielerzahl (alt) | später bis zu 16 Spieler unterstützen | ersetzt am 2026-11-13 (siehe nächste Zeile) |
+| Maximale Spielerzahl | höchstens 8 Spieler pro Welt; umgesetzt als `MaxPlayers=8` in `game/Config/DefaultGame.ini` | bestätigt (2026-11-13) |
+| Start-Spielerzahl | zuerst mit 2–4 Spielern entwickeln und testen, danach 8 (vorher: „danach 8, dann 16“, angepasst an die neue Höchstzahl) | Vorschlag |
 | Netzwerk | Dedicated-Server-fähig ab Phase 0; Listen-Server höchstens für kleine Gruppen | Vorschlag |
 | Zielhardware Spieler-PC | RAM mindestens 8 GB, optimal 16 GB | bestätigt (2026-11-12; von Claude als Anforderung an das fertige Spiel gedeutet) |
 | Installationsgröße | höchstens ca. 20 GB auf SSD (Pauschalwert, vorläufig) | bestätigt (2026-11-12; von Claude als Größe des fertigen Spiels gedeutet) |

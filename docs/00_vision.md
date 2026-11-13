@@ -17,7 +17,7 @@ die Routinearbeit, du erkundest die Welt, kämpfst, baust und besiegst Bosse. Me
 | ~~Tribes of Midgard~~ | gestrichen |
 
 ## Kernmerkmale
-- **Koop:** Start mit 2–4 Spielern, später bis zu **16 Spieler** (Ziel); solo spielbar. Ab mehr als ca. 4 Spielern vermutlich Dedicated Server (siehe `docs/04_technische_ziele.md`).
+- **Koop:** Start mit 2–4 Spielern, höchstens **8 Spieler** (seit 2026-11-13, vorher Ziel 16); solo spielbar. Ab mehr als ca. 4 Spielern vermutlich Dedicated Server (siehe `docs/04_technische_ziele.md`).
 - **Basisbau** mit Bauteilen (Snapping), Siedlung mit Dorfbewohnern.
 - **Ausrüstung** wie in KCD: Slots, levelbasiert, schmiedbar. **Skilltree** für Fähigkeiten.
 - **Kamera:** Third-Person als Hauptansicht; Vogelperspektive/2.5D (Vorschlag: als Bau- und Dorf-Kommandoansicht).
