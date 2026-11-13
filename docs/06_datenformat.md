@@ -99,6 +99,7 @@ Später dazu: `jobs.json` und `needs.json` (Phase 1, Schritt 5, Dorfbewohner), d
 1. **Einlesen:** Ein C++-Baustein (`UGamerDataSubsystem`) liest beim Start alle Dateien – auf dem Server **und** bei jedem Spieler, damit alle dieselben Zahlen kennen.
 2. **Prüfen** direkt beim Einlesen, mit klarer Fehlermeldung im Protokoll:
    doppelte IDs · Verweise auf IDs, die es nicht gibt (z. B. Rezept nennt `item_plnk`) · fehlende Pflichtfelder · Werte außerhalb des Sinnvollen (Stufe 7, negative Mengen) · Pfade zu Modellen/Icons, die es nicht gibt (nur Warnung, solange Modelle fehlen).
+   **Erreichbarkeit (seit 2026-11-13):** Ausgehend von „nichts im Inventar“ wird durchgespielt, was man mit der Hand sammeln, daraus herstellen und mit den neuen Werkzeugen weiter abbauen oder bauen kann. Jeder Gegenstand, jedes Vorkommen, Rezept und Bauteil, das dabei nie erreichbar wird, ist ein Fehler (z. B. „Axt braucht Stamm, Stamm braucht Axt“). Gegenstände, die es später nur bei Händlern oder Bossen gibt, bekommen dafür eine eigene Kennzeichnung, sobald es Händler und Bosse gibt.
 3. **Benutzen:** Spielcode fragt nur per ID: „Was ist `item_log`?“ Übers Netz gehen nur IDs und Mengen, nie ganze Datensätze – das spart Bandbreite.
 4. **Ändern während der Entwicklung:** Konsolenbefehl `gamer.ReloadData` liest neu ein, ohne Neustart.
 5. **Automatischer Test:** ein Unreal-Automationstest „Gamer.Data“, der alle Dateien lädt und bei jedem Fehler fehlschlägt. Läuft ohne Grafik in ca. 1 Minute; ein Skript `tools/test_data.ps1` startet ihn.
@@ -116,8 +117,13 @@ Typische Fehlerquellen und was dagegen hilft:
 |---|---|---|:-:|--:|--:|
 | `item_log` | Baumstamm | resource | 1 | 10 | 20 |
 | `item_stone` | Stein | resource | 1 | 20 | 5 |
+| `item_stick` | Äste | resource | 1 | 30 | 0,5 |
+| `item_fiber` | Pflanzenfasern | resource | 1 | 50 | 0,1 |
 | `item_plank` | Bretter | material | 1 | 40 | 2 |
 | `item_berries` | Beeren | food | 1 | 50 | 0,1 |
+| `item_apple` | Wildäpfel | food | 1 | 30 | 0,2 |
+| `item_mushrooms` | Pilze | food | 1 | 30 | 0,1 |
+| `item_hazelnuts` | Haselnüsse | food | 1 | 50 | 0,05 |
 | `item_meal` | einfache Mahlzeit | food | 1 | 10 | 0,5 |
 | `tool_axe_t1` | Steinaxt | tool | 1 | 1 | 2 |
 | `tool_pickaxe_t1` | Steinspitzhacke | tool | 1 | 1 | 3 |
@@ -134,19 +140,27 @@ Werkzeuge T1: Haltbarkeit 150 Einsätze, Tempo 1,0.
 | `res_rock_medium` | Spitzhacke T1 | 6 | 4 Steine | 5 Tage |
 | `res_rock_large` | Spitzhacke T1 | 10 | 8 Steine | 5 Tage |
 | `res_berry_bush` | Hand | 2 | 3–5 Beeren | 1 Tag |
+| `res_tree_apple` | Hand (pflücken) | 2,5 | 3–6 Wildäpfel | 2 Tage |
+| `res_mushroom_patch` | Hand | 1,5 | 2–4 Pilze | 1 Tag |
+| `res_hazel_bush` | Hand | 2 | 4–8 Haselnüsse | 2 Tage |
+| `res_loose_stone` | Hand | 1,5 | 1–2 Steine | 1 Tag |
+| `res_fallen_branch` | Hand | 1,5 | 1–2 Äste | 1 Tag |
+| `res_fiber_plant` | Hand | 2 | 2–3 Fasern | 1 Tag |
 
 Nachwachsen ist ein Vorschlag aus dem Design-Register (Kapitel 15), noch nicht bestätigt.
+Die drei Hand-Vorkommen (seit 2026-11-13) sind der Einstieg: Damit kommt man ohne Werkzeug an Steine, Äste und Fasern für die ersten Werkzeuge. Felsen geben mit der Spitzhacke deutlich mehr Steine.
 
 ### Rezepte
 | ID | Wo | aus | wird zu | Sekunden |
 |---|---|---|---|--:|
-| `recipe_axe_t1` | Hand | 1 Stamm + 2 Steine | Steinaxt | 5 |
-| `recipe_pickaxe_t1` | Hand | 1 Stamm + 2 Steine | Steinspitzhacke | 5 |
-| `recipe_hammer_t1` | Hand | 1 Stamm + 1 Stein | Steinhammer | 4 |
+| `recipe_axe_t1` | Hand (Anfangs-Crafting) | 1 Ast + 2 Steine + 2 Fasern | Steinaxt | 5 |
+| `recipe_pickaxe_t1` | Hand (Anfangs-Crafting) | 2 Äste + 3 Steine + 2 Fasern | Steinspitzhacke | 6 |
+| `recipe_hammer_t1` | Hand (Anfangs-Crafting) | 1 Ast + 1 Stein + 1 Faser | Steinhammer (Bauhammer) | 4 |
 | `recipe_plank` | Werkbank | 1 Stamm | 4 Bretter | 4 |
 | `recipe_meal` | Lagerfeuer | 3 Beeren | 1 Mahlzeit | 10 |
 
 Hinweis zur Reihenfolge: Die Werkbank kostet **keine Bretter** (sonst bräuchte man Bretter, um Bretter herzustellen).
+Bis 2026-11-13 brauchten die Werkzeug-Rezepte einen Baumstamm – den es aber nur mit Axt gibt. Deshalb jetzt Äste statt Stämme, und der Datenprüfer kontrolliert, ob jeder Gegenstand vom Spielstart aus erreichbar ist (Abschnitt 5).
 
 ### Bauteile und Arbeitsstätten (Hammer T1 nötig)
 | ID | Kosten | Sekunden |

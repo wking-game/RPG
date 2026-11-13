@@ -762,6 +762,128 @@ namespace
 	}
 }
 
+namespace
+{
+	/**
+	 * Plays the game forward from an empty inventory: gather what needs no (or an already obtainable) tool,
+	 * build what can be paid for, craft what has its station and inputs, repeat until nothing new appears.
+	 * Everything that never becomes reachable is an error (e.g. "axe needs a log, logs need an axe").
+	 */
+	void CheckReachability(const FGamerDataSet& Data, FGamerDataReport& Report)
+	{
+		TSet<FName> Items;
+		TMap<FName, int32> ToolTiers;
+		TSet<FName> Nodes;
+		TSet<FName> Buildables;
+		TSet<FName> Recipes;
+
+		auto ToolAvailable = [&](const FGamerToolRequirement& Required)
+		{
+			if (!Required.IsRequired())
+			{
+				return true;
+			}
+			const int32* Tier = ToolTiers.Find(Required.Type);
+			return Tier && *Tier >= Required.MinTier;
+		};
+		auto HaveAll = [&](const TArray<FGamerItemAmount>& Amounts)
+		{
+			for (const FGamerItemAmount& Amount : Amounts)
+			{
+				if (!Items.Contains(Amount.Item))
+				{
+					return false;
+				}
+			}
+			return true;
+		};
+		auto Obtain = [&](FName Item)
+		{
+			Items.Add(Item);
+			if (const FGamerItemDef* Def = Data.Items.Find(Item))
+			{
+				if (Def->Category == EGamerItemCategory::Tool && !Def->Tool.Type.IsNone())
+				{
+					int32& Best = ToolTiers.FindOrAdd(Def->Tool.Type, 0);
+					Best = FMath::Max(Best, Def->Tier);
+				}
+			}
+		};
+
+		bool bChanged = true;
+		while (bChanged)
+		{
+			bChanged = false;
+			for (const TPair<FName, FGamerResourceNodeDef>& Pair : Data.ResourceNodes)
+			{
+				if (!Nodes.Contains(Pair.Key) && ToolAvailable(Pair.Value.RequiredTool))
+				{
+					Nodes.Add(Pair.Key);
+					for (const FGamerDrop& Drop : Pair.Value.Drops)
+					{
+						if (Drop.Max > 0)
+						{
+							Obtain(Drop.Item);
+						}
+					}
+					bChanged = true;
+				}
+			}
+			for (const TPair<FName, FGamerBuildableDef>& Pair : Data.Buildables)
+			{
+				if (!Buildables.Contains(Pair.Key) && ToolAvailable(Pair.Value.RequiredTool) && HaveAll(Pair.Value.Cost))
+				{
+					Buildables.Add(Pair.Key);
+					bChanged = true;
+				}
+			}
+			for (const TPair<FName, FGamerRecipeDef>& Pair : Data.Recipes)
+			{
+				const bool bStationOk = Pair.Value.Station.IsNone() || Buildables.Contains(Pair.Value.Station);
+				if (!Recipes.Contains(Pair.Key) && bStationOk && HaveAll(Pair.Value.Inputs))
+				{
+					Recipes.Add(Pair.Key);
+					for (const FGamerItemAmount& Output : Pair.Value.Outputs)
+					{
+						Obtain(Output.Item);
+					}
+					bChanged = true;
+				}
+			}
+		}
+
+		for (const TPair<FName, FGamerItemDef>& Pair : Data.Items)
+		{
+			if (!Pair.Value.bDeprecated && !Items.Contains(Pair.Key))
+			{
+				Report.Errors.Add(FString::Printf(TEXT("%s (%s): nicht erreichbar ab Spielstart (weder sammelbar noch herstellbar)"), ItemsFile, *Pair.Key.ToString()));
+			}
+		}
+		for (const TPair<FName, FGamerResourceNodeDef>& Pair : Data.ResourceNodes)
+		{
+			if (!Pair.Value.bDeprecated && !Nodes.Contains(Pair.Key))
+			{
+				Report.Errors.Add(FString::Printf(TEXT("%s (%s): nicht erreichbar ab Spielstart (Werkzeug %s ab Stufe %d bekommt man nie)"),
+					NodesFile, *Pair.Key.ToString(), *Pair.Value.RequiredTool.Type.ToString(), Pair.Value.RequiredTool.MinTier));
+			}
+		}
+		for (const TPair<FName, FGamerBuildableDef>& Pair : Data.Buildables)
+		{
+			if (!Pair.Value.bDeprecated && !Buildables.Contains(Pair.Key))
+			{
+				Report.Errors.Add(FString::Printf(TEXT("%s (%s): nicht erreichbar ab Spielstart (Kosten oder Werkzeug nie verfügbar)"), BuildablesFile, *Pair.Key.ToString()));
+			}
+		}
+		for (const TPair<FName, FGamerRecipeDef>& Pair : Data.Recipes)
+		{
+			if (!Pair.Value.bDeprecated && !Recipes.Contains(Pair.Key))
+			{
+				Report.Errors.Add(FString::Printf(TEXT("%s (%s): nicht erreichbar ab Spielstart (Station oder Zutaten nie verfügbar)"), RecipesFile, *Pair.Key.ToString()));
+			}
+		}
+	}
+}
+
 void FGamerDataSet::Reset()
 {
 	Items.Reset();
@@ -794,6 +916,7 @@ bool GamerData::LoadFromDirectory(const FString& Directory, FGamerDataSet& Out, 
 	ParseRecipes(RecipeRows, Out, Report);
 	ParseBuildables(BuildableRows, Out, Report, bCheckAssetPaths);
 	CheckReferences(Out, Report);
+	CheckReachability(Out, Report);
 
 	return Report.Errors.Num() == ErrorsBefore;
 }

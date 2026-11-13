@@ -144,7 +144,12 @@ Je Biom: 4–6 Terrain-Schichten (`terrain_*`), 3–5 Bäume/Großpflanzen mit L
 | `res_rock_small/medium/large` | Felsen | Stein | alle | ✔ Slice |
 | `res_flint` | Feuersteinknollen am Bach | Feuerstein | Wiesen | ○ |
 | `res_berry_bush` | Beerenstrauch (voll/leer) | Beeren | Wiesen | ✔ Slice |
-| `res_mushrooms`, `res_herbs` | Pilze, Kräuter (Heilung, Färben) | Pilze, Kräuter | Wald, Heide | ○ |
+| `res_tree_apple` | Wildapfelbaum (Holzapfel): knorrig, kleine Krone, kleine gelb-rote Äpfel sichtbar am Baum und im Gras darunter; Zustände voll / abgeerntet / Winter kahl | Wildäpfel | Wiesen, Waldrand | ✔ (2026-11-13) |
+| `res_berry_bush` (Ausbau) | Beerensträucher als echte Arten: Himbeere, Heidelbeere (niedrig), Preiselbeere (Heide), Moltebeere (Moor) – je eigenes Modell oder Variante | Beeren | je Biom | ✔ / ○ Arten |
+| `res_mushroom_patch` | Pilzstelle: Steinpilze, Pfifferlinge an Baumstümpfen und im Moos; Fliegenpilz nur als giftige Deko | Pilze | Wald | ✔ (2026-11-13) |
+| `res_hazel_bush` | Haselstrauch: vielstämmig, Nüsse in Büscheln sichtbar | Haselnüsse | Waldrand | ✔ (2026-11-13) |
+| `res_herbs` | Kräuter (Schafgarbe, Johanniskraut, Bärlauch im Frühling) für Heilung und Färben | Kräuter | Wald, Heide | ○ |
+| `res_loose_stone`, `res_fallen_branch`, `res_fiber_plant` | lose Steine, herabgefallene Äste, Faserpflanze (Brennnessel) – Spielstart, von Hand | Steine, Äste, Fasern | alle | ✔ (2026-11-13) |
 | `res_reeds` | Schilf | Stroh/Schilf (Dach) | Marsch | ◐ |
 | `res_peat` | Torfstich | Torf (Brennstoff) | Marsch, Heide | ◐ |
 | `res_bog_ore` | Raseneisen im Moor | Raseneisenerz | Marsch | ◐ |

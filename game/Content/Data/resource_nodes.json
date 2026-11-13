@@ -12,6 +12,18 @@
     { "id": "res_rock_large", "name": "großer Fels", "required_tool": { "type": "pickaxe", "min_tier": 1 }, "work_seconds": 10.0,
       "drops": [ { "item": "item_stone", "min": 8, "max": 8 } ], "regrow_days": 5 },
     { "id": "res_berry_bush", "name": "Beerenstrauch", "work_seconds": 2.0,
-      "drops": [ { "item": "item_berries", "min": 3, "max": 5 } ], "regrow_days": 1 }
+      "drops": [ { "item": "item_berries", "min": 3, "max": 5 } ], "regrow_days": 1 },
+    { "id": "res_tree_apple", "name": "Wildapfelbaum", "work_seconds": 2.5,
+      "drops": [ { "item": "item_apple", "min": 3, "max": 6 } ], "regrow_days": 2 },
+    { "id": "res_mushroom_patch", "name": "Pilzstelle", "work_seconds": 1.5,
+      "drops": [ { "item": "item_mushrooms", "min": 2, "max": 4 } ], "regrow_days": 1 },
+    { "id": "res_hazel_bush", "name": "Haselstrauch", "work_seconds": 2.0,
+      "drops": [ { "item": "item_hazelnuts", "min": 4, "max": 8 } ], "regrow_days": 2 },
+    { "id": "res_loose_stone", "name": "lose Steine", "work_seconds": 1.5,
+      "drops": [ { "item": "item_stone", "min": 1, "max": 2 } ], "regrow_days": 1 },
+    { "id": "res_fallen_branch", "name": "herabgefallene Äste", "work_seconds": 1.5,
+      "drops": [ { "item": "item_stick", "min": 1, "max": 2 } ], "regrow_days": 1 },
+    { "id": "res_fiber_plant", "name": "Faserpflanze", "work_seconds": 2.0,
+      "drops": [ { "item": "item_fiber", "min": 2, "max": 3 } ], "regrow_days": 1 }
   ]
 }
