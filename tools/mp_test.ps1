@@ -37,6 +37,14 @@ param(
     # Seconds to wait for the server to listen and for all clients to join.
     [int]$TimeoutSec = 600,
 
+    # Extra command-line options: for the server, for every client, and only for client 1.
+    [string]$ServerArgs = '',
+    [string]$ClientArgs = '',
+    [string]$Client1Args = '',
+
+    # Keep everything running this long after the join check (e.g. for movement tests).
+    [int]$HoldSec = 0,
+
     [switch]$Render
 )
 
@@ -72,13 +80,13 @@ try {
     # --- Server ---
     if ($Mode -eq 'Editor') {
         $srvExe  = $Editor
-        $srvArgs = "`"$Project`" $Map -server -port=$Port -log -unattended -nosplash -nopause -abslog=`"$serverLog`""
+        $srvArgs = "`"$Project`" $Map -server -port=$Port -log -unattended -nosplash -nopause -abslog=`"$serverLog`" $ServerArgs"
     } else {
         $pkg = Join-Path $RepoRoot 'game\Build\Server\Development'
         $srvExe = Get-ChildItem $pkg -Recurse -Filter 'GamerServer.exe' -ErrorAction SilentlyContinue |
                   Sort-Object { $_.FullName.Length } | Select-Object -First 1 -ExpandProperty FullName
         if (-not $srvExe) { throw "GamerServer.exe not found under $pkg. Run: .\tools\build.ps1 PackageServer" }
-        $srvArgs = "$Map -port=$Port -log -unattended -nopause -abslog=`"$serverLog`""
+        $srvArgs = "$Map -port=$Port -log -unattended -nopause -abslog=`"$serverLog`" $ServerArgs"
     }
     Write-Host ">> Server: $srvExe $srvArgs" -ForegroundColor Cyan
     $server = Start-Process $srvExe -ArgumentList $srvArgs -WindowStyle Minimized -PassThru
@@ -95,7 +103,8 @@ try {
         $cLog = Join-Path $LogDir "client$i.log"
         $clientLogs += $cLog
         $rhi = if ($Render) { '-windowed -resx=960 -resy=540' } else { '-nullrhi -nosound' }
-        $cArgs = "`"$Project`" 127.0.0.1:$Port -game $rhi -unattended -nosplash -nopause -abslog=`"$cLog`""
+        $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } else { $ClientArgs }
+        $cArgs = "`"$Project`" 127.0.0.1:$Port -game $rhi -unattended -nosplash -nopause -abslog=`"$cLog`" $extra"
         Write-Host ">> Client ${i}: $cArgs" -ForegroundColor Cyan
         $started += Start-Process $Editor -ArgumentList $cArgs -WindowStyle Minimized -PassThru
     }
@@ -121,6 +130,10 @@ try {
     $welcomed = 0
     foreach ($cLog in $clientLogs) {
         if ((Test-Path $cLog) -and (Select-String -Path $cLog -Pattern 'Welcomed by server' -Quiet)) { $welcomed++ }
+    }
+    if ($HoldSec -gt 0) {
+        Write-Host "Holding for $HoldSec s ..."
+        Start-Sleep -Seconds $HoldSec
     }
 
     Write-Host ""

@@ -29,6 +29,12 @@ Grundsatz: erst ein kleiner, spielbarer Vertical Slice, dann ausbauen. Reihenfol
 - **Mehrspieler-Test bestanden** mit `tools/mp_test.ps1` (Server + 2 Spieler ohne Grafik, lokal 127.0.0.1): einmal Editor als Server, einmal das paketierte `GamerServer.exe` (Paket 2,76 GB, davon 2,3 GB Debug-Symbole). Spieler-Clients waren ungecookte Editor-Instanzen und konnten sich mit dem gecookten Server verbinden.
 - Spielerobergrenze `MaxPlayers=8` in `game/Config/DefaultGame.ini` (Entscheidung 2026-11-13).
 
+## Stand Phase 1 (2026-11-13): Spielfigur im Koop
+- C++: `AGamerCharacter` (Third-Person, Platzhalter-Körper aus Engine-Zylinder, Farbe je Spieler), `AGamerPlayerController`, `AGamerGameMode` (Spielerfigur und Controller setzen, Spieler am Startpunkt nebeneinander aufstellen). Steuerung mit Enhanced Input, im Code aufgebaut (WASD, Maus, Leertaste, Gamepad). Bewegungswerte als Config-Werte (`[/Script/Gamer.GamerCharacter]` in `DefaultGame.ini`), Rückfallwerte im Code.
+- **Test bestanden** (`tools/mp_test.ps1`, Karte `Template_Default` mit `?game=/Script/Gamer.GamerGameMode`, Server + 2 Spieler ohne Grafik): Spieler 1 lief 3 s geradeaus, Server, Spieler 1 und Spieler 2 sahen dieselbe Endposition (1317 cm), Spieler 2 blieb stehen.
+- Nicht automatisch getestet: Tastatur-/Maussteuerung und Kamera (brauchen Grafik). Zum Selbst-Ausprobieren: `tools/play_local.ps1`.
+- Projekt-Standards in `DefaultEngine.ini` (2026-11-13): `GlobalDefaultGameMode=/Script/Gamer.GamerGameMode`, `ServerDefaultMap=Template_Default` (vorher `Entry`, eine leere Karte, in der Figuren fallen würden). Getestet: Server ohne Zusatzangaben lädt `Template_Default` mit `GamerGameMode`, 2 Spieler, Bewegung kommt beim anderen Spieler an.
+
 ## Hinweis zum Dedicated-Server-Target (Phase 0)
 Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es einen Source-Build der Engine (Epic-Doku „Setting Up Dedicated Servers“). Das „Dedicated-Server-Target“ in Phase 0 geht deshalb erst mit Source-Build. Bis dahin kann mit dem Launcher-Build entwickelt und mit Listen-Server getestet werden. Die Entscheidung ist offen (siehe `docs/01_entscheidungen.md`).
 
