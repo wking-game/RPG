@@ -37,10 +37,17 @@ Write-Host "Starting server ($mapUrl) ..." -ForegroundColor Cyan
 $server = Start-Process $Editor -ArgumentList "`"$Project`" $mapUrl -server -port=$Port -log -nosplash -abslog=`"$serverLog`"" -WindowStyle Minimized -PassThru
 
 $deadline = (Get-Date).AddMinutes(10)
-while (-not ((Test-Path $serverLog) -and (Select-String -Path $serverLog -Pattern "listening on port $Port" -Quiet))) {
+$listenPattern = 'GameNetDriver.*listening on port (\d+)'
+while (-not ((Test-Path $serverLog) -and (Select-String -Path $serverLog -Pattern $listenPattern -Quiet))) {
     if ($server.HasExited) { throw "Server stopped early. Log: $serverLog" }
     if ((Get-Date) -gt $deadline) { Stop-Process -Id $server.Id -Force; throw "Server did not start within 10 minutes. Log: $serverLog" }
     Start-Sleep -Seconds 2
+}
+# If the wanted port is busy (e.g. a leftover test server), the engine takes the next one: use the real port.
+$actualPort = [int](Select-String -Path $serverLog -Pattern $listenPattern | Select-Object -First 1).Matches[0].Groups[1].Value
+if ($actualPort -ne $Port) {
+    Write-Warning "Port $Port was busy (leftover server? Task Manager: GamerServer / UnrealEditor). Using port $actualPort."
+    $Port = $actualPort
 }
 Write-Host "Server is up on port $Port." -ForegroundColor Green
 

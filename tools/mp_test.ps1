@@ -93,8 +93,15 @@ try {
     $started += $server
 
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
-    $listen = Wait-ForLog $serverLog "listening on port $Port" 1 @($server) $deadline
-    if ($listen -lt 1) { throw "Server did not listen on port $Port within $TimeoutSec s. Log: $serverLog" }
+    $listenPattern = 'GameNetDriver.*listening on port (\d+)'
+    $listen = Wait-ForLog $serverLog $listenPattern 1 @($server) $deadline
+    if ($listen -lt 1) { throw "Server did not start listening within $TimeoutSec s. Log: $serverLog" }
+    # The engine silently takes the next port if the wanted one is busy (e.g. a leftover server): use the real one.
+    $actualPort = [int](Select-String -Path $serverLog -Pattern $listenPattern | Select-Object -First 1).Matches[0].Groups[1].Value
+    if ($actualPort -ne $Port) {
+        Write-Warning "Port $Port was busy (leftover server?); the server uses $actualPort instead."
+        $Port = $actualPort
+    }
     Write-Host "Server listens on port $Port." -ForegroundColor Green
 
     # --- Clients ---
@@ -152,8 +159,13 @@ try {
     }
 }
 finally {
+    # Stop what we started, including child processes: the packaged GamerServer.exe is only a
+    # launcher that starts the real server in Gamer\Binaries\Win64 (left running before 2026-11-13).
     foreach ($p in $started) {
-        if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+        if (-not $p) { continue }
+        Get-CimInstance Win32_Process -Filter "ParentProcessId=$($p.Id)" -ErrorAction SilentlyContinue |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+        if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
     }
 }
 exit $exit
