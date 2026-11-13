@@ -1,8 +1,12 @@
 #include "GamerCharacter.h"
 
 #include "Gamer.h"
+#include "GamerBuildComponent.h"
+#include "GamerBuilding.h"
 #include "GamerDataSubsystem.h"
 #include "GamerInventoryComponent.h"
+#include "GamerKeyBindings.h"
+#include "GamerPlayerController.h"
 #include "GamerResourceNode.h"
 #include "GamerWorkComponent.h"
 #include "EngineUtils.h"
@@ -72,6 +76,7 @@ AGamerCharacter::AGamerCharacter()
 
 	Inventory = CreateDefaultSubobject<UGamerInventoryComponent>(TEXT("Inventory"));
 	Work = CreateDefaultSubobject<UGamerWorkComponent>(TEXT("Work"));
+	Build = CreateDefaultSubobject<UGamerBuildComponent>(TEXT("Build"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -104,7 +109,9 @@ void AGamerCharacter::BeginPlay()
 	// Config values are loaded after the constructor, so apply them here (same on server and clients).
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+	GetCharacterMovement()->GravityScale = GravityScale;
 	CameraBoom->TargetArmLength = CameraDistance;
+	CameraBoom->SocketOffset = CameraShoulderOffset;
 
 	float LogInterval = 0.f;
 	if (FParse::Value(FCommandLine::Get(), TEXT("GamerLogPositions="), LogInterval))
@@ -157,14 +164,38 @@ void AGamerCharacter::BuildInput()
 	// Input objects are built in code instead of editor assets (project rule: C++ for systems).
 	MappingContext = NewObject<UInputMappingContext>(this, TEXT("IMC_GamerDefault"));
 
-	MoveAction = NewObject<UInputAction>(this, TEXT("IA_Move"));
-	MoveAction->ValueType = EInputActionValueType::Axis2D;
-	LookAction = NewObject<UInputAction>(this, TEXT("IA_Look"));
-	LookAction->ValueType = EInputActionValueType::Axis2D;
-	JumpAction = NewObject<UInputAction>(this, TEXT("IA_Jump"));
-	JumpAction->ValueType = EInputActionValueType::Boolean;
+	auto MakeAction = [this](const TCHAR* Name, EInputActionValueType Type)
+	{
+		UInputAction* Action = NewObject<UInputAction>(this, Name);
+		Action->ValueType = Type;
+		return Action;
+	};
+	MoveAction = MakeAction(TEXT("IA_Move"), EInputActionValueType::Axis2D);
+	LookAction = MakeAction(TEXT("IA_Look"), EInputActionValueType::Axis2D);
+	JumpAction = MakeAction(TEXT("IA_Jump"), EInputActionValueType::Boolean);
+	InteractAction = MakeAction(TEXT("IA_Interact"), EInputActionValueType::Boolean);
+	StrikeAction = MakeAction(TEXT("IA_Strike"), EInputActionValueType::Boolean);
+	CraftMenuAction = MakeAction(TEXT("IA_CraftMenu"), EInputActionValueType::Boolean);
+	// Number keys: one action, the number arrives as the value (hotbar slot, or recipe while crafting).
+	NumberAction = MakeAction(TEXT("IA_Number"), EInputActionValueType::Axis1D);
+	BuildMenuAction = MakeAction(TEXT("IA_BuildMenu"), EInputActionValueType::Boolean);
+	RotateAction = MakeAction(TEXT("IA_Rotate"), EInputActionValueType::Boolean);
+	DemolishAction = MakeAction(TEXT("IA_Demolish"), EInputActionValueType::Boolean);
+	VillageMenuAction = MakeAction(TEXT("IA_VillageMenu"), EInputActionValueType::Boolean);
 
-	// WASD onto one 2D axis: X = right, Y = forward.
+	ApplyKeyBindings();
+}
+
+void AGamerCharacter::ApplyKeyBindings()
+{
+	if (!MappingContext)
+	{
+		return;
+	}
+	MappingContext->UnmapAll();
+	const UGamerKeyBindings* Keys = UGamerKeyBindings::Get();
+
+	// Move keys onto one 2D axis: X = right, Y = forward.
 	auto MapMoveKey = [this](const FKey& Key, bool bToForwardAxis, bool bNegate)
 	{
 		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(MoveAction, Key);
@@ -177,13 +208,13 @@ void AGamerCharacter::BuildInput()
 			Mapping.Modifiers.Add(NewObject<UInputModifierNegate>(MappingContext));
 		}
 	};
-	MapMoveKey(EKeys::W, true, false);
-	MapMoveKey(EKeys::S, true, true);
-	MapMoveKey(EKeys::D, false, false);
-	MapMoveKey(EKeys::A, false, true);
+	MapMoveKey(Keys->GetKey(GamerInputActions::MoveForward), true, false);
+	MapMoveKey(Keys->GetKey(GamerInputActions::MoveBack), true, true);
+	MapMoveKey(Keys->GetKey(GamerInputActions::MoveRight), false, false);
+	MapMoveKey(Keys->GetKey(GamerInputActions::MoveLeft), false, true);
 	MappingContext->MapKey(MoveAction, EKeys::Gamepad_Left2D);
 
-	// Mouse/stick up should look up: invert Y only.
+	// Mouse/stick up should look up: invert Y only. Not rebindable.
 	auto MapLookKey = [this](const FKey& Key)
 	{
 		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, Key);
@@ -196,33 +227,78 @@ void AGamerCharacter::BuildInput()
 	MapLookKey(EKeys::Mouse2D);
 	MapLookKey(EKeys::Gamepad_Right2D);
 
-	MappingContext->MapKey(JumpAction, EKeys::SpaceBar);
+	// Keyboard/mouse keys from the player's bindings; gamepad buttons fixed.
+	MappingContext->MapKey(JumpAction, Keys->GetKey(GamerInputActions::Jump));
 	MappingContext->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
-
-	// E: gather the resource in front of you.
-	InteractAction = NewObject<UInputAction>(this, TEXT("IA_Interact"));
-	InteractAction->ValueType = EInputActionValueType::Boolean;
-	MappingContext->MapKey(InteractAction, EKeys::E);
+	MappingContext->MapKey(InteractAction, Keys->GetKey(GamerInputActions::Interact));
 	MappingContext->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
-
-	// Tab: open/close the start crafting menu.
-	CraftMenuAction = NewObject<UInputAction>(this, TEXT("IA_CraftMenu"));
-	CraftMenuAction->ValueType = EInputActionValueType::Boolean;
-	MappingContext->MapKey(CraftMenuAction, EKeys::Tab);
+	MappingContext->MapKey(StrikeAction, Keys->GetKey(GamerInputActions::Strike));
+	MappingContext->MapKey(StrikeAction, EKeys::Gamepad_RightTrigger);
+	MappingContext->MapKey(CraftMenuAction, Keys->GetKey(GamerInputActions::CraftMenu));
 	MappingContext->MapKey(CraftMenuAction, EKeys::Gamepad_FaceButton_Top);
+	MappingContext->MapKey(BuildMenuAction, Keys->GetKey(GamerInputActions::BuildMenu));
+	MappingContext->MapKey(BuildMenuAction, EKeys::Gamepad_LeftTrigger);
+	MappingContext->MapKey(RotateAction, Keys->GetKey(GamerInputActions::Rotate));
+	MappingContext->MapKey(RotateAction, EKeys::Gamepad_RightShoulder);
+	MappingContext->MapKey(DemolishAction, Keys->GetKey(GamerInputActions::Demolish));
+	MappingContext->MapKey(DemolishAction, EKeys::Gamepad_FaceButton_Right);
+	MappingContext->MapKey(VillageMenuAction, Keys->GetKey(GamerInputActions::VillageMenu));
+	MappingContext->MapKey(VillageMenuAction, EKeys::Gamepad_Special_Left);
 
-	// 1..9: craft the recipe with that number. One action; the key number arrives as the value.
-	CraftSlotAction = NewObject<UInputAction>(this, TEXT("IA_CraftSlot"));
-	CraftSlotAction->ValueType = EInputActionValueType::Axis1D;
-	const FKey NumberKeys[] = { EKeys::One, EKeys::Two, EKeys::Three, EKeys::Four, EKeys::Five,
-		EKeys::Six, EKeys::Seven, EKeys::Eight, EKeys::Nine };
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(NumberKeys); ++Index)
+	auto MapNumber = [this](const FKey& Key, int32 Number)
 	{
-		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(CraftSlotAction, NumberKeys[Index]);
-		UInputModifierScalar* Number = NewObject<UInputModifierScalar>(MappingContext);
-		Number->Scalar = FVector(Index + 1, 1.f, 1.f);
-		Mapping.Modifiers.Add(Number);
+		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(NumberAction, Key);
+		UInputModifierScalar* Scalar = NewObject<UInputModifierScalar>(MappingContext);
+		Scalar->Scalar = FVector(Number, 1.f, 1.f);
+		Mapping.Modifiers.Add(Scalar);
+	};
+	for (int32 Number = 1; Number <= 8; ++Number)
+	{
+		MapNumber(Keys->GetKey(GamerInputActions::Hotbar(Number)), Number);
 	}
+	MapNumber(EKeys::Nine, 9); // 9th recipe only, not rebindable
+
+	if (const APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			Subsystem->RequestRebuildControlMappings();
+		}
+	}
+}
+
+void AGamerCharacter::SetGameplayInputEnabled(bool bEnabled)
+{
+	const APlayerController* PC = Cast<APlayerController>(Controller);
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = PC ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()) : nullptr;
+	if (!Subsystem || !MappingContext)
+	{
+		return;
+	}
+	if (bEnabled)
+	{
+		Subsystem->AddMappingContext(MappingContext, 0);
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(MappingContext);
+	}
+}
+
+FString AGamerCharacter::DescribeKeyBindings() const
+{
+	TArray<FString> Parts;
+	if (MappingContext)
+	{
+		for (const FEnhancedActionKeyMapping& Mapping : MappingContext->GetMappings())
+		{
+			if (Mapping.Action && !Mapping.Key.IsGamepadKey())
+			{
+				Parts.Add(FString::Printf(TEXT("%s=%s"), *Mapping.Action->GetName(), *Mapping.Key.ToString()));
+			}
+		}
+	}
+	return FString::Join(Parts, TEXT(" "));
 }
 
 void AGamerCharacter::NotifyControllerChanged()
@@ -253,7 +329,12 @@ void AGamerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGamerCharacter::Look);
 		Input->BindAction(InteractAction, ETriggerEvent::Started, this, &AGamerCharacter::Interact);
 		Input->BindAction(CraftMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::ToggleCraftMenu);
-		Input->BindAction(CraftSlotAction, ETriggerEvent::Started, this, &AGamerCharacter::CraftSlot);
+		Input->BindAction(NumberAction, ETriggerEvent::Started, this, &AGamerCharacter::NumberKey);
+		Input->BindAction(StrikeAction, ETriggerEvent::Triggered, this, &AGamerCharacter::Strike);
+		Input->BindAction(BuildMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::OpenBuildMenu);
+		Input->BindAction(RotateAction, ETriggerEvent::Started, this, &AGamerCharacter::RotatePiece);
+		Input->BindAction(DemolishAction, ETriggerEvent::Started, this, &AGamerCharacter::Demolish);
+		Input->BindAction(VillageMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::OpenVillageMenu);
 	}
 	else
 	{
@@ -281,9 +362,16 @@ void AGamerCharacter::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(Axis.Y * LookSensitivity);
 }
 
+void AGamerCharacter::GetAimView(FVector& OutLocation, FVector& OutDirection) const
+{
+	OutLocation = FollowCamera ? FollowCamera->GetComponentLocation() : GetActorLocation();
+	OutDirection = FollowCamera ? FollowCamera->GetForwardVector() : GetActorForwardVector();
+}
+
 void AGamerCharacter::UpdateFocus()
 {
 	FocusNode.Reset();
+	FocusBuilding.Reset();
 	if (!Work || !FollowCamera)
 	{
 		return;
@@ -302,6 +390,13 @@ void AGamerCharacter::UpdateFocus()
 		if (Node && !Node->IsDepleted() && FVector::Dist2D(Node->GetActorLocation(), GetActorLocation()) <= Reach)
 		{
 			FocusNode = Node;
+			return;
+		}
+		// Building pieces are big: measure to the point aimed at, not to the pivot.
+		AGamerBuilding* Building = Cast<AGamerBuilding>(Hit.GetActor());
+		if (Building && !Building->IsPreview() && FVector::Dist(Hit.ImpactPoint, GetActorLocation()) <= Reach + 100.f)
+		{
+			FocusBuilding = Building;
 			return;
 		}
 	}
@@ -328,6 +423,19 @@ void AGamerCharacter::UpdateFocus()
 
 void AGamerCharacter::Interact()
 {
+	if (Work->IsBusy())
+	{
+		return; // already gathering or crafting; the progress bar shows it
+	}
+	// The settlement storage: open it (every finished storage building is an access point to the same storage).
+	if (const AGamerBuilding* Building = FocusBuilding.Get(); Building && Building->IsFinished() && Building->GetBuildableId() == TEXT("building_storage"))
+	{
+		if (AGamerPlayerController* PC = Cast<AGamerPlayerController>(Controller))
+		{
+			PC->OpenMenu(EGamerMenuPage::Storage);
+		}
+		return;
+	}
 	if (AGamerResourceNode* Node = FocusNode.Get())
 	{
 		Work->ServerHarvest(Node);
@@ -336,18 +444,30 @@ void AGamerCharacter::Interact()
 
 void AGamerCharacter::RefreshHandRecipes()
 {
+	// Hand recipes first (sorted), then those of finished stations nearby (work bench, camp fire).
 	HandRecipes.Reset();
+	TArray<FName> StationRecipes;
 	if (const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this))
 	{
 		for (const TPair<FName, FGamerRecipeDef>& Pair : Data->GetData().Recipes)
 		{
-			if (Pair.Value.Station.IsNone() && !Pair.Value.bDeprecated)
+			if (Pair.Value.bDeprecated)
+			{
+				continue;
+			}
+			if (Pair.Value.Station.IsNone())
 			{
 				HandRecipes.Add(Pair.Key);
+			}
+			else if (Work->FindStationNearby(Pair.Value.Station))
+			{
+				StationRecipes.Add(Pair.Key);
 			}
 		}
 	}
 	HandRecipes.Sort(FNameLexicalLess());
+	StationRecipes.Sort(FNameLexicalLess());
+	HandRecipes.Append(StationRecipes);
 }
 
 void AGamerCharacter::ToggleCraftMenu()
@@ -359,17 +479,90 @@ void AGamerCharacter::ToggleCraftMenu()
 	}
 }
 
-void AGamerCharacter::CraftSlot(const FInputActionValue& Value)
+void AGamerCharacter::NumberKey(const FInputActionValue& Value)
 {
-	if (!bCraftMenuOpen)
+	const int32 Index = FMath::RoundToInt(Value.Get<float>()) - 1;
+	if (bCraftMenuOpen)
+	{
+		if (HandRecipes.IsValidIndex(Index))
+		{
+			Work->ServerCraft(HandRecipes[Index]);
+		}
+		return;
+	}
+	Inventory->SelectSlot(Index);
+}
+
+void AGamerCharacter::Strike()
+{
+	// Held button fires every frame: one action per interval. The server checks the timing again.
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastStrikeTime < Work->GetStrikeInterval())
 	{
 		return;
 	}
-	const int32 Index = FMath::RoundToInt(Value.Get<float>()) - 1;
-	if (HandRecipes.IsValidIndex(Index))
+	LastStrikeTime = Now;
+
+	// With the hammer: an unfinished plan under the crosshair is hammered first, otherwise the chosen piece is placed.
+	if (Inventory->IsHoldingTool(TEXT("hammer"), 1))
 	{
-		Work->ServerCraft(HandRecipes[Index]);
+		AGamerBuilding* Building = FocusBuilding.Get();
+		if (Building && !Building->IsFinished())
+		{
+			Build->ServerHammer(Building);
+			return;
+		}
+		if (Build->IsPlacing())
+		{
+			Build->TryPlace();
+			return;
+		}
 	}
+	Work->ServerStrike(FocusNode.Get());
+}
+
+void AGamerCharacter::OpenBuildMenu()
+{
+	if (!Inventory->IsHoldingTool(TEXT("hammer"), 1))
+	{
+		const int32 Slot = Inventory->FindToolInHotbar(TEXT("hammer"), 1);
+		Work->ShowMessage(Slot != INDEX_NONE
+			? FString::Printf(TEXT("Zum Bauen den Hammer in die Hand nehmen: %s"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Hotbar(Slot + 1)))
+			: FString(TEXT("Zum Bauen brauchst du einen Hammer (Herstellen-Menü).")));
+		return;
+	}
+	if (AGamerPlayerController* PC = Cast<AGamerPlayerController>(Controller))
+	{
+		PC->OpenMenu(EGamerMenuPage::Build);
+	}
+}
+
+void AGamerCharacter::RotatePiece()
+{
+	Build->Rotate();
+}
+
+void AGamerCharacter::OpenVillageMenu()
+{
+	if (AGamerPlayerController* PC = Cast<AGamerPlayerController>(Controller))
+	{
+		PC->OpenMenu(EGamerMenuPage::Village);
+	}
+}
+
+void AGamerCharacter::Demolish()
+{
+	AGamerBuilding* Building = FocusBuilding.Get();
+	if (!Building)
+	{
+		return;
+	}
+	if (!Inventory->IsHoldingTool(TEXT("hammer"), 1))
+	{
+		Work->ShowMessage(TEXT("Zum Abreißen den Hammer in die Hand nehmen."));
+		return;
+	}
+	Build->ServerDemolish(Building);
 }
 
 void AGamerCharacter::StartTestWalk(float Seconds)

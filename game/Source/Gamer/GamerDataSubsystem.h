@@ -29,6 +29,8 @@ public:
 	const FGamerResourceNodeDef* FindResourceNode(FName Id) const { return Data.ResourceNodes.Find(Id); }
 	const FGamerRecipeDef* FindRecipe(FName Id) const { return Data.Recipes.Find(Id); }
 	const FGamerBuildableDef* FindBuildable(FName Id) const { return Data.Buildables.Find(Id); }
+	const FGamerJobDef* FindJob(FName Id) const { return Data.Jobs.Find(Id); }
+	const FGamerNeedDef* FindNeed(FName Id) const { return Data.Needs.Find(Id); }
 
 	/** Convenience: the subsystem of the game instance that owns WorldContextObject. */
 	static UGamerDataSubsystem* Get(const UObject* WorldContextObject);

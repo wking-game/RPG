@@ -22,8 +22,8 @@ namespace
 
 	void LogSummary(const TCHAR* What, const FGamerDataSet& Data, const FGamerDataReport& Report)
 	{
-		UE_LOG(LogGamer, Log, TEXT("Data %s: %d items, %d resource nodes, %d recipes, %d buildables, checksum %08X, %d errors, %d warnings"),
-			What, Data.Items.Num(), Data.ResourceNodes.Num(), Data.Recipes.Num(), Data.Buildables.Num(),
+		UE_LOG(LogGamer, Log, TEXT("Data %s: %d items, %d resource nodes, %d recipes, %d buildables, %d jobs, %d needs, checksum %08X, %d errors, %d warnings"),
+			What, Data.Items.Num(), Data.ResourceNodes.Num(), Data.Recipes.Num(), Data.Buildables.Num(), Data.Jobs.Num(), Data.Needs.Num(),
 			Data.Checksum, Report.Errors.Num(), Report.Warnings.Num());
 	}
 

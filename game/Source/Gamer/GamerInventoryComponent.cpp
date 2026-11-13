@@ -23,6 +23,60 @@ void UGamerInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(UGamerInventoryComponent, Slots, COND_OwnerOnly);
+	DOREPLIFETIME(UGamerInventoryComponent, SelectedSlot);
+}
+
+const FGamerItemDef* UGamerInventoryComponent::GetSelectedItemDef() const
+{
+	if (!Slots.IsValidIndex(SelectedSlot) || SelectedSlot >= GetHotbarSize() || Slots[SelectedSlot].IsEmpty())
+	{
+		return nullptr;
+	}
+	return FindDef(Slots[SelectedSlot].Item);
+}
+
+bool UGamerInventoryComponent::IsHoldingTool(FName ToolType, int32 MinTier) const
+{
+	const FGamerItemDef* Held = GetSelectedItemDef();
+	return Held && Held->Category == EGamerItemCategory::Tool && Held->Tool.Type == ToolType && Held->Tier >= MinTier;
+}
+
+int32 UGamerInventoryComponent::FindToolInHotbar(FName ToolType, int32 MinTier) const
+{
+	int32 BestIndex = INDEX_NONE;
+	const FGamerItemDef* Best = nullptr;
+	for (int32 Index = 0; Index < GetHotbarSize(); ++Index)
+	{
+		const FGamerItemDef* Def = Slots[Index].IsEmpty() ? nullptr : FindDef(Slots[Index].Item);
+		if (Def && Def->Category == EGamerItemCategory::Tool && Def->Tool.Type == ToolType && Def->Tier >= MinTier
+			&& (!Best || Def->Tier > Best->Tier))
+		{
+			Best = Def;
+			BestIndex = Index;
+		}
+	}
+	return BestIndex;
+}
+
+void UGamerInventoryComponent::SelectSlot(int32 Index)
+{
+	if (Index < 0 || Index >= FMath::Max(1, FMath::Min(HotbarSize, SlotCount)))
+	{
+		return;
+	}
+	SelectedSlot = Index; // shown at once; the server's value replicates back
+	if (GetOwner() && !GetOwner()->HasAuthority())
+	{
+		ServerSelectSlot(Index);
+	}
+}
+
+void UGamerInventoryComponent::ServerSelectSlot_Implementation(int32 Index)
+{
+	if (Index >= 0 && Index < GetHotbarSize())
+	{
+		SelectedSlot = Index;
+	}
 }
 
 void UGamerInventoryComponent::OnRep_Slots()
@@ -67,8 +121,27 @@ int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count)
 			Remaining -= Moved;
 		}
 	}
-	for (FGamerInventorySlot& Slot : Slots)
+
+	// Tools and food go to the hotbar first, building materials to the backpack first,
+	// so the hotbar keeps room for the things you hold in your hand.
+	const FGamerItemDef* Def = FindDef(Item);
+	const bool bPreferHotbar = Def->Category == EGamerItemCategory::Tool || Def->Category == EGamerItemCategory::Food;
+	const int32 Hotbar = GetHotbarSize();
+	TArray<int32> Order;
+	for (int32 Index = bPreferHotbar ? 0 : Hotbar; Index < Slots.Num(); ++Index)
 	{
+		Order.Add(Index);
+	}
+	if (!bPreferHotbar)
+	{
+		for (int32 Index = 0; Index < Hotbar; ++Index)
+		{
+			Order.Add(Index);
+		}
+	}
+	for (const int32 Index : Order)
+	{
+		FGamerInventorySlot& Slot = Slots[Index];
 		if (Remaining > 0 && Slot.IsEmpty())
 		{
 			const int32 Moved = FMath::Min(Remaining, MaxStack);

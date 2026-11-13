@@ -158,6 +158,18 @@ void AGamerResourceNode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AGamerResourceNode, NodeId);
 	DOREPLIFETIME(AGamerResourceNode, bDepleted);
+	DOREPLIFETIME(AGamerResourceNode, WorkProgress);
+}
+
+bool AGamerResourceNode::AddWork(float Amount)
+{
+	if (!HasAuthority() || bDepleted)
+	{
+		return false;
+	}
+	WorkProgress = FMath::Min(1.f, WorkProgress + FMath::Max(0.f, Amount));
+	ForceNetUpdate();
+	return WorkProgress >= 0.999f;
 }
 
 void AGamerResourceNode::BeginPlay()
@@ -196,6 +208,7 @@ void AGamerResourceNode::Deplete()
 		return;
 	}
 	bDepleted = true;
+	WorkProgress = 0.f;
 	Worker.Reset();
 	ApplyLook();
 	ForceNetUpdate();
@@ -211,6 +224,7 @@ void AGamerResourceNode::Deplete()
 void AGamerResourceNode::Regrow()
 {
 	bDepleted = false;
+	WorkProgress = 0.f;
 	ApplyLook();
 	ForceNetUpdate();
 	UE_LOG(LogGamer, Log, TEXT("Node %s (%s) has grown back"), *GetName(), *NodeId.ToString());

@@ -3,9 +3,12 @@
 #include "Gamer.h"
 #include "GamerCharacter.h"
 #include "GamerDataSubsystem.h"
+#include "GamerGameState.h"
 #include "GamerHUD.h"
+#include "GamerNavigationSystem.h"
 #include "GamerPlayerController.h"
 #include "GamerResourceNode.h"
+#include "GamerSettlement.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerStart.h"
@@ -16,6 +19,38 @@ AGamerGameMode::AGamerGameMode()
 	DefaultPawnClass = AGamerCharacter::StaticClass();
 	PlayerControllerClass = AGamerPlayerController::StaticClass();
 	HUDClass = AGamerHUD::StaticClass();
+	GameStateClass = AGamerGameState::StaticClass();
+}
+
+void AGamerGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage); // sets OptionsString
+	ApplyWorldOptions(true);
+	// Villager pathfinding: the engine sets up navigation for play after InitGame, so the swap happens in time.
+	if (UWorld* World = GetWorld())
+	{
+		UGamerNavigationSystem::UseForWorld(*World);
+	}
+}
+
+void AGamerGameMode::InitGameState()
+{
+	Super::InitGameState();
+	ApplyWorldOptions(false);
+}
+
+void AGamerGameMode::ApplyWorldOptions(bool bFromInitGame)
+{
+	// World options from the map URL until the start menu exists (decision 2026-11-13).
+	// The game state may be spawned before or after InitGame: InitGame always wins, InitGameState only fills in.
+	AGamerGameState* State = GetGameState<AGamerGameState>();
+	if (!State || (bWorldOptionsApplied && !bFromInitGame))
+	{
+		return;
+	}
+	State->SetWorldOptions(FGamerWorldOptions::FromUrlOptions(OptionsString));
+	bWorldOptionsApplied = true;
+	UE_LOG(LogGamer, Log, TEXT("World options: %s"), *State->GetWorldOptions().ToLogString());
 }
 
 APawn* AGamerGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
@@ -49,6 +84,19 @@ void AGamerGameMode::StartPlay()
 	if (bSpawnStartArea && !bMapHasNodes)
 	{
 		SpawnStartArea();
+	}
+
+	// One settlement per world for the vertical slice (storage, villagers).
+	if (!AGamerSettlement::Get(this))
+	{
+		FVector Center = FVector::ZeroVector;
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			Center = It->GetActorLocation();
+			break;
+		}
+		GetWorld()->SpawnActor<AGamerSettlement>(AGamerSettlement::StaticClass(), Center, FRotator::ZeroRotator);
+		UE_LOG(LogGamer, Log, TEXT("Settlement created at %s"), *Center.ToCompactString());
 	}
 }
 

@@ -4,6 +4,8 @@
 #include "GamerDataSubsystem.h"
 #include "GamerInventoryComponent.h"
 #include "GamerResourceNode.h"
+#include "GamerBuilding.h"
+#include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
@@ -75,6 +77,11 @@ void UGamerWorkComponent::Fail(const FString& Message)
 
 void UGamerWorkComponent::ClientMessage_Implementation(const FString& Message)
 {
+	ShowMessage(Message);
+}
+
+void UGamerWorkComponent::ShowMessage(const FString& Message)
+{
 	LastMessage = Message;
 	LastMessageTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 	UE_LOG(LogGamer, Log, TEXT("Message: %s"), *Message);
@@ -109,26 +116,112 @@ void UGamerWorkComponent::ServerHarvest_Implementation(AGamerResourceNode* Node)
 	{
 		return Fail(TEXT("Zu weit weg."));
 	}
+	if (Def->RequiredTool.IsRequired())
+	{
+		// Decision 2026-11-13: trees and rocks are worked by striking, not with the interact key.
+		// The server does not know the player's key bindings; the HUD shows the real keys.
+		return Fail(FString::Printf(TEXT("%s baust du durch Schlagen ab: %s in die Hand nehmen und zuschlagen."),
+			*Def->Name, *ToolName(Def->RequiredTool.Type)));
+	}
 	if (Node->Worker.IsValid() && Node->Worker.Get() != GetOwner())
 	{
 		return Fail(TEXT("Daran arbeitet schon jemand."));
 	}
 
-	float Speed = 1.f;
-	if (Def->RequiredTool.IsRequired())
-	{
-		const UGamerInventoryComponent* Inventory = GetInventory();
-		const FGamerItemDef* Tool = Inventory ? Inventory->FindBestTool(Def->RequiredTool.Type, Def->RequiredTool.MinTier) : nullptr;
-		if (!Tool)
-		{
-			return Fail(FString::Printf(TEXT("Für %s brauchst du %s (ab Stufe %d)."), *Def->Name, *ToolName(Def->RequiredTool.Type), Def->RequiredTool.MinTier));
-		}
-		Speed = FMath::Max(0.1f, Tool->Tool.WorkSpeed);
-	}
-
 	TargetNode = Node;
 	Node->Worker = GetOwner();
-	StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds / Speed);
+	StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds);
+}
+
+void UGamerWorkComponent::ServerStrike_Implementation(AGamerResourceNode* Node)
+{
+	if (IsBusy())
+	{
+		return; // gathering or crafting by hand: no swinging at the same time
+	}
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastStrikeTime < StrikeInterval * 0.8f)
+	{
+		return; // faster than allowed (the client waits StrikeInterval; a little network jitter is tolerated)
+	}
+	LastStrikeTime = Now;
+
+	const FGamerResourceNodeDef* Def = Node ? Node->GetDef() : nullptr;
+	if (!Def || Node->IsDepleted())
+	{
+		return; // a swing into the air
+	}
+	if (!IsInReach(Node))
+	{
+		return Fail(TEXT("Zu weit weg."));
+	}
+	if (!Def->RequiredTool.IsRequired())
+	{
+		return Fail(FString::Printf(TEXT("%s sammelst du von Hand auf, nicht durch Schlagen."), *Def->Name));
+	}
+
+	UGamerInventoryComponent* Inventory = GetInventory();
+	if (!Inventory)
+	{
+		return;
+	}
+	const FName ToolType = Def->RequiredTool.Type;
+	const int32 MinTier = Def->RequiredTool.MinTier;
+	if (!Inventory->IsHoldingTool(ToolType, MinTier))
+	{
+		const int32 HotbarIndex = Inventory->FindToolInHotbar(ToolType, MinTier);
+		if (HotbarIndex != INDEX_NONE)
+		{
+			const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+			const FGamerItemDef* Tool = Data ? Data->FindItem(Inventory->GetSlots()[HotbarIndex].Item) : nullptr;
+			return Fail(FString::Printf(TEXT("Nimm %s in die Hand: Schnellleiste Platz %d."), Tool ? *Tool->Name : *ToolName(ToolType), HotbarIndex + 1));
+		}
+		if (Inventory->FindBestTool(ToolType, MinTier))
+		{
+			return Fail(TEXT("Dein Werkzeug liegt im Rucksack, nicht in der Schnellleiste."));
+		}
+		return Fail(FString::Printf(TEXT("Für %s brauchst du %s (ab Stufe %d)."), *Def->Name, *ToolName(ToolType), MinTier));
+	}
+
+	const FGamerItemDef* Held = Inventory->GetSelectedItemDef();
+	const float Amount = StrikeInterval * FMath::Max(0.1f, Held->Tool.WorkSpeed) / FMath::Max(0.1f, Def->WorkSeconds);
+	const bool bDone = Node->AddWork(Amount);
+	UE_LOG(LogGamer, Log, TEXT("Strike: player=%d node=%s tool=%s progress=%.2f"),
+		PlayerIdOf(GetOwner()), *Def->Id.ToString(), *Held->Id.ToString(), Node->GetWorkProgress());
+	if (bDone)
+	{
+		GiveDrops(Node, *Def);
+	}
+}
+
+void UGamerWorkComponent::GiveDrops(AGamerResourceNode* Node, const FGamerResourceNodeDef& Def)
+{
+	UGamerInventoryComponent* Inventory = GetInventory();
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (!Node || !Inventory || !Data)
+	{
+		return;
+	}
+	TArray<FString> Gained;
+	for (const FGamerDrop& Drop : Def.Drops)
+	{
+		const int32 Count = FMath::RandRange(Drop.Min, Drop.Max);
+		if (Count <= 0)
+		{
+			continue;
+		}
+		const int32 Lost = Inventory->AddItem(Drop.Item, Count);
+		const FGamerItemDef* Item = Data->FindItem(Drop.Item);
+		Gained.Add(FString::Printf(TEXT("+%d %s"), Count - Lost, Item ? *Item->Name : *Drop.Item.ToString()));
+		if (Lost > 0)
+		{
+			Gained.Add(FString::Printf(TEXT("(%d passten nicht mehr ins Inventar)"), Lost));
+		}
+	}
+	Node->Deplete();
+	UE_LOG(LogGamer, Log, TEXT("Harvest done: player=%d node=%s gained [%s] inventory: %s"),
+		PlayerIdOf(GetOwner()), *Def.Id.ToString(), *FString::Join(Gained, TEXT(" ")), *Inventory->Describe());
+	ClientMessage(FString::Join(Gained, TEXT("  ")));
 }
 
 void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
@@ -144,10 +237,10 @@ void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
 	{
 		return Fail(TEXT("Dieses Rezept gibt es nicht."));
 	}
-	if (!Recipe->Station.IsNone())
+	if (!Recipe->Station.IsNone() && !FindStationNearby(Recipe->Station))
 	{
 		const FGamerBuildableDef* Station = Data->FindBuildable(Recipe->Station);
-		return Fail(FString::Printf(TEXT("Dafür brauchst du: %s."), Station ? *Station->Name : *Recipe->Station.ToString()));
+		return Fail(FString::Printf(TEXT("Dafür brauchst du eine fertige %s in der Nähe."), Station ? *Station->Name : *Recipe->Station.ToString()));
 	}
 	if (!Inventory->HasAll(Recipe->Inputs))
 	{
@@ -203,27 +296,7 @@ void UGamerWorkComponent::FinishWork()
 			Node->Worker.Reset();
 			return Fail(TEXT("Abgebrochen: zu weit weggegangen."));
 		}
-
-		TArray<FString> Gained;
-		for (const FGamerDrop& Drop : Def->Drops)
-		{
-			const int32 Count = FMath::RandRange(Drop.Min, Drop.Max);
-			if (Count <= 0)
-			{
-				continue;
-			}
-			const int32 Lost = Inventory->AddItem(Drop.Item, Count);
-			const FGamerItemDef* Item = Data->FindItem(Drop.Item);
-			Gained.Add(FString::Printf(TEXT("+%d %s"), Count - Lost, Item ? *Item->Name : *Drop.Item.ToString()));
-			if (Lost > 0)
-			{
-				Gained.Add(FString::Printf(TEXT("(%d passten nicht mehr ins Inventar)"), Lost));
-			}
-		}
-		Node->Deplete();
-		UE_LOG(LogGamer, Log, TEXT("Harvest done: player=%d node=%s gained [%s] inventory: %s"),
-			PlayerIdOf(GetOwner()), *Def->Id.ToString(), *FString::Join(Gained, TEXT(" ")), *Inventory->Describe());
-		ClientMessage(FString::Join(Gained, TEXT("  ")));
+		GiveDrops(Node, *Def);
 	}
 	else if (Kind == EGamerWorkKind::Craft)
 	{
@@ -246,7 +319,47 @@ void UGamerWorkComponent::FinishWork()
 	}
 }
 
-void UGamerWorkComponent::ServerDebugTeleportNear_Implementation(AGamerResourceNode* Node)
+AGamerBuilding* UGamerWorkComponent::FindStationNearby(FName StationId) const
+{
+	const AActor* Owner = GetOwner();
+	if (!Owner || StationId.IsNone())
+	{
+		return nullptr;
+	}
+	for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsPreview() && It->IsFinished() && It->GetBuildableId() == StationId
+			&& FVector::Dist(It->GetActorLocation(), Owner->GetActorLocation()) <= StationReach)
+		{
+			return *It;
+		}
+	}
+	return nullptr;
+}
+
+void UGamerWorkComponent::ServerDebugTeleportTo_Implementation(FVector Location)
+{
+#if !UE_BUILD_SHIPPING
+	if (APawn* Pawn = Cast<APawn>(GetOwner()))
+	{
+		Pawn->TeleportTo(Location, Pawn->GetActorRotation(), false, true);
+	}
+#endif
+}
+
+void UGamerWorkComponent::ServerDebugGiveItem_Implementation(FName Item, int32 Count)
+{
+#if !UE_BUILD_SHIPPING
+	if (UGamerInventoryComponent* Inventory = GetInventory())
+	{
+		const int32 Lost = Inventory->AddItem(Item, FMath::Clamp(Count, 1, 999));
+		UE_LOG(LogGamer, Log, TEXT("Debug give: player=%d %s x%d (%d did not fit) inventory: %s"), PlayerIdOf(GetOwner()),
+			*Item.ToString(), Count, Lost, *Inventory->Describe());
+	}
+#endif
+}
+
+void UGamerWorkComponent::ServerDebugTeleportNear_Implementation(AActor* Node)
 {
 #if UE_BUILD_SHIPPING
 	return;

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "rows": [
+    { "id": "job_gatherer", "name": "Sammler", "kind": "harvest", "radius": 2500, "fallback": true },
+    { "id": "job_woodcutter", "name": "Holzfäller", "kind": "harvest", "station": "building_woodcutter", "tool": "axe", "radius": 3000 },
+    { "id": "job_stonecutter", "name": "Steinmetz", "kind": "harvest", "station": "building_stonecutter", "tool": "pickaxe", "radius": 3000 },
+    { "id": "job_cook", "name": "Koch", "kind": "craft", "station": "building_campfire", "recipes": [ "recipe_meal" ], "stock_target": 10 },
+    { "id": "job_builder", "name": "Baumeister", "kind": "build", "tool": "hammer", "radius": 3000 }
+  ]
+}

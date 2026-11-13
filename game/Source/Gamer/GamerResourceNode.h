@@ -34,7 +34,13 @@ public:
 	/** Server: mark as harvested and start the regrow timer (if the data says it regrows). */
 	void Deplete();
 
-	/** Server: who is currently working on it (only one player at a time). */
+	/** Server: add strike work (fraction of the whole job, 0..1). Returns true when the node is done. */
+	bool AddWork(float Amount);
+
+	/** 0..1, how far players have chopped/mined it (replicated for the HUD). */
+	float GetWorkProgress() const { return WorkProgress; }
+
+	/** Server: who is gathering it by hand right now (only one player at a time; not used for strikes). */
 	TWeakObjectPtr<AActor> Worker;
 
 protected:
@@ -43,6 +49,9 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Depleted)
 	bool bDepleted = false;
+
+	UPROPERTY(Replicated)
+	float WorkProgress = 0.f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Visual")
 	TObjectPtr<UStaticMeshComponent> Body;

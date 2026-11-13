@@ -10,6 +10,8 @@ struct GAMER_API FGamerDataSet
 	TMap<FName, FGamerResourceNodeDef> ResourceNodes;
 	TMap<FName, FGamerRecipeDef> Recipes;
 	TMap<FName, FGamerBuildableDef> Buildables;
+	TMap<FName, FGamerJobDef> Jobs;
+	TMap<FName, FGamerNeedDef> Needs;
 
 	/** CRC32 over the file contents (line endings ignored). Equal on every machine with the same data. */
 	uint32 Checksum = 0;
@@ -38,7 +40,7 @@ namespace GamerData
 	GAMER_API FString DefaultDirectory();
 
 	/**
-	 * Loads and checks all tables in Directory (items, resource_nodes, recipes, buildables).
+	 * Loads and checks all tables in Directory (items, resource_nodes, recipes, buildables; jobs and needs if present).
 	 * Fills Out as far as possible even if there are errors. Returns true if there were no errors.
 	 * bCheckAssetPaths: warn when a model/icon path points to an asset that does not exist.
 	 */

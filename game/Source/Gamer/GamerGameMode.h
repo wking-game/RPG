@@ -18,6 +18,8 @@ public:
 
 	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
 	virtual void StartPlay() override;
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	virtual void InitGameState() override;
 
 protected:
 	/** Players sharing one start point are placed side by side, this far apart (Unreal units = cm). */
@@ -36,4 +38,6 @@ protected:
 
 private:
 	void SpawnStartArea();
+	void ApplyWorldOptions(bool bFromInitGame);
+	bool bWorldOptionsApplied = false;
 };

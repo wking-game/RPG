@@ -4,7 +4,9 @@
 #include "GameFramework/Character.h"
 #include "GamerCharacter.generated.h"
 
+class AGamerBuilding;
 class AGamerResourceNode;
+class UGamerBuildComponent;
 class UCameraComponent;
 class UGamerInventoryComponent;
 class UGamerWorkComponent;
@@ -40,13 +42,33 @@ public:
 
 	UGamerInventoryComponent* GetInventory() const { return Inventory; }
 	UGamerWorkComponent* GetWork() const { return Work; }
+	UGamerBuildComponent* GetBuild() const { return Build; }
+
+	/** Camera position and direction through the crosshair (for aiming at resources and building spots). */
+	void GetAimView(FVector& OutLocation, FVector& OutDirection) const;
+	float GetCameraDistance() const { return CameraDistance; }
+
+	/** Local player only: the building piece under the crosshair within reach (for hammering, tearing down, HUD). */
+	AGamerBuilding* GetFocusBuilding() const { return FocusBuilding.Get(); }
 
 	/** Local player only: the resource node in front of the camera and within reach (for the HUD hint). */
 	AGamerResourceNode* GetFocusNode() const { return FocusNode.Get(); }
 
-	/** Local player only: the start crafting menu (recipes without a station). */
+	/** Local player only: the crafting menu (recipes by hand plus those of stations nearby). */
 	bool IsCraftMenuOpen() const { return bCraftMenuOpen; }
 	const TArray<FName>& GetHandRecipes() const { return HandRecipes; }
+
+	/** Local player only: world time of the last swing (for the HUD). */
+	double GetLastStrikeTime() const { return LastStrikeTime; }
+
+	/** Local player: (re)map all keys from UGamerKeyBindings (after a change in the menu). */
+	void ApplyKeyBindings();
+
+	/** Local player: switch movement, looking and actions off while the menu is open. */
+	void SetGameplayInputEnabled(bool bEnabled);
+
+	/** Current keyboard/mouse mapping as text, for logs and tests ("IA_Jump=SpaceBar ..."). */
+	FString DescribeKeyBindings() const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
@@ -54,6 +76,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<UGamerWorkComponent> Work;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerBuildComponent> Build;
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> CameraBoom;
@@ -72,11 +97,20 @@ protected:
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float WalkSpeed = 450.f;
 
+	// Jump: a higher start speed together with stronger gravity gives a short, snappy jump
+	// (about 1.25 m high, 0.7 s in the air). 500 / 1.0 felt floaty in the first play test.
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
-	float JumpVelocity = 500.f;
+	float JumpVelocity = 700.f;
+
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float GravityScale = 2.f;
 
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Camera")
 	float CameraDistance = 400.f;
+
+	/** Over-the-shoulder offset (right, up) so the own body does not hide the spot under the crosshair. */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Camera")
+	FVector CameraShoulderOffset = FVector(0.f, 60.f, 60.f);
 
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Camera")
 	float LookSensitivity = 1.f;
@@ -87,8 +121,14 @@ private:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Interact();
+	void Strike();
+	void OpenBuildMenu();
+	void RotatePiece();
+	void Demolish();
+	void OpenVillageMenu();
 	void ToggleCraftMenu();
-	void CraftSlot(const FInputActionValue& Value);
+	/** Number keys: pick a recipe while the crafting menu is open, otherwise select a hotbar slot. */
+	void NumberKey(const FInputActionValue& Value);
 	void UpdateFocus();
 	void RefreshHandRecipes();
 
@@ -99,9 +139,26 @@ private:
 	TObjectPtr<UInputAction> CraftMenuAction;
 
 	UPROPERTY(Transient)
-	TObjectPtr<UInputAction> CraftSlotAction;
+	TObjectPtr<UInputAction> NumberAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> StrikeAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> BuildMenuAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> RotateAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> DemolishAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> VillageMenuAction;
 
 	TWeakObjectPtr<AGamerResourceNode> FocusNode;
+	TWeakObjectPtr<AGamerBuilding> FocusBuilding;
+	double LastStrikeTime = -1000.0;
 	bool bCraftMenuOpen = false;
 	TArray<FName> HandRecipes;
 

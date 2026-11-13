@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "rows": [
+    { "id": "need_hunger", "name": "Hunger", "kind": "food", "decay_per_day": 1.0, "threshold": 0.4,
+      "foods": [ { "item": "item_meal", "value": 0.8 }, { "item": "item_apple", "value": 0.25 }, { "item": "item_berries", "value": 0.15 },
+                 { "item": "item_mushrooms", "value": 0.15 }, { "item": "item_hazelnuts", "value": 0.1 } ],
+      "work_speed_when_unmet": 0.7, "leave_after_days": 2.0 },
+    { "id": "need_sleep", "name": "Schlaf", "kind": "sleep", "decay_per_day": 1.0, "threshold": 0.25, "restore_per_day": 6.0,
+      "work_speed_when_unmet": 0.8 },
+    { "id": "need_shelter", "name": "Unterkunft", "kind": "shelter", "work_speed_when_unmet": 0.9 }
+  ]
+}

@@ -10,6 +10,9 @@ public class Gamer : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
 
+		// AIModule + NavigationSystem: villager pathfinding (docs/01_entscheidungen.md, Wegfindung).
+		PublicDependencyModuleNames.AddRange(new string[] { "AIModule", "NavigationSystem" });
+
 		// Json: game data tables in Content/Data/*.json (docs/06_datenformat.md).
 		PrivateDependencyModuleNames.AddRange(new string[] { "Json" });
 

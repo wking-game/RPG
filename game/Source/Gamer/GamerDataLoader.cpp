@@ -17,6 +17,8 @@ namespace
 	const TCHAR* const NodesFile = TEXT("resource_nodes.json");
 	const TCHAR* const RecipesFile = TEXT("recipes.json");
 	const TCHAR* const BuildablesFile = TEXT("buildables.json");
+	const TCHAR* const JobsFile = TEXT("jobs.json");
+	const TCHAR* const NeedsFile = TEXT("needs.json");
 
 	bool IsSnakeCase(const FString& S)
 	{
@@ -200,10 +202,15 @@ namespace
 	};
 
 	/** Reads a file, checks "schema" and "rows", and returns the row objects. */
-	bool ReadTable(const FString& Directory, const TCHAR* FileName, TArray<FRow>& OutRows, uint32& InOutCrc, FGamerDataReport& Report)
+	bool ReadTable(const FString& Directory, const TCHAR* FileName, TArray<FRow>& OutRows, uint32& InOutCrc, FGamerDataReport& Report,
+		bool bOptional = false)
 	{
 		const FString Path = FPaths::Combine(Directory, FileName);
 		FString Text;
+		if (bOptional && !FPaths::FileExists(Path))
+		{
+			return false; // table not used by this data set (e.g. test data without villagers)
+		}
 		if (!FFileHelper::LoadFileToString(Text, *Path))
 		{
 			Report.Errors.Add(FString::Printf(TEXT("%s: Datei fehlt oder ist nicht lesbar (%s)"), FileName, *Path));
@@ -603,8 +610,10 @@ namespace
 
 	void ParseBuildables(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
-		static const TCHAR* const SnapTypes[] = { TEXT("foundation"), TEXT("floor"), TEXT("wall"), TEXT("door"),
-			TEXT("pillar"), TEXT("beam"), TEXT("roof"), TEXT("stairs") };
+		// Where a structure snaps to (sockets in GamerBuildSnapping.cpp). wall_door = wall with a door opening
+		// (also offers a socket for the door), gable/ridge = roof parts that sit differently from roof panels.
+		static const TCHAR* const SnapTypes[] = { TEXT("foundation"), TEXT("floor"), TEXT("wall"), TEXT("wall_door"), TEXT("door"),
+			TEXT("pillar"), TEXT("beam"), TEXT("roof"), TEXT("gable"), TEXT("ridge"), TEXT("stairs") };
 
 		for (const FRow& Source : Rows)
 		{
@@ -640,7 +649,7 @@ namespace
 				}
 				if (!bKnown)
 				{
-					Row.Error(FString::Printf(TEXT("snap \"%s\" unbekannt (erlaubt: foundation, floor, wall, door, pillar, beam, roof, stairs)"), *Snap));
+					Row.Error(FString::Printf(TEXT("snap \"%s\" unbekannt (erlaubt: foundation, floor, wall, wall_door, door, pillar, beam, roof, gable, ridge, stairs)"), *Snap));
 				}
 				else if (!bIsStructure)
 				{
@@ -674,6 +683,212 @@ namespace
 	}
 
 	/** Second pass: every reference must point to an existing row. */
+	void ParseJobs(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
+	{
+		int32 Fallbacks = 0;
+		for (const FRow& Source : Rows)
+		{
+			FRowReader Row(Source.Object, Source.Context, Report);
+			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("kind"), TEXT("station"), TEXT("tool"), TEXT("recipes"),
+				TEXT("stock_target"), TEXT("radius"), TEXT("fallback"), TEXT("deprecated") });
+
+			FGamerJobDef Def;
+			if (!ReadId(Row, { TEXT("job_") }, Def.Id))
+			{
+				continue;
+			}
+			Row.GetString(TEXT("name"), Def.Name, true);
+			FString Kind;
+			if (Row.GetString(TEXT("kind"), Kind, true))
+			{
+				if (Kind == TEXT("harvest")) { Def.Kind = EGamerJobKind::Harvest; }
+				else if (Kind == TEXT("craft")) { Def.Kind = EGamerJobKind::Craft; }
+				else if (Kind == TEXT("build")) { Def.Kind = EGamerJobKind::Build; }
+				else { Row.Error(FString::Printf(TEXT("kind \"%s\" unbekannt (erlaubt: harvest, craft, build)"), *Kind)); }
+			}
+			FString Station;
+			if (Row.GetString(TEXT("station"), Station, false))
+			{
+				Def.Station = FName(*Station);
+			}
+			FString Tool;
+			if (Row.GetString(TEXT("tool"), Tool, false))
+			{
+				Def.Tool = FName(*Tool);
+			}
+			if (const TArray<TSharedPtr<FJsonValue>>* Recipes = Row.GetArray(TEXT("recipes"), Def.Kind == EGamerJobKind::Craft))
+			{
+				for (const TSharedPtr<FJsonValue>& Value : *Recipes)
+				{
+					FString RecipeId;
+					if (Value.IsValid() && Value->TryGetString(RecipeId))
+					{
+						Def.Recipes.Add(FName(*RecipeId));
+					}
+					else
+					{
+						Row.Error(TEXT("\"recipes\" darf nur Rezept-IDs als Text enthalten"));
+					}
+				}
+			}
+			int32 Stock = 0;
+			if (Row.GetInt(TEXT("stock_target"), Stock, false))
+			{
+				if (Stock < 1)
+				{
+					Row.Error(TEXT("stock_target muss mindestens 1 sein"));
+				}
+				Def.StockTarget = Stock;
+			}
+			double Radius = 0.0;
+			if (Row.GetNumber(TEXT("radius"), Radius, false))
+			{
+				if (Radius <= 0.0)
+				{
+					Row.Error(TEXT("radius muss größer als 0 sein"));
+				}
+				Def.Radius = static_cast<float>(Radius);
+			}
+			Row.GetBool(TEXT("fallback"), Def.bFallback);
+			Row.GetBool(TEXT("deprecated"), Def.bDeprecated);
+			Fallbacks += Def.bFallback ? 1 : 0;
+
+			if (Out.Jobs.Contains(Def.Id))
+			{
+				Row.Error(TEXT("ID doppelt vergeben"));
+				continue;
+			}
+			Out.Jobs.Add(Def.Id, MoveTemp(Def));
+		}
+		if (Rows.Num() > 0 && Fallbacks != 1)
+		{
+			Report.Errors.Add(FString::Printf(TEXT("%s: genau ein Beruf braucht \"fallback\": true (Ausweich-Beruf), gefunden: %d"), JobsFile, Fallbacks));
+		}
+	}
+
+	void ParseNeeds(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
+	{
+		for (const FRow& Source : Rows)
+		{
+			FRowReader Row(Source.Object, Source.Context, Report);
+			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("kind"), TEXT("decay_per_day"), TEXT("threshold"), TEXT("restore_per_day"),
+				TEXT("foods"), TEXT("work_speed_when_unmet"), TEXT("leave_after_days"), TEXT("deprecated") });
+
+			FGamerNeedDef Def;
+			if (!ReadId(Row, { TEXT("need_") }, Def.Id))
+			{
+				continue;
+			}
+			Row.GetString(TEXT("name"), Def.Name, true);
+			FString Kind;
+			if (Row.GetString(TEXT("kind"), Kind, true))
+			{
+				if (Kind == TEXT("food")) { Def.Kind = EGamerNeedKind::Food; }
+				else if (Kind == TEXT("sleep")) { Def.Kind = EGamerNeedKind::Sleep; }
+				else if (Kind == TEXT("shelter")) { Def.Kind = EGamerNeedKind::Shelter; }
+				else { Row.Error(FString::Printf(TEXT("kind \"%s\" unbekannt (erlaubt: food, sleep, shelter)"), *Kind)); }
+			}
+			auto ReadFraction = [&Row](const TCHAR* Field, float& OutValue, double Min, double Max)
+			{
+				double Value = 0.0;
+				if (Row.GetNumber(Field, Value, false))
+				{
+					if (Value < Min || Value > Max)
+					{
+						Row.Error(FString::Printf(TEXT("%s muss zwischen %g und %g liegen"), Field, Min, Max));
+					}
+					OutValue = static_cast<float>(Value);
+				}
+			};
+			ReadFraction(TEXT("decay_per_day"), Def.DecayPerDay, 0.0, 100.0);
+			ReadFraction(TEXT("threshold"), Def.Threshold, 0.0, 1.0);
+			ReadFraction(TEXT("restore_per_day"), Def.RestorePerDay, 0.0, 1000.0);
+			ReadFraction(TEXT("work_speed_when_unmet"), Def.WorkSpeedWhenUnmet, 0.1, 1.0);
+			ReadFraction(TEXT("leave_after_days"), Def.LeaveAfterDays, 0.0, 1000.0);
+			if (const TArray<TSharedPtr<FJsonValue>>* Foods = Row.GetArray(TEXT("foods"), Def.Kind == EGamerNeedKind::Food))
+			{
+				for (const TSharedPtr<FJsonValue>& Value : *Foods)
+				{
+					const TSharedPtr<FJsonObject> Food = Value.IsValid() && Value->Type == EJson::Object ? Value->AsObject() : nullptr;
+					FString Item;
+					double Amount = 0.0;
+					if (!Food || !Food->TryGetStringField(TEXT("item"), Item) || !Food->TryGetNumberField(TEXT("value"), Amount))
+					{
+						Row.Error(TEXT("\"foods\": jeder Eintrag braucht { \"item\": …, \"value\": … }"));
+						continue;
+					}
+					if (Amount <= 0.0 || Amount > 1.0)
+					{
+						Row.Error(FString::Printf(TEXT("\"foods\": value von %s muss zwischen 0 und 1 liegen"), *Item));
+					}
+					FGamerFoodValue& Entry = Def.Foods.AddDefaulted_GetRef();
+					Entry.Item = FName(*Item);
+					Entry.Value = static_cast<float>(Amount);
+				}
+			}
+			Row.GetBool(TEXT("deprecated"), Def.bDeprecated);
+
+			if (Out.Needs.Contains(Def.Id))
+			{
+				Row.Error(TEXT("ID doppelt vergeben"));
+				continue;
+			}
+			Out.Needs.Add(Def.Id, MoveTemp(Def));
+		}
+	}
+
+	void CheckVillagerReferences(const FGamerDataSet& Data, FGamerDataReport& Report)
+	{
+		for (const TPair<FName, FGamerJobDef>& Pair : Data.Jobs)
+		{
+			const FGamerJobDef& Job = Pair.Value;
+			const FString Where = FString::Printf(TEXT("%s (%s)"), JobsFile, *Job.Id.ToString());
+			if (!Job.Station.IsNone() && !Data.Buildables.Contains(Job.Station))
+			{
+				Report.Errors.Add(FString::Printf(TEXT("%s: station \"%s\" gibt es nicht"), *Where, *Job.Station.ToString()));
+			}
+			if (!Job.Tool.IsNone())
+			{
+				bool bToolExists = false;
+				for (const TPair<FName, FGamerItemDef>& Item : Data.Items)
+				{
+					bToolExists |= Item.Value.Category == EGamerItemCategory::Tool && Item.Value.Tool.Type == Job.Tool;
+				}
+				if (!bToolExists)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s: kein Werkzeug vom Typ \"%s\""), *Where, *Job.Tool.ToString()));
+				}
+			}
+			for (const FName RecipeId : Job.Recipes)
+			{
+				const FGamerRecipeDef* Recipe = Data.Recipes.Find(RecipeId);
+				if (!Recipe)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s: Rezept \"%s\" gibt es nicht"), *Where, *RecipeId.ToString()));
+				}
+				else if (Recipe->Station != Job.Station)
+				{
+					Report.Warnings.Add(FString::Printf(TEXT("%s: Rezept %s gehört zu einer anderen Station"), *Where, *RecipeId.ToString()));
+				}
+			}
+		}
+		for (const TPair<FName, FGamerNeedDef>& Pair : Data.Needs)
+		{
+			for (const FGamerFoodValue& Food : Pair.Value.Foods)
+			{
+				const FGamerItemDef* Item = Data.Items.Find(Food.Item);
+				if (!Item)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s (%s): Gegenstand \"%s\" gibt es nicht"), NeedsFile, *Pair.Key.ToString(), *Food.Item.ToString()));
+				}
+				else if (Item->Category != EGamerItemCategory::Food)
+				{
+					Report.Warnings.Add(FString::Printf(TEXT("%s (%s): %s ist kein Essen (category)"), NeedsFile, *Pair.Key.ToString(), *Food.Item.ToString()));
+				}
+			}
+		}
+	}
+
 	void CheckReferences(const FGamerDataSet& Data, FGamerDataReport& Report)
 	{
 		// Tool types that exist, with the highest tier available for each.
@@ -890,6 +1105,8 @@ void FGamerDataSet::Reset()
 	ResourceNodes.Reset();
 	Recipes.Reset();
 	Buildables.Reset();
+	Jobs.Reset();
+	Needs.Reset();
 	Checksum = 0;
 }
 
@@ -904,18 +1121,23 @@ bool GamerData::LoadFromDirectory(const FString& Directory, FGamerDataSet& Out, 
 	const int32 ErrorsBefore = Report.Errors.Num();
 
 	uint32 Crc = 0;
-	TArray<FRow> ItemRows, NodeRows, RecipeRows, BuildableRows;
+	TArray<FRow> ItemRows, NodeRows, RecipeRows, BuildableRows, JobRows, NeedRows;
 	ReadTable(Directory, ItemsFile, ItemRows, Crc, Report);
 	ReadTable(Directory, NodesFile, NodeRows, Crc, Report);
 	ReadTable(Directory, RecipesFile, RecipeRows, Crc, Report);
 	ReadTable(Directory, BuildablesFile, BuildableRows, Crc, Report);
+	ReadTable(Directory, JobsFile, JobRows, Crc, Report, true);
+	ReadTable(Directory, NeedsFile, NeedRows, Crc, Report, true);
 	Out.Checksum = Crc;
 
 	ParseItems(ItemRows, Out, Report, bCheckAssetPaths);
 	ParseNodes(NodeRows, Out, Report, bCheckAssetPaths);
 	ParseRecipes(RecipeRows, Out, Report);
 	ParseBuildables(BuildableRows, Out, Report, bCheckAssetPaths);
+	ParseJobs(JobRows, Out, Report);
+	ParseNeeds(NeedRows, Out, Report);
 	CheckReferences(Out, Report);
+	CheckVillagerReferences(Out, Report);
 	CheckReachability(Out, Report);
 
 	return Report.Errors.Num() == ErrorsBefore;
