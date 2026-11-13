@@ -46,9 +46,12 @@ Regeln 1, 3, 4, 7 sind Vorschläge von Claude; ihr Status steht in `docs/01_ents
 - Unreal-Präfixe: `A` Actor, `U` UObject, `F` Struct, `E` Enum, `I` Interface.
 - IDs in Daten: `snake_case`, stabil, nie wiederverwenden.
 
-## Aktueller Stand (2026-11-12)
-- Projekt „Gamer“ liegt in `game/` (C++, Vorlage TP_Blank), noch nie gebaut. Projektordner: `D:\gamer\gamer`.
-- Unreal Engine 5.8.4 (Launcher-Build) in `D:\gamer\unreal\UE_5.8`. Dedicated-Server-Target erst mit späterem Source-Build.
-- Git ist vorhanden (`D:\Program Files\Git`).
-- Entwicklungs-PC: RTX 3070 (8 GB VRAM), 16 GB RAM.
-- Details: `docs/04_technische_ziele.md`, `docs/03_setup_checkliste.md`.
+## Aktueller Stand (2026-11-13)
+- Projekt „Gamer“ liegt in `game/` (C++, Vorlage TP_Blank). Projektordner: `D:\gamer\gamer`. Phase 0 abgeschlossen, Phase 1 (Vertical Slice „Siedlung“) beginnt mit der Spielfigur im Koop.
+- Engine: **Source-Build 5.8.4** in `E:\UE58` (Tag 5.8.4-release, ohne Mac/Android/Linux; iOS-Teil nachgeladen, weil UAT ihn braucht). `Gamer.uproject` zeigt per GUID darauf. Der Launcher-Build in `D:\gamer\unreal\UE_5.8` wird nicht mehr benutzt.
+- Dedicated Server: Target `GamerServer`, Bauen mit `tools/build.ps1 Server`, Paketieren mit `tools/build.ps1 PackageServer`. Mehrspieler-Test mit `tools/mp_test.ps1` (Server + N Spieler ohne Grafik).
+- Höchstens 8 Spieler pro Welt (`MaxPlayers=8` in `game/Config/DefaultGame.ini`).
+- `game/Config/DefaultEngine.ini` enthält lokal ein Token und wird bewusst nicht committet.
+- Git: `E:\Git\cmd\git.exe` (nicht im PATH der Werkzeuge). Visual Studio Build Tools in `E:\VS\BuildTools`, Blender in `E:\Blender`.
+- Entwicklungs-PC: RTX 3070 (8 GB VRAM), 16 GB RAM; im Alltag oft nur 3–4 GB RAM frei, Mehrspieler-Tests mit vielen Spielern deshalb sparsam.
+- Details: `docs/02_phasenplan.md`, `docs/04_technische_ziele.md`, `docs/03_setup_checkliste.md`.
