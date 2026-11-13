@@ -18,9 +18,9 @@
 |---|---|:-:|---|---|
 | `slot_head` | Helm | ✓ | Fellmütze, Lederhaube, Spangenhelm, Brillenhelm | |
 | `slot_shoulders` | Schulter | ✓ | Fellkragen, Leder-Schulterstücke, Lamellen | neu gegenüber der ersten Fassung |
-| `slot_torso` | Oberkörper | ✓ | Tunika, Gambeson, Lederpanzer, Kettenhemd | **in der Slot-Antwort nicht genannt – offen**, vermutlich vergessen. Vorschlag: ein Slot, Unterkleidung gehört zur Grundfigur (wie in 06) |
+| `slot_torso` | Oberkörper | ✓ | Tunika, Gambeson, Lederpanzer, Kettenhemd | **bestätigt am 2026-11-13:** ein Slot, Unterkleidung gehört zur Grundfigur (wie in 06); schützt die Trefferzone „Körper“ |
 | `slot_hands` | Hände | ✓ | Handschuhe, Armschienen | ein Paar-Mesh |
-| `slot_ring_1`, `slot_ring_2` | 2 × Ring | – | Ringe | nur Icon; **Widerspruch zu „kein Schmuck-Slot“ offen** |
+| `slot_ring_1`, `slot_ring_2` | 2 × Ring | – | Ringe mit Wirkung | nur Icon; **geklärt am 2026-11-13:** Ringe sind die Ausnahme vom „kein Schmuck-Slot“, anderer Schmuck bleibt Handelsware |
 | `slot_legs` | Beine | ✓ | Hose, Wickelgamaschen, Beinschienen | Basishose gehört zur Grundfigur |
 | `slot_feet` | Füße | ✓ | Bundschuhe, Stiefel | ein Paar-Mesh |
 | `slot_cloak` | Umhang | ✓ | Wollumhang, Fellumhang | **wird nach dem ersten Winter freigeschaltet** |
@@ -97,12 +97,12 @@ Gesamtbudget aus dem Asset-Plan: Spielerfigur **40.000 Dreiecke** mit voller Aus
 - **Zweiter Körpertyp:** Mit eigenen Meshes pro Körpertyp verdoppelt sich die Zahl auf rund 84. Mit **einem Mesh pro Teil plus Formanpassung (Morph Target)** bleibt es bei rund 42.
 
 ## 9. Entscheidungen
-**Beantwortet am 2026-11-12:** Slots (Helm, Schulter, Hände, 2 × Ring, Beine, Füße, Umhang nach dem ersten Winter) · Haltbarkeit auch für Rüstung · keine automatische Spielerfarbe.
+**Beantwortet am 2026-11-12:** Slots (Helm, Schulter, Hände, 2 × Ring, Beine, Füße, Umhang nach dem ersten Winter) · Haltbarkeit auch für Rüstung · keine automatische Spielerfarbe (die Koop-Spielerfarbe vom 2026-11-13 gilt nur für Namensschild, Karte und Markierung, nicht für die Kleidung).
+
+**Beantwortet am 2026-11-13:** Oberkörper-Slot ja, ein Slot · Ringe sind die Ausnahme vom „kein Schmuck-Slot“, Fibeln/Armringe bleiben Handelsware.
 
 **Noch offen:**
-1. **Oberkörper-Slot:** Gibt es ihn (vermutlich vergessen)? Einer oder zwei Lagen?
-2. **Ringe vs. „kein Schmuck-Slot“:** Sind Ringe die Ausnahme, und Fibeln/Armringe bleiben Handelsware?
-3. **Umhang:** nur Optik oder auch Kälteschutz für den Winter?
-4. **Zweiter Körpertyp:** ein Mesh mit Formanpassung (Empfehlung) oder eigene Meshes?
-5. **Helm ausblendbar** (Option im Menü)?
-6. **Schutzwerte nach Schadensart** (Hieb, Stich, Wucht) wie in Kingdom Come, oder ein einziger Rüstungswert?
+1. **Umhang:** nur Optik oder auch Kälteschutz für den Winter?
+2. **Zweiter Körpertyp:** ein Mesh mit Formanpassung (Empfehlung) oder eigene Meshes? (Dass es zwei frei kombinierbare Körperbauten gibt, ist seit 2026-11-13 entschieden; offen ist nur die technische Umsetzung.)
+3. **Helm ausblendbar** (Option im Menü)?
+4. **Schutzwerte nach Schadensart** (Hieb, Stich, Wucht) wie in Kingdom Come, oder ein einziger Rüstungswert?

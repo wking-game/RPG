@@ -121,7 +121,7 @@ Dorfbewohner nutzen dieselben Werkzeug-Meshes. Ihre Arbeitsgeschwindigkeit häng
 | `item_hacksilver` | Hacksilber (Währung) | – | 4 | Handel bestätigt: Händler, nachts zusätzlich ein Schwarzmarkt-Händler |
 | `item_contraband_*` | Schwarzmarkt-Ware (seltene Bauteile, Rezepte, Bossmaterial-Splitter) | – | 4 | nur beim Nacht-Händler; Inhalte offen |
 | `item_jewelry_*` | Schmuck (Fibel, Armring) | – | 4 | nur Handelsware, **kein Ausrüstungs-Slot** (bestätigt) |
-| `item_ring_*` | Ringe für die 2 Ring-Slots | – | 3 | Ring-Slots am 2026-11-12 bestätigt; Verhältnis zu „kein Schmuck-Slot“ noch offen. Nur Icon, kein Mesh |
+| `item_ring_*` | Ringe für die 2 Ring-Slots | – | 3 | Ring-Slots am 2026-11-12 bestätigt; am 2026-11-13 geklärt: Ringe sind die Ausnahme vom „kein Schmuck-Slot“. Nur Icon, kein Mesh |
 | `item_trophy_boss_*` | Trophäe je Boss | ✓ | 4 | **eigenes Design**, platzierbar in der Siedlung |
 | `item_quest_*` | Quest-Gegenstände | – | 4 | pro Questlinie |
 | `item_portal_key_*` | Portal-Fokus | ✓ | 5 | für das Portalsystem im Spätspiel |

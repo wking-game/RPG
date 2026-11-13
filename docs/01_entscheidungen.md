@@ -65,15 +65,35 @@ Status: **bestätigt** = vom Nutzer gesagt · **Vorschlag** = von Claude, noch n
 | Haltbarkeit | Werkzeuge und Waffen haben Haltbarkeit, einfach gehalten (Reparatur) | bestätigt (2026-11-12) |
 | Handel | Händler; nachts zusätzlich ein Schwarzmarkt-Händler. Währung Hacksilber | bestätigt (2026-11-12; Hacksilber ist Vorschlag) |
 | Tierhaltung | ja, einfach gehalten; Tierarten passend zu den Tier-Stufen (von Claude so gedeutet) | bestätigt (2026-11-12) |
-| Schmuck-Slot | nein; Schmuck ist nur Handelsware | bestätigt (2026-11-12) |
+| Schmuck-Slot | nein; Schmuck ist nur Handelsware | bestätigt (2026-11-12); präzisiert am 2026-11-13: Ringe sind die Ausnahme (siehe „Ring-Slots“ unten) |
 | Feldbau (Gerste, Flachs) | ab Phase 2 | bestätigt (2026-11-12) |
 | Armbrust: Freischaltung | über bestimmte Attribute plus eine Fähigkeit im Skilltree (nicht über einen Meilenstein) | bestätigt (2026-11-12) |
 | Armbrust: ab welcher Stufe | T3 (Claude) oder T4 als seltene Import-/Schwarzmarktware (ChatGPT/Codex, `design/inbox/05_assets_armbrust.md`) | offen |
 | Haltbarkeit Rüstung | ja (einfach gehalten wie Waffen und Werkzeuge) | bestätigt (2026-11-12) |
-| Ausrüstungs-Slots | Helm, Schulter, Hände, 2 × Ring, Beine, Füße, Umhang. Der Umhang wird nach dem ersten Winter freigeschaltet | bestätigt (2026-11-12) |
-| Ausrüstungs-Slot Oberkörper (Brust/Rüstung) | in der Slot-Antwort nicht genannt – vermutlich vergessen? | offen |
-| Ring-Slots vs. „kein Schmuck-Slot“ | Widerspruch: oben „Schmuck-Slot: nein“, jetzt „2 × Ring“. Sind Ringe eine Ausnahme (z. B. besondere Ringe mit Wirkung) und Fibeln/Armringe bleiben Handelsware? | offen |
+| Ausrüstungs-Slots | Helm, Schulter, **Oberkörper**, Hände, 2 × Ring, Beine, Füße, Umhang. Der Umhang wird nach dem ersten Winter freigeschaltet | bestätigt (2026-11-12; Oberkörper ergänzt am 2026-11-13) |
+| Ausrüstungs-Slot Oberkörper (Brust/Rüstung) | ja, ein Slot (Tunika, Gambeson, Lederpanzer, Kettenhemd); Unterkleidung gehört zur Grundfigur | bestätigt (2026-11-13, Nutzer: „Oberkörper einbinden“; „ein Slot“ ist der bisherige Vorschlag) |
+| Ring-Slots vs. „kein Schmuck-Slot“ | Ringe sind die Ausnahme: 2 Ring-Slots für Ringe mit Wirkung bleiben. Fibeln, Armringe, Ketten bleiben Handelsware ohne Slot | bestätigt (2026-11-13, Nutzer: „Schmuck bleibt“, von Claude so gedeutet) |
 | Jahreszeiten | Es gibt Winter; der erste Winter ist nicht hart (abgeleitet aus der Slot-Antwort) | bestätigt (2026-11-12) |
 | Verderben – Dauer | Fleisch 4 Tage, Obst und Gemüse 2,5 Tage, wenn nicht trocken gelagert; sonstige Lebensmittel 3 Tage | bestätigt (2026-11-12) |
 | Verderben – Auslegung | Spieltage? Hält trockene Lagerung unbegrenzt oder nur länger? Verderben auch gekochte Speisen („sonstige Lebensmittel 3 Tage“) – das widerspricht „nur Rohes“? | offen |
+| Datenformat Spielinhalte | JSON-Dateien, eine pro Tabelle (`items`, `resource_nodes`, `recipes`, `buildables`), Aufbau `{ "schema", "rows" }`, Details in `docs/06_datenformat.md` | bestätigt (2026-11-13) |
+| Ort der Datendateien | `game/Content/Data/` (statt `data/`, damit sie beim Paketieren mitkommen); `data/README.md` bleibt als Wegweiser | bestätigt (2026-11-13) |
+| Werkzeug-IDs | Stufe in der ID (`tool_axe_t1`, `tool_axe_t2` …); `tool_axe` bleibt der Name des gemeinsamen Modells | bestätigt (2026-11-13) |
+| Startwerte Phase 1 | Werte aus `docs/06_datenformat.md` Abschnitt 6 zum Ausprobieren, inklusive Nachwachsen von Bäumen, Felsen, Sträuchern | bestätigt (2026-11-13, als Startwerte zum Anpassen) |
 | Herkunft 3D-Assets | Mittelweg: Baukasten (Wände, Böden, Dächer, Pfosten, Türen) erzeugt Claude per Python-Skript in Blender nach den Steckbriefen; organische Einzelobjekte (Felsen, Stümpfe, Werkzeuge, Items, Kessel …) aus einem KI-3D-Werkzeug mit automatischer Nachbearbeitung in Blender; Texturen (z. B. Trim-Sheet) per KI-Bildgenerator, vom Nutzer geprüft; Figuren später. Welcher KI-3D-Dienst: offen (Lizenzvergleich vorher). Alle KI-Inhalte ins Asset-Log | bestätigt (2026-11-12) |
+| Figuren: Körpertypen | zwei Körperbauten (schmal, kräftig), frei mit jedem Kopf, Bart und jeder Frisur kombinierbar, nicht an „männlich/weiblich“ gebunden; ein gemeinsames Skelett | bestätigt (2026-11-13, Empfehlung von Claude übernommen) |
+| Figuren: Alter der Bewohner | nur Erwachsene; Ältere später als günstige Variante (graue Haare, gebeugte Haltung); keine Kinder im ersten Wurf | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Bewohner: Tod | Bewohner können sterben, endgültig, aber nur durch Gewalt; Hunger und Unzufriedenheit führen zum Weggehen, nicht zum Tod. Weltoption „Bewohner unsterblich“. Gefallene bekommen Saga-Eintrag oder Gedenkstein | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Bewohner: Persönlichkeit | Namen im altnordischen Stil und 1–2 Eigenschaften aus einer kleinen Liste (z. B. fleißig, Langschläfer, kräftig, geschickt, gesellig, Einzelgänger), Wirkung ±10–20 %; ab Phase 2. Vorlieben später | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Sprache und Dialoge | keine Sprachausgabe, keine Lippen-Synchronität; Gespräche als Text mit Gesten, dazu kurze Laute/Rufe in einer erfundenen, altnordisch klingenden Sprache | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Gegnerarten und Bosse | zuerst nur Menschen und Tiere; Bosse in der realistischen Fassung. Sagenwesen höchstens später als Weltoption „Sagenwelt“ (beantwortet die offene Frage aus dem Design-Register) | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Reit- und Zugtiere | kein Reiten im ersten Wurf; Zugtiere für Karren eventuell später, gesteuert von Dorfbewohnern, nicht vom Spieler | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Tod im Koop | erst niedergeschlagen, Mitspieler können ca. 45 s lang wiederbeleben; danach (oder solo) Aufwachen am eigenen Bett bzw. im Lager. Ausrüstung bleibt am Körper, Rucksackinhalt liegt als Bündel am Todesort, ohne Ablaufzeit. Strengere Regeln nur als Weltoption | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Proportionen der Figuren | fast realistisch, leicht überzeichnet (Hände, Füße, Schultern ca. 10 % kräftiger), klare Silhouetten; passend zu „Klarform-Saga“ und zum UE5-Standardskelett | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Spieler im Koop unterscheiden | Namensschild über dem Kopf (blendet mit Entfernung aus, abschaltbar) plus feste Spielerfarbe in Koop-Liste, Karte und als kleiner Ring/Rand, unabhängig von der Kleidung | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Kampf: Angriffe | Richtungsangriffe: drei Hiebrichtungen (links, rechts, oben) plus Stoß; zusätzlich ein einfacher Modus ohne Richtungen für Gamepad und Einsteiger | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Kampf: Zielerfassung | ja, zuschaltbar, mit Zielwechsel in Gruppen | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Kampf: Ausweichen | kurzer Ausweichschritt, keine Rolle; gegen Dauer-Ausweichen eine kurze Erholungszeit, keine Ausdauer | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Kampf: Friendly Fire | Weltoption, standardmäßig aus | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Kampf: Trefferzonen | drei Zonen: Kopf mehr Schaden, Körper normal, Arme/Beine weniger; geschützt durch die passenden Rüstungs-Slots (Körper durch den Oberkörper-Slot, seit 2026-11-13) | bestätigt (2026-11-13, Empfehlung übernommen) |
+| Abnutzung von Waffen | voller Schaden bis Haltbarkeit 0, dann „beschädigt“ mit halbem Schaden; die Waffe verschwindet nicht, Reparatur stellt sie wieder her | bestätigt (2026-11-13, Empfehlung übernommen) |
