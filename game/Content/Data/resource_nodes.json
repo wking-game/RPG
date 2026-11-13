@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "rows": [
+    { "id": "res_tree_pine", "name": "Kiefer", "required_tool": { "type": "axe", "min_tier": 1 }, "work_seconds": 6.0,
+      "drops": [ { "item": "item_log", "min": 2, "max": 3 } ], "regrow_days": 3 },
+    { "id": "res_tree_birch", "name": "Birke", "required_tool": { "type": "axe", "min_tier": 1 }, "work_seconds": 5.0,
+      "drops": [ { "item": "item_log", "min": 2, "max": 2 } ], "regrow_days": 3 },
+    { "id": "res_rock_small", "name": "kleiner Fels", "required_tool": { "type": "pickaxe", "min_tier": 1 }, "work_seconds": 3.0,
+      "drops": [ { "item": "item_stone", "min": 2, "max": 2 } ], "regrow_days": 5 },
+    { "id": "res_rock_medium", "name": "mittlerer Fels", "required_tool": { "type": "pickaxe", "min_tier": 1 }, "work_seconds": 6.0,
+      "drops": [ { "item": "item_stone", "min": 4, "max": 4 } ], "regrow_days": 5 },
+    { "id": "res_rock_large", "name": "großer Fels", "required_tool": { "type": "pickaxe", "min_tier": 1 }, "work_seconds": 10.0,
+      "drops": [ { "item": "item_stone", "min": 8, "max": 8 } ], "regrow_days": 5 },
+    { "id": "res_berry_bush", "name": "Beerenstrauch", "work_seconds": 2.0,
+      "drops": [ { "item": "item_berries", "min": 3, "max": 5 } ], "regrow_days": 1 }
+  ]
+}

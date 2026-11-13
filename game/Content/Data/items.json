@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "rows": [
+    { "id": "item_log", "name": "Baumstamm", "category": "resource", "tier": 1, "max_stack": 10, "weight_kg": 20.0 },
+    { "id": "item_stone", "name": "Stein", "category": "resource", "tier": 1, "max_stack": 20, "weight_kg": 5.0 },
+    { "id": "item_plank", "name": "Bretter", "category": "material", "tier": 1, "max_stack": 40, "weight_kg": 2.0 },
+    { "id": "item_berries", "name": "Beeren", "category": "food", "tier": 1, "max_stack": 50, "weight_kg": 0.1 },
+    { "id": "item_meal", "name": "einfache Mahlzeit", "category": "food", "tier": 1, "max_stack": 10, "weight_kg": 0.5 },
+
+    { "id": "tool_axe_t1", "name": "Steinaxt", "category": "tool", "tier": 1, "max_stack": 1, "weight_kg": 2.0,
+      "tool": { "type": "axe", "durability": 150, "work_speed": 1.0 } },
+    { "id": "tool_pickaxe_t1", "name": "Steinspitzhacke", "category": "tool", "tier": 1, "max_stack": 1, "weight_kg": 3.0,
+      "tool": { "type": "pickaxe", "durability": 150, "work_speed": 1.0 } },
+    { "id": "tool_hammer_t1", "name": "Steinhammer", "category": "tool", "tier": 1, "max_stack": 1, "weight_kg": 1.5,
+      "tool": { "type": "hammer", "durability": 150, "work_speed": 1.0 } }
+  ]
+}

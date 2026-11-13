@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "rows": [
+    { "id": "recipe_axe_t1", "inputs": [ { "item": "item_log", "count": 1 }, { "item": "item_stone", "count": 2 } ],
+      "outputs": [ { "item": "tool_axe_t1", "count": 1 } ], "work_seconds": 5.0 },
+    { "id": "recipe_pickaxe_t1", "inputs": [ { "item": "item_log", "count": 1 }, { "item": "item_stone", "count": 2 } ],
+      "outputs": [ { "item": "tool_pickaxe_t1", "count": 1 } ], "work_seconds": 5.0 },
+    { "id": "recipe_hammer_t1", "inputs": [ { "item": "item_log", "count": 1 }, { "item": "item_stone", "count": 1 } ],
+      "outputs": [ { "item": "tool_hammer_t1", "count": 1 } ], "work_seconds": 4.0 },
+    { "id": "recipe_plank", "station": "building_workbench", "inputs": [ { "item": "item_log", "count": 1 } ],
+      "outputs": [ { "item": "item_plank", "count": 4 } ], "work_seconds": 4.0 },
+    { "id": "recipe_meal", "station": "building_campfire", "inputs": [ { "item": "item_berries", "count": 3 } ],
+      "outputs": [ { "item": "item_meal", "count": 1 } ], "work_seconds": 10.0 }
+  ]
+}

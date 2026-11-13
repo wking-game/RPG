@@ -35,12 +35,19 @@ Grundsatz: erst ein kleiner, spielbarer Vertical Slice, dann ausbauen. Reihenfol
 - Nicht automatisch getestet: Tastatur-/Maussteuerung und Kamera (brauchen Grafik). Zum Selbst-Ausprobieren: `tools/play_local.ps1`.
 - Projekt-Standards in `DefaultEngine.ini` (2026-11-13): `GlobalDefaultGameMode=/Script/Gamer.GamerGameMode`, `ServerDefaultMap=Template_Default` (vorher `Entry`, eine leere Karte, in der Figuren fallen würden). Getestet: Server ohne Zusatzangaben lädt `Template_Default` mit `GamerGameMode`, 2 Spieler, Bewegung kommt beim anderen Spieler an.
 
+## Stand Phase 1, Schritt 2 (2026-11-13): Datenbasis
+- Format bestätigt: `docs/06_datenformat.md`. Vier JSON-Tabellen in `game/Content/Data/`: `items` (8), `resource_nodes` (6), `recipes` (5), `buildables` (16), Startwerte aus Abschnitt 6 des Formatdokuments. Modell- und Icon-Pfade noch leer (Assets nicht importiert).
+- C++: `GamerDataTypes.h` (Zeilentypen), `GamerDataLoader` (Einlesen und Prüfen: Pflichtfelder, unbekannte Felder, ID-Format und -Präfix, doppelte IDs, Wertebereiche, Verweise auf Gegenstände/Stationen/Werkzeugtypen, Asset-Pfade), `UGamerDataSubsystem` (lädt beim Start auf Server und Spielern, Abfrage per ID, Konsolenbefehl `gamer.ReloadData`, Prüfsumme im Protokoll).
+- Kerndateien (mit Freigabe): `Gamer.Build.cs` bekommt das Modul `Json` (über die Engine nur für Header sichtbar, nicht zum Linken), `DefaultGame.ini` packt den Ordner `Data` beim Paketieren ein.
+- **Tests bestanden:** `tools/test_data.ps1` → `Gamer.Data.ShippedDataIsValid` und `Gamer.Data.ValidatorFindsErrors` (absichtlich kaputte Daten, alle 10 Fehlerarten erkannt) grün, ca. 70 s. Mehrspieler: Server und 2 Spieler laden dieselben Daten, Prüfsumme `C0022D82`, 0 Fehler, 0 Warnungen – sowohl mit dem Editor als Server als auch mit dem paketierten `GamerServer.exe` (Paket mit `Template_Default`, 5,6 min; die JSON-Dateien kommen also mit ins Paket).
+- Noch nicht umgesetzt: Prüfsummen-Vergleich beim Beitritt (Spieler mit anderen Daten abweisen) – laut Formatdokument vor dem ersten öffentlichen Test. Die Daten werden noch von keiner Spielmechanik benutzt; das kommt mit Sammeln, Inventar und Bauen (Schritte 3 und 4).
+
 ## Hinweis zum Dedicated-Server-Target (Phase 0)
 Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es einen Source-Build der Engine (Epic-Doku „Setting Up Dedicated Servers“). Das „Dedicated-Server-Target“ in Phase 0 geht deshalb erst mit Source-Build. Bis dahin kann mit dem Launcher-Build entwickelt und mit Listen-Server getestet werden. Die Entscheidung ist offen (siehe `docs/01_entscheidungen.md`).
 
 ## Parallel laufend
 - **Design (ChatGPT):** Art Direction und Siedlungs-/UI-Konzepte vor Phase 1; danach phasenweise.
-- **Daten:** Spielinhalte entstehen als Tabellen in `data/`, nicht im Code.
+- **Daten:** Spielinhalte entstehen als JSON-Tabellen in `game/Content/Data/` (Format: `docs/06_datenformat.md`), nicht im Code.
 - **Messen:** ab Phase 1 regelmäßig Installationsgröße (gecookt), Client-RAM und Server-Tick; ab Phase 2 Skalierungstests mit Bots (2 → 4 → 8 Spieler).
 
 ## Ehrliche Einschätzung

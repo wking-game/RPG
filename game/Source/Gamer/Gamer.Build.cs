@@ -10,7 +10,8 @@ public class Gamer : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		// Json: game data tables in Content/Data/*.json (docs/06_datenformat.md).
+		PrivateDependencyModuleNames.AddRange(new string[] { "Json" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
