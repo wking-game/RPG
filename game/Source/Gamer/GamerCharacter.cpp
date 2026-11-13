@@ -1,6 +1,12 @@
 #include "GamerCharacter.h"
 
 #include "Gamer.h"
+#include "GamerDataSubsystem.h"
+#include "GamerInventoryComponent.h"
+#include "GamerResourceNode.h"
+#include "GamerWorkComponent.h"
+#include "EngineUtils.h"
+#include "Engine/World.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -64,6 +70,9 @@ AGamerCharacter::AGamerCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	Inventory = CreateDefaultSubobject<UGamerInventoryComponent>(TEXT("Inventory"));
+	Work = CreateDefaultSubobject<UGamerWorkComponent>(TEXT("Work"));
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 
@@ -114,6 +123,11 @@ void AGamerCharacter::Tick(float DeltaSeconds)
 	{
 		TestWalkRemaining -= DeltaSeconds;
 		AddMovementInput(GetActorForwardVector(), 1.f);
+	}
+
+	if (IsLocallyControlled())
+	{
+		UpdateFocus();
 	}
 
 	const float LogInterval = CVarLogPositions.GetValueOnGameThread();
@@ -184,6 +198,31 @@ void AGamerCharacter::BuildInput()
 
 	MappingContext->MapKey(JumpAction, EKeys::SpaceBar);
 	MappingContext->MapKey(JumpAction, EKeys::Gamepad_FaceButton_Bottom);
+
+	// E: gather the resource in front of you.
+	InteractAction = NewObject<UInputAction>(this, TEXT("IA_Interact"));
+	InteractAction->ValueType = EInputActionValueType::Boolean;
+	MappingContext->MapKey(InteractAction, EKeys::E);
+	MappingContext->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
+
+	// Tab: open/close the start crafting menu.
+	CraftMenuAction = NewObject<UInputAction>(this, TEXT("IA_CraftMenu"));
+	CraftMenuAction->ValueType = EInputActionValueType::Boolean;
+	MappingContext->MapKey(CraftMenuAction, EKeys::Tab);
+	MappingContext->MapKey(CraftMenuAction, EKeys::Gamepad_FaceButton_Top);
+
+	// 1..9: craft the recipe with that number. One action; the key number arrives as the value.
+	CraftSlotAction = NewObject<UInputAction>(this, TEXT("IA_CraftSlot"));
+	CraftSlotAction->ValueType = EInputActionValueType::Axis1D;
+	const FKey NumberKeys[] = { EKeys::One, EKeys::Two, EKeys::Three, EKeys::Four, EKeys::Five,
+		EKeys::Six, EKeys::Seven, EKeys::Eight, EKeys::Nine };
+	for (int32 Index = 0; Index < UE_ARRAY_COUNT(NumberKeys); ++Index)
+	{
+		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(CraftSlotAction, NumberKeys[Index]);
+		UInputModifierScalar* Number = NewObject<UInputModifierScalar>(MappingContext);
+		Number->Scalar = FVector(Index + 1, 1.f, 1.f);
+		Mapping.Modifiers.Add(Number);
+	}
 }
 
 void AGamerCharacter::NotifyControllerChanged()
@@ -212,6 +251,9 @@ void AGamerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGamerCharacter::Move);
 		Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGamerCharacter::Look);
+		Input->BindAction(InteractAction, ETriggerEvent::Started, this, &AGamerCharacter::Interact);
+		Input->BindAction(CraftMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::ToggleCraftMenu);
+		Input->BindAction(CraftSlotAction, ETriggerEvent::Started, this, &AGamerCharacter::CraftSlot);
 	}
 	else
 	{
@@ -237,6 +279,97 @@ void AGamerCharacter::Look(const FInputActionValue& Value)
 	const FVector2D Axis = Value.Get<FVector2D>();
 	AddControllerYawInput(Axis.X * LookSensitivity);
 	AddControllerPitchInput(Axis.Y * LookSensitivity);
+}
+
+void AGamerCharacter::UpdateFocus()
+{
+	FocusNode.Reset();
+	if (!Work || !FollowCamera)
+	{
+		return;
+	}
+	const float Reach = Work->GetMaxReach();
+	const FVector CameraLocation = FollowCamera->GetComponentLocation();
+	const FVector CameraForward = FollowCamera->GetForwardVector();
+
+	// 1) What the camera looks at.
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GamerFocus), false, this);
+	const FVector End = CameraLocation + CameraForward * (CameraDistance + Reach + 200.f);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, CameraLocation, End, ECC_Visibility, Params))
+	{
+		AGamerResourceNode* Node = Cast<AGamerResourceNode>(Hit.GetActor());
+		if (Node && !Node->IsDepleted() && FVector::Dist2D(Node->GetActorLocation(), GetActorLocation()) <= Reach)
+		{
+			FocusNode = Node;
+			return;
+		}
+	}
+
+	// 2) Small things on the ground are easy to miss with the camera: nearest node in front within reach.
+	const FVector Forward2D = FVector(CameraForward.X, CameraForward.Y, 0.f).GetSafeNormal();
+	float BestDistance = Reach;
+	for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+	{
+		AGamerResourceNode* Node = *It;
+		if (Node->IsDepleted())
+		{
+			continue;
+		}
+		const FVector ToNode = FVector(Node->GetActorLocation() - GetActorLocation()) * FVector(1.f, 1.f, 0.f);
+		const float Distance = ToNode.Size();
+		if (Distance <= BestDistance && FVector::DotProduct(ToNode.GetSafeNormal(), Forward2D) > 0.5f)
+		{
+			BestDistance = Distance;
+			FocusNode = Node;
+		}
+	}
+}
+
+void AGamerCharacter::Interact()
+{
+	if (AGamerResourceNode* Node = FocusNode.Get())
+	{
+		Work->ServerHarvest(Node);
+	}
+}
+
+void AGamerCharacter::RefreshHandRecipes()
+{
+	HandRecipes.Reset();
+	if (const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this))
+	{
+		for (const TPair<FName, FGamerRecipeDef>& Pair : Data->GetData().Recipes)
+		{
+			if (Pair.Value.Station.IsNone() && !Pair.Value.bDeprecated)
+			{
+				HandRecipes.Add(Pair.Key);
+			}
+		}
+	}
+	HandRecipes.Sort(FNameLexicalLess());
+}
+
+void AGamerCharacter::ToggleCraftMenu()
+{
+	bCraftMenuOpen = !bCraftMenuOpen;
+	if (bCraftMenuOpen)
+	{
+		RefreshHandRecipes();
+	}
+}
+
+void AGamerCharacter::CraftSlot(const FInputActionValue& Value)
+{
+	if (!bCraftMenuOpen)
+	{
+		return;
+	}
+	const int32 Index = FMath::RoundToInt(Value.Get<float>()) - 1;
+	if (HandRecipes.IsValidIndex(Index))
+	{
+		Work->ServerCraft(HandRecipes[Index]);
+	}
 }
 
 void AGamerCharacter::StartTestWalk(float Seconds)

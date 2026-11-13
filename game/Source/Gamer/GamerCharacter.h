@@ -4,7 +4,10 @@
 #include "GameFramework/Character.h"
 #include "GamerCharacter.generated.h"
 
+class AGamerResourceNode;
 class UCameraComponent;
+class UGamerInventoryComponent;
+class UGamerWorkComponent;
 class UInputAction;
 class UInputMappingContext;
 class USpringArmComponent;
@@ -35,7 +38,23 @@ public:
 	/** Test helper: walk straight forward for the given time. Only acts on the locally controlled character. */
 	void StartTestWalk(float Seconds);
 
+	UGamerInventoryComponent* GetInventory() const { return Inventory; }
+	UGamerWorkComponent* GetWork() const { return Work; }
+
+	/** Local player only: the resource node in front of the camera and within reach (for the HUD hint). */
+	AGamerResourceNode* GetFocusNode() const { return FocusNode.Get(); }
+
+	/** Local player only: the start crafting menu (recipes without a station). */
+	bool IsCraftMenuOpen() const { return bCraftMenuOpen; }
+	const TArray<FName>& GetHandRecipes() const { return HandRecipes; }
+
 protected:
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerInventoryComponent> Inventory;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerWorkComponent> Work;
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> CameraBoom;
 
@@ -67,6 +86,24 @@ private:
 	void ApplyPlayerColor();
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void Interact();
+	void ToggleCraftMenu();
+	void CraftSlot(const FInputActionValue& Value);
+	void UpdateFocus();
+	void RefreshHandRecipes();
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> InteractAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> CraftMenuAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> CraftSlotAction;
+
+	TWeakObjectPtr<AGamerResourceNode> FocusNode;
+	bool bCraftMenuOpen = false;
+	TArray<FName> HandRecipes;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputMappingContext> MappingContext;
