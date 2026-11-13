@@ -87,13 +87,42 @@ Werkzeuge bekommen die Stufe in der ID (`tool_axe_t1`, `tool_axe_t2` …), weil 
 | `id` | ✓ | `building_…` |
 | `name` | ✓ | Anzeigename |
 | `category` | ✓ | `structure` (Baukasten), `workstation`, `storage`, `comfort` (Bett, Feuer) |
-| `snap` | nur `structure` | `foundation`, `floor`, `wall`, `door`, `pillar`, `beam`, `roof`, `stairs`; Raster 300 cm wie der Holzbaukasten |
-| `mesh` | | Pfad zum Modell (Holzbaukasten liegt schon in `Assets/`) |
+| `snap` | nur `structure` | `foundation`, `floor`, `wall`, `wall_door` (Wand mit Türöffnung, bietet den Platz für die Tür), `door`, `pillar`, `beam`, `roof` (Dachfläche), `gable` (Giebel), `ridge` (First), `stairs`; Raster 300 cm wie der Holzbaukasten. `wall_door`, `gable`, `ridge` seit 2026-11-13 (vorher liefen Giebel und First unter `roof`, die Türwand unter `wall`; das Einrasten braucht die Unterscheidung) |
+| `mesh` | | Unreal-Pfad zum Modell, z. B. `/Game/Gamer/Buildings/WoodKit/SM_Building_Wall_Wood.SM_Building_Wall_Wood` (Import aus `Assets/` mit `tools/import_assets.ps1`). Ohne `mesh` zeigt das Spiel einen Platzhalter aus Grundformen |
 | `cost` | ✓ | Liste `{ "item": …, "count": … }` |
 | `build_seconds` | ✓ | Bauzeit |
 | `required_tool` | | meist `{ "type": "hammer", "min_tier": 1 }` |
 
-Später dazu: `jobs.json` und `needs.json` (Phase 1, Schritt 5, Dorfbewohner), danach Gegner, Fähigkeiten, Quests.
+### 4.5 `jobs.json` – Berufe der Dorfbewohner (seit 2026-11-13)
+| Feld | Pflicht | Bedeutung |
+|---|:-:|---|
+| `id` | ✓ | `job_…` |
+| `name` | ✓ | Anzeigename („Holzfäller“) |
+| `kind` | ✓ | `harvest` (Vorkommen abbauen/sammeln), `craft` (Rezepte an der Station), `build` (Baupläne hämmern) |
+| `station` | | Bauteil, von dem aus gearbeitet wird (muss fertig stehen); ohne: vom Lager aus |
+| `tool` | | Werkzeugtyp, den der Bewohner aus dem Lager nimmt (`axe`, `pickaxe`, `hammer`); ohne: von Hand |
+| `recipes` | bei `craft` | Rezept-IDs |
+| `stock_target` | | `craft`: aufhören, wenn so viel vom Ergebnis im Lager liegt (Standard 10) |
+| `radius` | | Arbeitsbereich in cm um Station bzw. Lager (Standard 3000) |
+| `fallback` | | genau ein Beruf hat `true`: der Ausweich-Beruf, wenn der eigene nicht geht |
+
+### 4.6 `needs.json` – Bedürfnisse der Dorfbewohner (seit 2026-11-13)
+Werte laufen von 1 (gut) bis 0 (leer), Zeiten in Spieltagen (1 Spieltag = 30 min).
+| Feld | Pflicht | Bedeutung |
+|---|:-:|---|
+| `id` | ✓ | `need_…` |
+| `name` | ✓ | Anzeigename |
+| `kind` | ✓ | `food`, `sleep`, `shelter` (eigenes Bett unter einem Dach) |
+| `decay_per_day` | | Abnahme pro Spieltag (wach) |
+| `threshold` | | darunter kümmert sich der Bewohner zuerst darum |
+| `restore_per_day` | | `sleep`: Zunahme pro Spieltag im Bett (ohne Bett die Hälfte) |
+| `foods` | bei `food` | `[{ "item": …, "value": 0..1 }]`, bestes zuerst |
+| `work_speed_when_unmet` | | Arbeitstempo, solange das Bedürfnis nicht erfüllt ist (z. B. 0,7) |
+| `leave_after_days` | | `food`: geht nach so vielen Spieltagen bei 0 (0 = nie) |
+
+`jobs.json` und `needs.json` sind optional (fehlen sie, gibt es keine Bewohner-Daten, aber keinen Fehler). Der Prüfer kontrolliert Stationen, Werkzeugtypen, Rezepte und Speisen.
+
+Später dazu: Gegner, Fähigkeiten, Quests.
 
 ## 5. Wie Unreal die Daten benutzt
 1. **Einlesen:** Ein C++-Baustein (`UGamerDataSubsystem`) liest beim Start alle Dateien – auf dem Server **und** bei jedem Spieler, damit alle dieselben Zahlen kennen.
