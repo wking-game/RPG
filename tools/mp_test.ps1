@@ -31,7 +31,8 @@ param(
     # How many clients must get in. Default: all of them. Lower it to test the player limit.
     [int]$ExpectedJoins = -1,
 
-    [string]$Map = '/Engine/Maps/Entry',
+    # Game map (Entry is the start menu since 2026-11-13: no pawn there, test scripts would not run).
+    [string]$Map = '/Engine/Maps/Templates/Template_Default',
     [int]$Port = 7777,
 
     # Seconds to wait for the server to listen and for all clients to join.
@@ -113,7 +114,9 @@ try {
         $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } else { $ClientArgs }
         $cArgs = "`"$Project`" 127.0.0.1:$Port -game $rhi -unattended -nosplash -nopause -abslog=`"$cLog`" $extra"
         Write-Host ">> Client ${i}: $cArgs" -ForegroundColor Cyan
-        $started += Start-Process $Editor -ArgumentList $cArgs -WindowStyle Minimized -PassThru
+        # With -Render the window must be visible (a minimized game window does not draw).
+        $style = if ($Render) { 'Normal' } else { 'Minimized' }
+        $started += Start-Process $Editor -ArgumentList $cArgs -WindowStyle $style -PassThru
     }
 
     if ($ExpectedJoins -lt 0) { $ExpectedJoins = $Clients }
