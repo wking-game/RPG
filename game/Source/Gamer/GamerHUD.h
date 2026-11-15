@@ -54,6 +54,8 @@ private:
 	/** Bird's-eye view: name tags over villagers, help line, info panel of the selection. */
 	void DrawBirdView(const class AGamerPlayerController& PC);
 	void DrawBar(float X, float Y, float W, float H, float Value);
+	/** Listening for magic: passive edge shimmer, turquoise sine ring, labels of the finds (GamerHUDListen.cpp). */
+	void DrawListen(const class AGamerCharacter* Character);
 
 	/** Icon tile: the rendered icon of the item/piece if it has one, else a named placeholder (first letters of the name). */
 	void DrawIconTile(FName Id, const FString& Name, float X, float Y, float Size);

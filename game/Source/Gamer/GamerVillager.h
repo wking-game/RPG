@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GamerDataTypes.h"
+#include "GamerAnimTypes.h"
 #include "GamerSaveable.h"
 #include "GamerVillager.generated.h"
 
@@ -108,6 +109,10 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Look)
 	FName HeldTool;
 
+	/** Work animation loop while working at the target (server decides, everyone plays it). */
+	UPROPERTY(Replicated)
+	EGamerAnimAction AnimWork = EGamerAnimAction::None;
+
 	/** Walking speed (cm/s). */
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Villager")
 	float WalkSpeed = 320.f;
@@ -122,6 +127,18 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Look();
+
+public:
+	/** Animation inputs (work loop); speed and falling come from the movement. */
+	void FillAnimInputs(FGamerAnimInputs& Out) const { Out.Loop = AnimWork; }
+
+protected:
+	/** Interim figures on the UE5 skeleton (Manny/Quinn), picked by name. */
+	UPROPERTY()
+	TObjectPtr<class USkeletalMesh> BodyA;
+
+	UPROPERTY()
+	TObjectPtr<class USkeletalMesh> BodyB;
 
 private:
 	enum class ETask : uint8

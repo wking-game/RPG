@@ -19,6 +19,7 @@
 #include "GamerBuffComponent.h"
 #include "GamerIcons.h"
 #include "Engine/Texture2D.h"
+#include "GamerListenComponent.h"
 #include "GamerScanComponent.h"
 #include "GamerWorkComponent.h"
 #include "CanvasItem.h"
@@ -33,12 +34,24 @@ namespace
 {
 	// No red: it was hard to read in the first play test (2026-11-13). Missing things are orange,
 	// and the text says what is missing, so colour is never the only hint.
+	// Palette of the style guide (design/stil_norden_gezeitenhall.md), sRGB hex -> linear. Text colours stay light and
+	// readable on dark panels (reading rules of 2026-11-13); the palette colours go into panels, frames, bars and tiles.
+	FLinearColor Hex(uint32 Rgb, float Alpha = 1.f)
+	{
+		auto Channel = [](uint32 Value) { return FMath::Pow(static_cast<float>(Value) / 255.f, 2.2f); };
+		return FLinearColor(Channel((Rgb >> 16) & 0xFF), Channel((Rgb >> 8) & 0xFF), Channel(Rgb & 0xFF), Alpha);
+	}
 	const FLinearColor TextWhite(0.97f, 0.97f, 0.94f);
 	const FLinearColor TextDim(0.82f, 0.82f, 0.80f);
-	const FLinearColor TextGood(0.50f, 0.95f, 0.50f);
-	const FLinearColor TextMissing(1.00f, 0.62f, 0.15f);
-	const FLinearColor TextHint(1.00f, 0.88f, 0.45f);
-	const FLinearColor PanelColor(0.f, 0.f, 0.f, 0.55f);
+	const FLinearColor TextGood = Hex(0xA5CC90);        // light moss green (Moosgruen, brightened for text)
+	const FLinearColor TextMissing = Hex(0xF0A04C);     // fire orange (Herdfeuer, brightened)
+	const FLinearColor TextHint = Hex(0xEBD9A8);        // light driftwood (Treibholz, brightened)
+	const FLinearColor PanelColor = Hex(0x1E2321, 0.72f);   // basalt black
+	const FLinearColor FrameColor = Hex(0xA99B80, 0.75f);   // driftwood
+	const FLinearColor LeatherColor = Hex(0x2B261F, 0.88f); // dark leather for tiles
+	const FLinearColor MossFill = Hex(0x7E9A6A);        // bars: fine
+	const FLinearColor FireFill = Hex(0xDB9345);        // bars: needs care (Herdfeuer)
+	const FLinearColor PalettePick[] = { Hex(0x716957), Hex(0x56654F), Hex(0x904C3E), Hex(0xA99B80), Hex(0x9AA8A5), Hex(0xA9844A) };
 
 	TAutoConsoleVariable<float> CVarHudScale(
 		TEXT("gamer.HudScale"), 1.f,
@@ -91,6 +104,20 @@ void AGamerHUD::DrawShadowText(const FString& Text, float X, float Y, const FLin
 void AGamerHUD::DrawPanel(float X, float Y, float W, float H)
 {
 	DrawRect(PanelColor, X, Y, W, H);
+	// Thin driftwood edge and short corner notches (style stage A: colours and simple notches, no textures).
+	const float Line = FMath::Max(1.f, Ui);
+	const float Notch = FMath::Min(10.f * Ui, FMath::Min(W, H) * 0.25f);
+	DrawRect(FrameColor, X, Y, W, Line);
+	DrawRect(FrameColor, X, Y + H - Line, W, Line);
+	DrawRect(FrameColor, X, Y, Line, H);
+	DrawRect(FrameColor, X + W - Line, Y, Line, H);
+	for (int32 Corner = 0; Corner < 4; ++Corner)
+	{
+		const float CornerX = (Corner & 1) ? X + W - Line * 3.f : X;
+		const float CornerY = (Corner & 2) ? Y + H - Line * 3.f : Y;
+		DrawRect(FrameColor, CornerX, (Corner & 2) ? CornerY - Notch + Line * 3.f : CornerY, Line * 3.f, Notch);
+		DrawRect(FrameColor, (Corner & 1) ? CornerX - Notch + Line * 3.f : CornerX, CornerY, Notch, Line * 3.f);
+	}
 }
 
 FVector2D AGamerHUD::DrawLineBlock(const TArray<FGamerHudLine>& Lines, float X, float Y)
@@ -204,7 +231,7 @@ void AGamerHUD::DrawHUD()
 			: Character->GetFocusGroundItem() ? static_cast<const AActor*>(Character->GetFocusGroundItem())
 			: static_cast<const AActor*>(Character->GetFocusBuilding());
 		APlayerController* OwnerPC = GetOwningPlayerController();
-		if (Target && OwnerPC)
+		if (Target && OwnerPC && !Character->HasOutline())   // rectangle only as a fallback without the outline material
 		{
 			const FBox Box = Target->GetComponentsBoundingBox(true);
 			float MinX = TNumericLimits<float>::Max(), MinY = MinX, MaxX = -MinX, MaxY = -MinX;
@@ -268,6 +295,90 @@ void AGamerHUD::DrawHUD()
 			}
 		}
 	}
+
+	// Look around (key Z): material only. A sine-shaped wave runs over the ground (soft, transparent), markers appear when it
+	// reaches them and fade after a while (decision 2026-11-15: "Umschauen" and "Lauschen" are separate; magic is in DrawListen).
+	if (const UGamerScanComponent* ScanComp = Character->GetScan())
+	{
+		const double NowTime = GetWorld()->GetTimeSeconds();
+		APlayerController* ScanPC = GetOwningPlayerController();
+		const TArray<FGamerScanCategory>& Categories = ScanComp->GetCategories();
+		if (ScanComp->IsShowing() && ScanPC)
+		{
+			const float Age = ScanComp->GetAgeSeconds();
+			const float Spread = ScanComp->GetSpreadSeconds();
+			const float WaveRadius = ScanComp->GetRadiusCm() * FMath::Clamp(Age / Spread, 0.f, 1.f);
+			if (Age < Spread + 0.6f)
+			{
+				const float WaveFade = 1.f - FMath::Clamp((Age - Spread) / 0.6f, 0.f, 1.f);
+				const FLinearColor WaveColors[2] = { Hex(0xE2D8BC), Hex(0xB4C0BD) };   // driftwood, mist grey
+				const float Amplitude = ScanComp->GetWaveAmplitudeCm();
+				const int32 Waves = ScanComp->GetWaveCount();
+				for (int32 Trail = 0; Trail < 8; ++Trail)
+				{
+					const float R = WaveRadius - Trail * 170.f;
+					if (R <= 60.f)
+					{
+						continue;
+					}
+					FLinearColor DotColor = WaveColors[Trail % 2];
+					DotColor.A = WaveFade * 0.22f * FMath::Square(1.f - Trail / 8.f);   // transparent: a colour wave, not a line
+					const int32 Steps = 260;
+					const float WaveDot = FMath::Max(3.f, (Trail == 0 ? 6.f : 5.f) * Ui);
+					for (int32 Step = 0; Step < Steps; ++Step)
+					{
+						const float Angle = 2.f * PI * Step / Steps;
+						// The sine: the ring's radius swings with the wave number and the wave travels around slowly.
+						const float Swing = Amplitude * FMath::Sin(Waves * Angle + Age * ScanComp->GetRippleSpeed() - Trail * 0.5f);
+						const FVector Point = ScanComp->GetCenter() + FVector(FMath::Cos(Angle) * (R + Swing), FMath::Sin(Angle) * (R + Swing), -90.f);
+						FVector2D ScreenPoint;
+						if (ScanPC->ProjectWorldLocationToScreen(Point, ScreenPoint) && ScreenPoint.X >= 0 && ScreenPoint.Y >= 0 && ScreenPoint.X <= Width && ScreenPoint.Y <= Height)
+						{
+							DrawRect(DotColor, static_cast<float>(ScreenPoint.X) - WaveDot * 0.5f, static_cast<float>(ScreenPoint.Y) - WaveDot * 0.5f, WaveDot, WaveDot);
+						}
+					}
+				}
+			}
+			for (const FGamerScanMark& Mark : ScanComp->GetMarks())
+			{
+				const float Left = static_cast<float>(Mark.ExpireTime - NowTime);
+				const float Shown = static_cast<float>(NowTime - Mark.RevealTime);
+				if (Left <= 0.f || Shown <= 0.f || !Categories.IsValidIndex(Mark.Category))
+				{
+					continue;   // not reached by the wave yet, or faded
+				}
+				FVector2D Screen;
+				if (!ScanPC->ProjectWorldLocationToScreen(Mark.Location, Screen) || Screen.X < 0 || Screen.Y < 0 || Screen.X > Width || Screen.Y > Height)
+				{
+					continue;
+				}
+				const float Alpha = FMath::Clamp(Left / ScanComp->GetMarkFadeSeconds(), 0.f, 1.f) * FMath::Clamp(Shown / 0.4f, 0.f, 1.f);
+				FLinearColor Color = Categories[Mark.Category].Color;
+				Color.A = Alpha;
+				const float Box = 14.f * Ui;
+				DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.65f * Alpha), static_cast<float>(Screen.X) - Box * 0.5f - 1.f, static_cast<float>(Screen.Y) - Box * 0.5f - 1.f, Box + 2.f, Box + 2.f);
+				DrawRect(Color, static_cast<float>(Screen.X) - Box * 0.5f, static_cast<float>(Screen.Y) - Box * 0.5f, Box, Box);
+				DrawShadowText(Categories[Mark.Category].Symbol, static_cast<float>(Screen.X) - Box * 0.28f, static_cast<float>(Screen.Y) - Box * 0.5f,
+					FLinearColor(0.f, 0.f, 0.f, Alpha), Ui * 0.6f);
+			}
+			// Counts per category at the right edge.
+			float CountY = Height * 0.20f;
+			for (int32 Index = 0; Index < Categories.Num(); ++Index)
+			{
+				const FString Line = FString::Printf(TEXT("%s %s: %d"), *Categories[Index].Symbol, *Categories[Index].Name, ScanComp->GetCount(Index));
+				DrawShadowText(Line, Width - Margin - TextWidth(Line, Ui * 0.85f), CountY, Categories[Index].Color, Ui * 0.85f);
+				CountY += LineH * 0.95f;
+			}
+		}
+		else if (const float CoolLeft = ScanComp->GetCooldownLeft(); CoolLeft > 0.f)
+		{
+			const FString Line = FString::Printf(TEXT("Umschauen %.0f s"), FMath::CeilToFloat(CoolLeft));
+			DrawShadowText(Line, Width - Margin - TextWidth(Line, Ui * 0.75f), Height * 0.20f, TextDim, Ui * 0.75f);
+		}
+	}
+
+	// Listening for magic: edge shimmer (passive), the turquoise sine ring and the finds' labels (active).
+	DrawListen(Character);
 
 	// Hint under the crosshair. Trees and rocks: strike with the right tool in hand; the rest: E.
 	const float BarY = Height * 0.5f + LineH * 3.0f;
@@ -712,11 +823,15 @@ bool AGamerHUD::IsMouseOver(float X, float Y, float W, float H) const
 void AGamerHUD::DrawButton(FName Id, const FString& Text, float X, float Y, float W, float H, float Scale, bool bActive)
 {
 	const bool bHover = IsMouseOver(X, Y, W, H);
-	const FLinearColor Fill = bActive ? FLinearColor(0.55f, 0.42f, 0.10f, 0.95f)
-		: (bHover ? FLinearColor(0.32f, 0.32f, 0.30f, 0.95f) : FLinearColor(0.12f, 0.12f, 0.12f, 0.92f));
+	const FLinearColor Fill = bActive ? Hex(0x8A5A24, 0.95f)
+		: (bHover ? Hex(0x5A5446, 0.95f) : Hex(0x2A302D, 0.92f));
 	if (bHover || bActive)
 	{
 		DrawRect(TextHint, X - 2.f, Y - 2.f, W + 4.f, H + 4.f);
+	}
+	else
+	{
+		DrawRect(FrameColor, X - 1.f, Y - 1.f, W + 2.f, H + 2.f);
 	}
 	DrawRect(Fill, X, Y, W, H);
 	const float TextH = LineHeight(Scale) / 1.12f;
@@ -946,7 +1061,7 @@ void AGamerHUD::DrawBuildMenu(const AGamerPlayerController& PC)
 		}
 		OutNameW += 24.f * S;
 		OutRowH = LineHeight(S * 0.85f) * 1.25f;
-		const float ColumnW = OutNameW + 10.f * S + OutCostW;
+		const float ColumnW = OutRowH + 4.f * S + OutNameW + 10.f * S + OutCostW;   // icon tile + name + cost
 		const float TotalW = FMath::Max3(2.f * ColumnW + 40.f * S, TextWidth(Help, S * 0.7f), TextWidth(WorldText, S * 0.7f));
 		const float TotalH = LineHeight(S * 1.3f) * 1.3f + LineHeight(S * 0.7f) * 2.6f + Rows * (OutRowH + 3.f * S) + LineHeight(S) * 1.8f;
 		return FVector2D(TotalW, TotalH);
@@ -966,7 +1081,7 @@ void AGamerHUD::DrawBuildMenu(const AGamerPlayerController& PC)
 	DrawShadowText(WorldText, (Width - TextWidth(WorldText, S * 0.7f)) * 0.5f, Y, TextDim, S * 0.7f);
 	Y += LineHeight(S * 0.7f) * 1.4f;
 
-	const float ColumnW = NameW + 10.f * S + CostW;
+	const float ColumnW = RowH + 4.f * S + NameW + 10.f * S + CostW;
 	const float ColumnsX = (Width - (2.f * ColumnW + 40.f * S)) * 0.5f;
 	const FName Selected = Character->GetBuild()->GetSelected();
 	const float CostTextH = LineHeight(S * 0.7f) / 1.12f;
@@ -977,10 +1092,12 @@ void AGamerHUD::DrawBuildMenu(const AGamerPlayerController& PC)
 			const FGamerBuildableDef& Def = *Columns[Column][Row];
 			const float X = ColumnsX + Column * (ColumnW + 40.f * S);
 			const float RowY = Y + Row * (RowH + 3.f * S);
-			DrawButton(FName(*(TEXT("build:") + Def.Id.ToString())), Def.Name, X, RowY, NameW, RowH, S * 0.85f, Def.Id == Selected);
+			DrawIconTile(Def.Id, Def.Name, X, RowY, RowH);   // rendered icon or named placeholder
+			const float ButtonX = X + RowH + 4.f * S;
+			DrawButton(FName(*(TEXT("build:") + Def.Id.ToString())), Def.Name, ButtonX, RowY, NameW, RowH, S * 0.85f, Def.Id == Selected);
 			bool bEnough = true;
 			const FString Cost = CostText(Def, bEnough);
-			DrawShadowText(Cost, X + NameW + 10.f * S, RowY + (RowH - CostTextH) * 0.5f, bPayLater ? TextDim : (bEnough ? TextGood : TextMissing), S * 0.7f);
+			DrawShadowText(Cost, ButtonX + NameW + 10.f * S, RowY + (RowH - CostTextH) * 0.5f, bPayLater ? TextDim : (bEnough ? TextGood : TextMissing), S * 0.7f);
 		}
 	}
 	Y += Rows * (RowH + 3.f * S) + 8.f * S;
@@ -1071,6 +1188,9 @@ void AGamerHUD::DrawStartMenu(const AGamerPlayerController& PC)
 				Options.bCarryInventory ? TEXT("Wandert mit dem Charakter") : TEXT("Bleibt in dieser Welt"),
 				Options.bCarryInventory ? TEXT("Was du trägst, nimmst du in jede Welt mit, die das auch erlaubt (gespeichert bei dir).")
 					: TEXT("Jede Welt merkt sich dein Inventar; in einer anderen Welt beginnst du mit eigener Ausrüstung.") },
+			{ TEXT("opt:gespuer"), TEXT("Gespür-Tempo"),
+				Options.GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("Langsam (×0,6)") : Options.GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("Schnell (×1,6)") : TEXT("Normal (×1)"),
+				TEXT("Wie schnell das Lauschen nach Magie besser wird (Erfahrung pro Fund). Gilt für alle Spieler dieser Welt.") },
 		};
 		float LabelW = 0.f, ValueW = 0.f, ExplainW = 0.f;
 		for (const FOptionRow& Row : Rows)
@@ -1157,7 +1277,7 @@ AActor* AGamerHUD::FindButtonTarget(FName ButtonId) const
 
 void AGamerHUD::DrawIconTile(FName Id, const FString& Name, float X, float Y, float Size)
 {
-	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.55f), X, Y, Size, Size);
+	DrawRect(LeatherColor, X, Y, Size, Size);
 	if (UTexture2D* Icon = GamerIcons::Find(Id))
 	{
 		const float Pad = Size * 0.06f;
@@ -1166,7 +1286,7 @@ void AGamerHUD::DrawIconTile(FName Id, const FString& Name, float X, float Y, fl
 	}
 	// Placeholder: coloured frame (colour from the id, so the same thing always looks the same) and the first letters of its name.
 	const uint32 Hash = GetTypeHash(Id);
-	const FLinearColor Frame = FLinearColor::MakeFromHSV8(static_cast<uint8>(Hash % 256), 110, 200);
+	const FLinearColor Frame = PalettePick[Hash % UE_ARRAY_COUNT(PalettePick)];
 	const float Line = FMath::Max(2.f, Size * 0.05f);
 	DrawRect(Frame, X, Y, Size, Line);
 	DrawRect(Frame, X, Y + Size - Line, Size, Line);
@@ -1185,7 +1305,7 @@ void AGamerHUD::DrawBar(float X, float Y, float W, float H, float Value)
 {
 	// Need bar: green when fine, yellow when getting low, orange when it needs care (no red, see the colours above).
 	const float Clamped = FMath::Clamp(Value, 0.f, 1.f);
-	const FLinearColor Fill = Clamped > 0.5f ? TextGood : Clamped > 0.25f ? TextHint : TextMissing;
+	const FLinearColor Fill = Clamped > 0.5f ? MossFill : Clamped > 0.25f ? Hex(0xCDBB86) : FireFill;
 	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), X, Y, W, H);
 	DrawRect(Fill, X + 1.f, Y + 1.f, (W - 2.f) * Clamped, H - 2.f);
 }

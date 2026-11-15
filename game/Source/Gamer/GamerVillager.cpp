@@ -1,4 +1,6 @@
 #include "GamerVillager.h"
+#include "GamerAnimInstance.h"
+#include "Engine/SkeletalMesh.h"
 #include "GamerTavern.h"
 
 #include "Gamer.h"
@@ -88,15 +90,21 @@ AGamerVillager::AGamerVillager()
 	Movement->MaxWalkSpeed = WalkSpeed;
 	bUseControllerRotationYaw = false;
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	// Kept as an empty component (no mesh) so existing references stay valid; the figure is GetMesh().
 	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	Body->SetupAttachment(GetCapsuleComponent());
-	Body->SetRelativeScale3D(FVector(0.8f, 0.8f, 1.84f));
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	if (CylinderMesh.Succeeded())
-	{
-		Body->SetStaticMesh(CylinderMesh.Object);
-	}
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MannyMesh(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> QuinnMesh(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple"));
+	BodyA = MannyMesh.Object;
+	BodyB = QuinnMesh.Object;
+	USkeletalMeshComponent* Figure = GetMesh();
+	Figure->SetSkeletalMesh(BodyA);
+	Figure->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -92.f), FRotator(0.f, -90.f, 0.f));
+	Figure->SetAnimInstanceClass(UGamerAnimInstance::StaticClass());
+	Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Figure->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 
 	Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Label"));
 	Label->SetupAttachment(GetCapsuleComponent());
@@ -117,6 +125,7 @@ void AGamerVillager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AGamerVillager, VillagerName);
 	DOREPLIFETIME(AGamerVillager, JobId);
 	DOREPLIFETIME(AGamerVillager, Activity);
+	DOREPLIFETIME(AGamerVillager, AnimWork);
 	DOREPLIFETIME(AGamerVillager, Hunger);
 	DOREPLIFETIME(AGamerVillager, Sleep);
 	DOREPLIFETIME(AGamerVillager, Mood);
@@ -194,11 +203,21 @@ void AGamerVillager::OnRep_Look()
 
 void AGamerVillager::ApplyLook()
 {
-	if (Body && Body->GetStaticMesh())
+	if (GetNetMode() != NM_DedicatedServer)
 	{
-		if (UMaterialInstanceDynamic* Material = Body->CreateAndSetMaterialInstanceDynamic(0))
+		USkeletalMeshComponent* Figure = GetMesh();
+		USkeletalMesh* Wanted = (GetTypeHash(VillagerName) & 1) && BodyB ? BodyB.Get() : BodyA.Get();
+		if (Wanted && Figure->GetSkeletalMeshAsset() != Wanted)
 		{
-			Material->SetVectorParameterValue(TEXT("Color"), JobColor(JobId));
+			Figure->SetSkeletalMesh(Wanted);
+		}
+		// Job colour on the painted panels of the interim figure.
+		for (int32 i = 0; i < Figure->GetNumMaterials(); ++i)
+		{
+			if (UMaterialInstanceDynamic* Material = Figure->CreateAndSetMaterialInstanceDynamic(i))
+			{
+				Material->SetVectorParameterValue(TEXT("Paint Tint"), JobColor(JobId));
+			}
 		}
 	}
 	if (Label)
@@ -228,6 +247,24 @@ void AGamerVillager::Tick(float DeltaSeconds)
 	if (HasAuthority())
 	{
 		ServerTick(DeltaSeconds);
+		// Work animation: only while standing at the work (not on the way there).
+		EGamerAnimAction Anim = EGamerAnimAction::None;
+		if (GetVelocity().Size2D() < 30.f)
+		{
+			switch (Task)
+			{
+			case ETask::Harvest:
+				Anim = HeldTool == TEXT("axe") ? EGamerAnimAction::Chop
+					: HeldTool == TEXT("pickaxe") ? EGamerAnimAction::Mine : EGamerAnimAction::GatherLow;
+				break;
+			case ETask::Build: Anim = EGamerAnimAction::Hammer; break;
+			case ETask::Craft: Anim = EGamerAnimAction::CraftStation; break; // villagers craft at stations
+			case ETask::FarmWork: Anim = EGamerAnimAction::Plant; break;
+			case ETask::Eat: Anim = EGamerAnimAction::Consume; break;
+			default: break;
+			}
+		}
+		AnimWork = Anim;
 	}
 	// Name and activity face the local camera (not on a dedicated server).
 	if (Label && GetNetMode() != NM_DedicatedServer)

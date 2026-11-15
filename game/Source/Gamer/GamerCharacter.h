@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GamerAnimTypes.h"
 #include "GamerCharacter.generated.h"
 
 class AGamerBuilding;
@@ -9,7 +10,9 @@ class AGamerResourceNode;
 class UGamerBuildComponent;
 class UCameraComponent;
 class UGamerInventoryComponent;
+class UMaterialInstanceDynamic;
 class UGamerScanComponent;
+class UGamerListenComponent;
 class UGamerWorkComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -43,11 +46,31 @@ public:
 	void SetSprinting(bool bOn);
 	bool IsSprinting() const { return bSprinting; }
 
+	/** Animation inputs (sprint, work loop, last one-shot action); speed and falling come from the movement. */
+	void FillAnimInputs(FGamerAnimInputs& Out) const;
+
+	/** Local only: play a one-shot work animation on this machine (prediction for the acting player). */
+	void PlayActionLocally(EGamerAnimAction Kind);
+
+	/** Local player: walk up to a hand-gatherable node or ground item, then grab it (E key path; tests). */
+	void StartGrab(AActor* Target);
+
+	/** Local player: turn the body towards what it works on (the movement component replicates the rotation). */
+	void FaceTowards(const AActor* Target);
+
+	/** Server: play a one-shot work animation on all machines. bPredicted: the owner already played it. */
+	void MulticastAction(EGamerAnimAction Kind, bool bPredicted);
+
 	/** Pile of things close together (hand-pickable resources and ground items): candidates around the aimed thing, and the chosen one. */
 	const TArray<TWeakObjectPtr<AActor>>& GetPile() const { return Pile; }
 	int32 GetPilePick() const { return PilePick; }
 	/** Key "switch in pile": the next candidate becomes the target of the interact key. */
 	void CycleFocus();
+
+	/** True while the silhouette outline (post-process material) is set up; then the HUD draws no rectangle. */
+	bool HasOutline() const { return OutlineMaterial != nullptr; }
+	/** The camera's contour material (the scan drives its magic parameters). */
+	UMaterialInstanceDynamic* GetOutlineMaterial() const { return OutlineMaterial; }
 
 	/** Mouse wheel: next (+1) or previous (-1) hotbar slot, wrapping around. */
 	void CycleHotbar(int32 Direction);
@@ -65,6 +88,7 @@ public:
 	UGamerWorkComponent* GetWork() const { return Work; }
 	UGamerBuildComponent* GetBuild() const { return Build; }
 	UGamerScanComponent* GetScan() const { return Scan; }
+	UGamerListenComponent* GetListen() const { return Listen; }
 	class UGamerBuffComponent* GetBuffs() const { return Buffs; }
 
 	/** Camera position and direction through the crosshair (for aiming at resources and building spots). */
@@ -113,6 +137,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<UGamerScanComponent> Scan;
 
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerListenComponent> Listen;
+
 	/** Meal buffs (Taverne-Session, decision 2026-11-14). */
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<class UGamerBuffComponent> Buffs;
@@ -123,11 +150,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> FollowCamera;
 
-	UPROPERTY(VisibleAnywhere, Category = "Visual")
-	TObjectPtr<UStaticMeshComponent> BodyMesh;
+	/** Interim figures on the UE5 skeleton (Epic Manny/Quinn) until the MetaHuman bodies exist. */
+	UPROPERTY()
+	TObjectPtr<class USkeletalMesh> BodyStrong;
 
-	UPROPERTY(VisibleAnywhere, Category = "Visual")
-	TObjectPtr<UStaticMeshComponent> FacingMarker;
+	UPROPERTY()
+	TObjectPtr<class USkeletalMesh> BodySlim;
 
 	// Tunable values. Read from [/Script/Gamer.GamerCharacter] in DefaultGame.ini;
 	// the numbers here are only fallbacks. Server and clients must use the same values.
@@ -142,6 +170,14 @@ protected:
 	/** Running speed while the sprint key is held (no stamina). */
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float SprintSpeed = 750.f;
+
+	/** Gathering by hand / picking up: walk up to this distance (cm, horizontal, to the target's origin) before grabbing. */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float GrabDistance = 70.f;
+
+	/** Give up walking up after this long (blocked by the bush itself, a slope ...) and grab from where we stand. */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float GrabApproachSeconds = 1.5f;
 
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float GravityScale = 2.f;
@@ -164,6 +200,7 @@ private:
 	void Interact();
 	void Strike();
 	void DoScan();
+	void DoListen();
 	void InteractPressed();
 	void InteractReleased();
 	/** What the pick-up-all key combination acts on: the aimed thing of the pile. */
@@ -188,11 +225,32 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Sprinting)
 	bool bSprinting = false;
 
+	/** Last one-shot work action (server -> everyone); LocalAction is what this machine's animation plays. */
+	UPROPERTY(ReplicatedUsing = OnRep_ActionPulse)
+	FGamerActionPulse ActionPulse;
+
+	UFUNCTION()
+	void OnRep_ActionPulse();
+
+	FGamerActionPulse LocalAction;
+
+	/** Local player: walking up to a hand-gatherable node or ground item before grabbing it. */
+	TWeakObjectPtr<AActor> PendingGrab;
+	float PendingGrabTime = 0.f;
+	float PendingGrabBestDistance = 0.f;
+	void TickGrab(float DeltaSeconds);
+	void FinishGrab();
+	FName AppliedBodyLook;
+	void ApplyBodyLook();
+
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> FocusNextAction;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> ScanAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> ListenAction;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> SprintAction;
@@ -212,6 +270,15 @@ private:
 	void UpdateFocus();
 	void UpdateFocusRaw();
 	void BuildPile();
+	/** Local player: the aimed target gets the custom stencil, the camera's post-process material draws its contour. */
+	void UpdateOutline();
+	void SetupOutline();
+	void SetOutlined(AActor* Actor, bool bOn);
+	bool bOutlineSetupTried = false;
+	TWeakObjectPtr<AActor> OutlineTarget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInstanceDynamic> OutlineMaterial;
 	void RefreshHandRecipes();
 
 	UPROPERTY(Transient)

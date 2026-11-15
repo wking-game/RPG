@@ -36,6 +36,18 @@ enum class EGamerDemolish : uint8
 	Disabled
 };
 
+/** How fast the magic sense (listening) improves in this world: a factor on the experience (world option, 2026-11-15). */
+UENUM()
+enum class EGamerGespuerTempo : uint8
+{
+	/** x0.6 */
+	Slow,
+	/** x1 */
+	Normal,
+	/** x1.6 */
+	Fast
+};
+
 /**
  * Rules of one world, chosen by the host when creating it (decision 2026-11-13: in the start menu).
  * Until the start menu exists they come from the map URL: ?BuildFlow=blueprint|instant|material
@@ -66,6 +78,10 @@ struct FGamerWorldOptions
 	 */
 	UPROPERTY()
 	bool bCarryInventory = false;
+
+	/** Tempo of the magic sense (decision 2026-11-15): slow x0.6, normal x1, fast x1.6 on the experience (values in listen.json). ?Tempo=slow|normal|fast */
+	UPROPERTY()
+	EGamerGespuerTempo GespuerTempo = EGamerGespuerTempo::Normal;
 
 	/** Reads the options from a map URL option string; unknown values keep the default and are logged. */
 	static FGamerWorldOptions FromUrlOptions(const FString& Options);

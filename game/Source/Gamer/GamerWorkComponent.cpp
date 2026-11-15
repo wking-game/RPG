@@ -91,8 +91,10 @@ void UGamerWorkComponent::ShowMessage(const FString& Message)
 	UE_LOG(LogGamer, Log, TEXT("Message: %s"), *Message);
 }
 
-void UGamerWorkComponent::StartWork(EGamerWorkKind Kind, const FString& Label, float Duration)
+void UGamerWorkComponent::StartWork(EGamerWorkKind Kind, const FString& Label, float Duration, FName Subject, bool bLowOrStation)
 {
+	Work.Subject = Subject;
+	Work.bLowOrStation = bLowOrStation;
 	Work.Kind = Kind;
 	Work.Label = Label;
 	Work.StartTime = ServerNow();
@@ -134,7 +136,7 @@ void UGamerWorkComponent::ServerHarvest_Implementation(AGamerResourceNode* Node)
 
 	TargetNode = Node;
 	Node->Worker = GetOwner();
-	StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds);
+	StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds, Def->Id, !Def->RequiredTool.IsRequired());
 }
 
 void UGamerWorkComponent::ServerStrike_Implementation(AGamerResourceNode* Node)
@@ -173,6 +175,12 @@ void UGamerWorkComponent::ServerStrike_Implementation(AGamerResourceNode* Node)
 	const int32 MinTier = Def->RequiredTool.MinTier;
 	// Automatic tool choice: the best matching tool from the hotbar goes into the hand.
 	Inventory->SelectBestToolInHotbar(ToolType, MinTier);
+	if (AGamerCharacter* Character = Cast<AGamerCharacter>(GetOwner()))
+	{
+		// The striking player already swings locally; everybody else sees it from here.
+		Character->MulticastAction(ToolType == TEXT("axe") ? EGamerAnimAction::Chop
+			: ToolType == TEXT("pickaxe") ? EGamerAnimAction::Mine : EGamerAnimAction::Gather, true);
+	}
 	if (!Inventory->IsHoldingTool(ToolType, MinTier))
 	{
 		const int32 HotbarIndex = Inventory->FindToolInHotbar(ToolType, MinTier);
@@ -249,6 +257,10 @@ void UGamerWorkComponent::ServerPickUp_Implementation(AGamerGroundItem* Item)
 		return;
 	}
 	Inventory->AddItem(Id, Count, Freshness);
+	if (AGamerCharacter* Character = Cast<AGamerCharacter>(GetOwner()))
+	{
+		Character->MulticastAction(EGamerAnimAction::GatherLow, true); // ground items: crouch and grab (owner plays it itself)
+	}
 	UE_LOG(LogGamer, Log, TEXT("Pick up: player=%d %s x%d at %d %% - inventory: %s"), PlayerIdOf(GetOwner()), *Id.ToString(), Count,
 		FMath::RoundToInt(Freshness * 100.f), *Inventory->Describe());
 	ClientMessage(TEXT("Aufgehoben: ") + Name);
@@ -314,7 +326,7 @@ void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
 
 	const FGamerItemDef* First = Data->FindItem(Recipe->Outputs[0].Item);
 	TargetRecipe = RecipeId;
-	StartWork(EGamerWorkKind::Craft, First ? First->Name : RecipeId.ToString(), Recipe->WorkSeconds);
+	StartWork(EGamerWorkKind::Craft, First ? First->Name : RecipeId.ToString(), Recipe->WorkSeconds, RecipeId, !Recipe->Station.IsNone());
 }
 
 void UGamerWorkComponent::FinishWork()
@@ -337,7 +349,7 @@ void UGamerWorkComponent::StartNextQueued()
 		}
 		TargetNode = Node;
 		Node->Worker = GetOwner();
-		StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds);
+		StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds, Def->Id, !Def->RequiredTool.IsRequired());
 	}
 }
 

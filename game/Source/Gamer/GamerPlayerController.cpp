@@ -16,6 +16,7 @@
 #include "GamerFarmBuilding.h"
 #include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerListenComponent.h"
 #include "GamerScanComponent.h"
 #include "GamerSettlement.h"
 #include "GamerTavern.h"
@@ -25,6 +26,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "EngineUtils.h"
+#include "Components/PrimitiveComponent.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -300,6 +302,10 @@ void AGamerPlayerController::PressMenuButton(FName ButtonId)
 		else if (Which == TEXT("inventory"))
 		{
 			Options.bCarryInventory = !Options.bCarryInventory; // save system 2026-11-15: asked when creating a world
+		}
+		else if (Which == TEXT("gespuer"))
+		{
+			Options.GespuerTempo = static_cast<EGamerGespuerTempo>((static_cast<uint8>(Options.GespuerTempo) + 1) % 3);   // 2026-11-15: tempo of the magic sense
 		}
 		UGamerMenuSettings::Get()->Save();
 		UE_LOG(LogGamer, Log, TEXT("Start menu world options: %s"), *Options.ToLogString());
@@ -801,10 +807,21 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 		{
 			if (Node)
 			{
+				// Same local swing as a real click (AGamerCharacter::PerformStrike); the server skips it for this player.
+				const FGamerResourceNodeDef* NodeDef = Node->GetDef();
+				if (NodeDef && !Work->IsBusy())
+				{
+					const FName Tool = NodeDef->RequiredTool.Type;
+					GamerCharacter->FaceTowards(Node);
+					GamerCharacter->PlayActionLocally(Tool == TEXT("axe") ? EGamerAnimAction::Chop
+						: Tool == TEXT("pickaxe") ? EGamerAnimAction::Mine : EGamerAnimAction::Gather);
+				}
 				Work->ServerStrike(Node);
 			}
 			else if (Building)
 			{
+				GamerCharacter->FaceTowards(Building);
+				GamerCharacter->PlayActionLocally(EGamerAnimAction::Hammer);
 				GamerCharacter->GetBuild()->ServerHammer(Building);
 			}
 			StrikeCooldown = Work->GetStrikeInterval() + 0.05f;
@@ -892,6 +909,118 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	{
 		GamerCharacter->GetInventory()->SelectSlot(FCString::Atoi(*Argument) - 1);
 	}
+	else if (Kind == TEXT("outlinecount"))
+	{
+		// How many things on THIS machine are drawn with the outline stencil (only the own aim target, never replicated).
+		int32 Count = 0;
+		FString Names;
+		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+		{
+			TArray<UPrimitiveComponent*> Primitives;
+			It->GetComponents<UPrimitiveComponent>(Primitives);
+			if (Primitives.ContainsByPredicate([](const UPrimitiveComponent* P) { return P->bRenderCustomDepth; }))
+			{
+				++Count;
+				Names += It->GetName() + TEXT(" ");
+			}
+		}
+		UE_LOG(LogGamer, Log, TEXT("Test outlinecount: %d outlined here: %s(has outline %d)"), Count, *Names, GamerCharacter->HasOutline() ? 1 : 0);
+	}
+	else if (Kind == TEXT("near") || Kind == TEXT("aim"))
+	{
+		// near:<node id> teleports next to the nearest full node of that type; aim:<node id> then turns the view to it
+		// (two steps because the teleport arrives from the server a moment later).
+		AGamerResourceNode* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+		{
+			if (It->GetNodeId() == FName(*Argument) && !It->IsDepleted())
+			{
+				const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+				if (Distance < BestDistance)
+				{
+					BestDistance = Distance;
+					Nearest = *It;
+				}
+			}
+		}
+		if (!Nearest)
+		{
+			UE_LOG(LogGamer, Warning, TEXT("Test %s: no full node %s found"), *Kind, *Argument);
+		}
+		else if (Kind == TEXT("near"))
+		{
+			Work->ServerDebugTeleportNear(Nearest);
+		}
+		else
+		{
+			const FVector Eye = GamerCharacter->GetActorLocation() + FVector(0.f, 0.f, 60.f);
+			const FVector Aim = Nearest->GetActorLocation() + FVector(0.f, 0.f, 60.f);
+			SetControlRotation((Aim - Eye).Rotation());
+			UE_LOG(LogGamer, Log, TEXT("Test aim: looking at %s at %.0f cm"), *Argument, FVector::Dist(Eye, Aim));
+		}
+	}
+	else if (Kind == TEXT("magictarget"))
+	{
+		// magictarget:<kind>|<name>[|hidden][|rare] puts a fake magical thing 7 m in front (no real magical objects exist yet)
+		TArray<FString> Parts;
+		Argument.ParseIntoArray(Parts, TEXT("|"));
+		const FString MagicKind = Parts.IsValidIndex(0) ? Parts[0] : TEXT("Ader");
+		const FString MagicName = Parts.IsValidIndex(1) ? Parts[1] : MagicKind;
+		const bool bHiddenTarget = Parts.Contains(TEXT("hidden"));
+		const bool bRareTarget = Parts.Contains(TEXT("rare"));
+		const FVector Ahead = GamerCharacter->GetActorLocation() + FRotator(0.f, GetControlRotation().Yaw, 0.f).Vector() * 700.f + FVector(0.f, 0.f, 20.f);
+		GamerCharacter->GetListen()->AddDebugTarget(Ahead, MagicKind, MagicName, bHiddenTarget, bRareTarget);
+		UE_LOG(LogGamer, Log, TEXT("Test magic target at %s%s%s"), *Ahead.ToCompactString(), bHiddenTarget ? TEXT(" hidden") : TEXT(""), bRareTarget ? TEXT(" rare") : TEXT(""));
+	}
+	else if (Kind == TEXT("magicevent"))
+	{
+		// magicevent:<source>[|<find id>] (new_find, seaglass_harvest, stone_circle, tide_event): the server awards experience as a magical
+		// event would; with a find id it counts once per find and player
+		FString SourceName, FindId;
+		if (!Argument.Split(TEXT("|"), &SourceName, &FindId))
+		{
+			SourceName = Argument;
+		}
+		GamerCharacter->GetListen()->ServerDebugAward(FName(*SourceName), FindId.IsEmpty() ? NAME_None : FName(*FindId));
+	}
+	else if (Kind == TEXT("magicorigin"))
+	{
+		// magicorigin:off ignores the origin's start level (test as a player who is not a seer), on restores it
+		GamerCharacter->GetListen()->SetDebugNoOrigin(Argument == TEXT("off"));
+	}
+	else if (Kind == TEXT("amulet"))
+	{
+		// amulet:on|off pretends the seaglass amulet is worn (it does not exist yet)
+		GamerCharacter->GetListen()->SetDebugAmulet(Argument != TEXT("off"));
+	}
+	else if (Kind == TEXT("magiclevel"))
+	{
+		UE_LOG(LogGamer, Log, TEXT("Test magic: %s"), *GamerCharacter->GetListen()->DescribeState());
+	}
+	else if (Kind == TEXT("listen"))
+	{
+		const bool bStarted = GamerCharacter->GetListen()->TryListen();
+		UE_LOG(LogGamer, Log, TEXT("Test listen: %s"), bStarted ? TEXT("started") : TEXT("refused"));
+	}
+	else if (Kind == TEXT("listenage"))
+	{
+		// listenage:<seconds> freezes the listening wave at that age (for pictures); listenage:-1 ends it
+		GamerCharacter->GetListen()->SetDebugAge(FCString::Atof(*Argument));
+	}
+	else if (Kind == TEXT("listenstate"))
+	{
+		const UGamerListenComponent* L = GamerCharacter->GetListen();
+		int32 Revealed = 0;
+		for (const FGamerListenFind& Find : L->GetFinds()) { Revealed += Find.RevealTime > 0.0 ? 1 : 0; }
+		UE_LOG(LogGamer, Log, TEXT("Test listen state: listening %d showing %d level %d range %.0f m wave %.1f s finds %d revealed %d proximity %.2f cooldown %.1f"),
+			L->IsListening() ? 1 : 0, L->IsShowing() ? 1 : 0, L->GetEffectiveLevel(), L->GetRangeCm() / 100.f, L->GetWaveSeconds(), L->GetFinds().Num(), Revealed, L->GetProximity(), L->GetCooldownLeft());
+	}
+	else if (Kind == TEXT("scanage"))
+	{
+		// scanage:<seconds> freezes the scan wave at that age (for pictures); scanage:-1 ends it
+		GamerCharacter->GetScan()->SetDebugAge(FCString::Atof(*Argument));
+	}
 	else if (Kind == TEXT("scan"))
 	{
 		// scan - same path as the scan key; the result is in the log ("Scan: N marks ...")
@@ -967,6 +1096,60 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 		// sprint:on / sprint:off - same path as the held key
 		GamerCharacter->SetSprinting(Argument != TEXT("off"));
 		UE_LOG(LogGamer, Log, TEXT("Test sprint %s: local speed %.0f"), *Argument, GamerCharacter->GetCharacterMovement()->MaxWalkSpeed);
+	}
+	else if (Kind == TEXT("burst"))
+	{
+		// burst:<count>:<seconds> - screenshots on a timer, also while a following harvest step is still striking
+		FString CountText, IntervalText;
+		Argument.Split(TEXT(":"), &CountText, &IntervalText);
+		TSharedRef<int32> Left = MakeShared<int32>(FMath::Max(1, FCString::Atoi(*CountText)));
+		TSharedRef<FTimerHandle> Handle = MakeShared<FTimerHandle>();
+		TWeakObjectPtr<AGamerPlayerController> WeakThis(this);
+		GetWorldTimerManager().SetTimer(*Handle, FTimerDelegate::CreateLambda([WeakThis, Left, Handle]()
+		{
+			if (!WeakThis.IsValid() || --(*Left) < 0)
+			{
+				if (WeakThis.IsValid())
+				{
+					WeakThis->GetWorldTimerManager().ClearTimer(*Handle);
+				}
+				return;
+			}
+			WeakThis->TakeTestShot();
+		}), FMath::Max(0.05f, FCString::Atof(*IntervalText)), true);
+	}
+	else if (Kind == TEXT("grab"))
+	{
+		// grab:<node id> - like E on the nearest such node: walk up, crouch and gather. Farther than 5 m: teleport near first.
+		AGamerResourceNode* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (It->GetNodeId() == FName(*Argument) && !It->IsDepleted() && Distance < BestDistance)
+			{
+				Nearest = *It;
+				BestDistance = Distance;
+			}
+		}
+		if (Nearest && BestDistance > 500.f)
+		{
+			Work->ServerDebugTeleportNear(Nearest);
+		}
+		else if (Nearest)
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test grab %s from %.0f cm"), *Argument, BestDistance);
+			GamerCharacter->StartGrab(Nearest);
+		}
+	}
+	else if (Kind == TEXT("walk"))
+	{
+		// walk:<seconds> - walk forward (animation tests)
+		GamerCharacter->StartTestWalk(FCString::Atof(*Argument));
+	}
+	else if (Kind == TEXT("jump"))
+	{
+		GamerCharacter->Jump();
 	}
 	else if (Kind == TEXT("hand"))
 	{

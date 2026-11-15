@@ -1,5 +1,7 @@
 # Stilidee „Gelebter Norden“ (Vorschlag)
 
+> **Abgelöst (2026-11-15):** Geltende Stilvorgabe ist `design/stil_norden_gezeitenhall.md` (Mischung mit „Küstenasche“). Dieses Dokument bleibt als Grundlage zum Nachlesen.
+
 Stand 2026-11-14. Vorschlag von Claude auf Wunsch des Nutzers: eigene Stilidee, angelehnt an **Aska**, **Medieval Dynasty** und **Kingdom Come: Deliverance II**. Nicht bestätigt. Es wird nichts aus diesen Spielen übernommen (keine Assets, Namen, Motive); sie dienen nur als Richtung.
 
 ## Was wir von wem lernen

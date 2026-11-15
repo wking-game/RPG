@@ -34,11 +34,11 @@ void UGamerScanComponent::LoadSettings()
 		Category.Symbol = Symbol;
 	};
 	// Defaults, overwritten by scan.json when present.
-	AddCategory(TEXT("food"), TEXT("Nahrung"), FLinearColor(0.95f, 0.45f, 0.35f), TEXT("N"));
-	AddCategory(TEXT("wood"), TEXT("Holz"), FLinearColor(0.80f, 0.60f, 0.30f), TEXT("H"));
-	AddCategory(TEXT("stone"), TEXT("Stein"), FLinearColor(0.70f, 0.75f, 0.85f), TEXT("S"));
-	AddCategory(TEXT("plants"), TEXT("Pflanzen"), FLinearColor(0.45f, 0.85f, 0.40f), TEXT("P"));
-	AddCategory(TEXT("items"), TEXT("Gegenstände"), FLinearColor(0.95f, 0.85f, 0.30f), TEXT("G"));
+	AddCategory(TEXT("food"), TEXT("Nahrung"), FLinearColor(0.715f, 0.298f, 0.056f), TEXT("N"));
+	AddCategory(TEXT("wood"), TEXT("Holz"), FLinearColor(0.405f, 0.334f, 0.22f), TEXT("H"));
+	AddCategory(TEXT("stone"), TEXT("Stein"), FLinearColor(0.33f, 0.399f, 0.384f), TEXT("S"));
+	AddCategory(TEXT("plants"), TEXT("Pflanzen"), FLinearColor(0.212f, 0.33f, 0.145f), TEXT("P"));
+	AddCategory(TEXT("items"), TEXT("Gegenstände"), FLinearColor(0.687f, 0.442f, 0.164f), TEXT("G"));
 
 	const FString Path = FPaths::ProjectContentDir() / TEXT("Data/scan.json");
 	FString Text;
@@ -48,9 +48,18 @@ void UGamerScanComponent::LoadSettings()
 		UE_LOG(LogGamer, Warning, TEXT("Scan: %s not readable, using defaults"), *Path);
 		return;
 	}
-	RadiusCm = static_cast<float>(Root->GetNumberField(TEXT("radius_m"))) * 100.f;
-	DurationSeconds = static_cast<float>(Root->GetNumberField(TEXT("duration_s")));
-	CooldownSeconds = static_cast<float>(Root->GetNumberField(TEXT("cooldown_s")));
+	double Number = 0.0;
+	if (Root->TryGetNumberField(TEXT("radius_m"), Number)) { RadiusCm = static_cast<float>(Number) * 100.f; }
+	if (Root->TryGetNumberField(TEXT("spread_s"), Number)) { SpreadSeconds = FMath::Max(0.5f, static_cast<float>(Number)); }
+	if (Root->TryGetNumberField(TEXT("visible_s"), Number)) { VisibleSeconds = static_cast<float>(Number); }
+	if (Root->TryGetNumberField(TEXT("cooldown_s"), Number)) { CooldownSeconds = static_cast<float>(Number); }
+	const TSharedPtr<FJsonObject>* Wave = nullptr;
+	if (Root->TryGetObjectField(TEXT("wave"), Wave))
+	{
+		if ((*Wave)->TryGetNumberField(TEXT("amplitude_cm"), Number)) { WaveAmplitudeCm = static_cast<float>(Number); }
+		if ((*Wave)->TryGetNumberField(TEXT("waves"), Number)) { WaveCount = FMath::Max(1, static_cast<int32>(Number)); }
+		if ((*Wave)->TryGetNumberField(TEXT("ripple_speed"), Number)) { RippleSpeed = static_cast<float>(Number); }
+	}
 	const TArray<TSharedPtr<FJsonValue>>* List = nullptr;
 	if (Root->TryGetArrayField(TEXT("categories"), List))
 	{
@@ -73,8 +82,8 @@ void UGamerScanComponent::LoadSettings()
 			}
 		}
 	}
-	UE_LOG(LogGamer, Log, TEXT("Scan: loaded radius %.0f m, %.0f s visible, %.0f s cooldown, %d categories"),
-		RadiusCm / 100.f, DurationSeconds, CooldownSeconds, Categories.Num());
+	UE_LOG(LogGamer, Log, TEXT("Scan: loaded radius %.0f m, spread %.1f s, %.0f s visible, %.0f s cooldown, %d categories"),
+		RadiusCm / 100.f, SpreadSeconds, VisibleSeconds, CooldownSeconds, Categories.Num());
 }
 
 int32 UGamerScanComponent::CategoryIndex(FName Id) const
@@ -112,10 +121,20 @@ float UGamerScanComponent::GetCooldownLeft() const
 	return World ? FMath::Max(0.f, CooldownSeconds - static_cast<float>(World->GetTimeSeconds() - LastScanTime)) : 0.f;
 }
 
+float UGamerScanComponent::GetAgeSeconds() const
+{
+	if (DebugAge >= 0.f)
+	{
+		return DebugAge;
+	}
+	const UWorld* World = GetWorld();
+	return World ? static_cast<float>(World->GetTimeSeconds() - LastScanTime) : 1000.f;
+}
+
 bool UGamerScanComponent::IsShowing() const
 {
 	const UWorld* World = GetWorld();
-	return World && Marks.Num() > 0 && World->GetTimeSeconds() < Marks[0].ExpireTime;
+	return World && (DebugAge >= 0.f || World->GetTimeSeconds() < ShowUntil);
 }
 
 bool UGamerScanComponent::TryScan()
@@ -131,23 +150,26 @@ bool UGamerScanComponent::TryScan()
 	{
 		if (UGamerWorkComponent* Work = Owner->FindComponentByClass<UGamerWorkComponent>())
 		{
-			Work->ShowMessage(FString::Printf(TEXT("Scan wieder bereit in %.0f s"), FMath::CeilToFloat(Left)));
+			Work->ShowMessage(FString::Printf(TEXT("Umschauen wieder bereit in %.0f s"), FMath::CeilToFloat(Left)));
 		}
 		return false;
 	}
-	LastScanTime = World->GetTimeSeconds();
+	const double Start = World->GetTimeSeconds();
+	LastScanTime = Start;
 	Marks.Reset();
 	Counts.Init(0, Categories.Num());
-	const FVector Center = Owner->GetActorLocation();
-	const double Expire = World->GetTimeSeconds() + DurationSeconds;
+	Center = Owner->GetActorLocation();
+	ShowUntil = Start + SpreadSeconds + VisibleSeconds;
 	auto Add = [&](const FVector& Location, int32 Category)
 	{
-		if (Category != INDEX_NONE && FVector::Dist(Location, Center) <= RadiusCm)
+		const float Distance = FVector::Dist(Location, Center);
+		if (Category != INDEX_NONE && Distance <= RadiusCm)
 		{
 			FGamerScanMark& Mark = Marks.AddDefaulted_GetRef();
 			Mark.Location = Location;
 			Mark.Category = Category;
-			Mark.ExpireTime = Expire;
+			Mark.RevealTime = Start + SpreadSeconds * (Distance / RadiusCm);   // the wave reaches it
+			Mark.ExpireTime = Mark.RevealTime + VisibleSeconds;
 			++Counts[Category];
 		}
 	};
@@ -156,8 +178,7 @@ bool UGamerScanComponent::TryScan()
 		const FGamerResourceNodeDef* Def = It->GetDef();
 		if (Def && !It->IsDepleted())
 		{
-			// Mark at the middle of the object, not at its feet.
-			Add(It->GetActorLocation() + FVector(0.f, 0.f, 60.f), CategoryOfNode(*Def));
+			Add(It->GetActorLocation() + FVector(0.f, 0.f, 60.f), CategoryOfNode(*Def));   // middle of the object, not its feet
 		}
 	}
 	const int32 ItemsCategory = CategoryIndex(TEXT("items"));

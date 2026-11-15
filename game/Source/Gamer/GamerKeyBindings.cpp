@@ -27,7 +27,8 @@ const TArray<FGamerBindableAction>& UGamerKeyBindings::GetActions()
 			{ GamerInputActions::Rotate, TEXT("Bauteil drehen"), EKeys::R },
 			{ GamerInputActions::BuildMulti, TEXT("Mehrfach bauen (halten)"), EKeys::LeftShift },
 			{ GamerInputActions::Demolish, TEXT("Abreißen"), EKeys::X },
-			{ GamerInputActions::Scan, TEXT("Umgebungs-Scan"), EKeys::Z },
+			{ GamerInputActions::Scan, TEXT("Umschauen (Material)"), EKeys::Z },
+			{ GamerInputActions::Listen, TEXT("Lauschen (Magie)"), EKeys::Q },
 			{ GamerInputActions::VillageMenu, TEXT("Dorfverwaltung"), EKeys::V },
 			{ GamerInputActions::BirdView, TEXT("Vogelperspektive"), EKeys::B },
 		};

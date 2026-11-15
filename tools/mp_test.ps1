@@ -43,6 +43,7 @@ param(
     [string]$ServerArgs = '',
     [string]$ClientArgs = '',
     [string]$Client1Args = '',
+    [string]$Client2Args = '',
 
     # Keep everything running this long after the join check (e.g. for movement tests).
     [int]$HoldSec = 0,
@@ -112,7 +113,7 @@ try {
         $cLog = Join-Path $LogDir "client$i.log"
         $clientLogs += $cLog
         $rhi = if ($Render) { '-windowed -resx=960 -resy=540' } else { '-nullrhi -nosound' }
-        $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } else { $ClientArgs }
+        $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } elseif ($i -eq 2) { "$ClientArgs $Client2Args" } else { $ClientArgs }
         # Stable player id per client slot (save system: re-joining players get their inventory back).
         if ($extra -notmatch 'GamerPlayerId=') { $extra = "$extra -GamerPlayerId=mp_client$i" }
         $cArgs = "`"$Project`" 127.0.0.1:$Port -game $rhi -unattended -nosplash -nopause -abslog=`"$cLog`" $extra"

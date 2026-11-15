@@ -89,6 +89,10 @@ void UGamerBuffComponent::ServerEat_Implementation(FName Item)
 	{
 		return Tell(FString::Printf(TEXT("Du hast kein %s."), *Def->Name));
 	}
+	if (AGamerCharacter* Eater = Cast<AGamerCharacter>(GetOwner()))
+	{
+		Eater->MulticastAction(EGamerAnimAction::Consume, true);
+	}
 
 	const double End = ServerNow() + Def->Food.Minutes * MinuteSeconds;
 	FString Replaced;

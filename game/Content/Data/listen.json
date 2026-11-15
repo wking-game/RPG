@@ -1,0 +1,37 @@
+{
+  "schema": "listen_1",
+  "_comment": "Lauschen (Magie, Gezeitenhall), Entscheidung 2026-11-15 (Umschauen und Lauschen getrennt; Magie-Gespür: Stufen und Boni). Passiv: ist ein magisches Ziel in Reichweite, schimmert der Bildschirmrand türkis (heiß/kalt), und es gibt einen Audio-Haken fürs Summen. Aktiv (eigene Taste): die Figur bleibt stehen, ein langsamer türkiser Sinus-Ring läuft aus (Dauer = Reichweite / 2 m/s, je Stufe einzeln justierbar), Funde bleiben sichtbar. Alle Zahlen sind Startwerte zum Justieren; das Zieltempo für Solo (Stufe 3 nach ca. 3–4 h, Stufe 5 nach ca. 25–30 h) ist eine Annahme. Magische Ziele sind Actors mit dem Tag GamerMagic (optional: GamerMagicHidden ab Stufe 4, GamerMagicRare ab Stufe 5, kind:<Art>, coarse:<grobe Art>, name:<Name>, amount:<Menge>). Es gibt noch keine echten magischen Objekte.",
+  "wave_speed_m_s": 2,
+  "levels": [
+    { "level": 1, "name": "Gespür",      "min_ep": 0,   "range_m": 10, "wave_s": 5,    "visible_s": 15, "cooldown_s": 15, "strength": 0.30, "shows": "flicker" },
+    { "level": 2, "name": "Ahnung",      "min_ep": 10,  "range_m": 15, "wave_s": 7.5,  "visible_s": 20, "cooldown_s": 15, "strength": 0.45, "shows": "direction_coarse" },
+    { "level": 3, "name": "Deutung",     "min_ep": 30,  "range_m": 20, "wave_s": 10,   "visible_s": 25, "cooldown_s": 15, "strength": 0.60, "shows": "name_amount" },
+    { "level": 4, "name": "Klarblick",   "min_ep": 75,  "range_m": 25, "wave_s": 12.5, "visible_s": 30, "cooldown_s": 15, "strength": 0.80, "shows": "hidden_mark" },
+    { "level": 5, "name": "Seidr-Blick", "min_ep": 160, "range_m": 30, "wave_s": 15,   "visible_s": 40, "cooldown_s": 10, "strength": 1.00, "shows": "rare" }
+  ],
+  "start_level_by_origin": { "origin_seer": 2 },
+  "bonus_level": {
+    "item": { "item_seaglass_amulet": 1 },
+    "d_conditions": ["season:winter", "night", "fog", "place:stone_circle"],
+    "d_levels": 1,
+    "_comment": "Amulett +1 Stufe, solange man es trägt. D: +1 Stufe, solange eine Bedingung gilt; geprüft wird bisher nur season:winter (Nacht, Nebel und Steinkreis brauchen Tag/Nacht, Wetter und Orte). Alle Boni zusammen höchstens bis Stufe 5."
+  },
+  "village_seer": {
+    "ep_bonus": 0.25,
+    "conditions": ["unlock:quest_village_seer", "job:job_seer"],
+    "_comment": "+25 % EP für alle Spieler, solange die Dorf-Seherin durch eine Quest freigeschaltet ist und im Dorf lebt. Quests gibt es noch nicht: unlock:* wird nicht geprüft (gilt als nicht erfüllt)."
+  },
+  "ep_sources": { "new_find": 2, "seaglass_harvest": 1, "stone_circle": 8, "tide_event": 15 },
+  "tempo": { "slow": 0.6, "normal": 1.0, "fast": 1.6 },
+  "coop": {
+    "find_share": 0.5,
+    "find_radius_m": 30,
+    "group_window_s": 10,
+    "group_distance_m": 15,
+    "group_range_mul": 1.25,
+    "group_level_minus": 1
+  },
+  "passive": { "interval_s": 0.15, "max_edge_alpha": 0.55 },
+  "colors": { "tide_light": [0.405, 0.82, 0.723] },
+  "marks": { "min_level": 4, "_comment": "Markieren ab Stufe 4, sichtbar für alle: nur vorgemerkt (es gibt noch keine Funde); eigene Markierungen sollen auch solo gespeichert bleiben." }
+}

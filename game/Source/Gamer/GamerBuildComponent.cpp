@@ -13,7 +13,7 @@
 
 namespace
 {
-	int32 PlayerIdOf(const AActor* Owner)
+	int32 BuildPlayerIdOf(const AActor* Owner)
 	{
 		const APawn* Pawn = Cast<APawn>(Owner);
 		const APlayerState* PS = Pawn ? Pawn->GetPlayerState() : nullptr;
@@ -86,7 +86,7 @@ UGamerWorkComponent* UGamerBuildComponent::GetWork() const
 
 void UGamerBuildComponent::Message(const FString& Text) const
 {
-	UE_LOG(LogGamer, Log, TEXT("Build message for player %d: %s"), PlayerIdOf(GetOwner()), *Text);
+	UE_LOG(LogGamer, Log, TEXT("Build message for player %d: %s"), BuildPlayerIdOf(GetOwner()), *Text);
 	if (UGamerWorkComponent* Work = GetWork())
 	{
 		if (GetOwner()->HasAuthority())
@@ -389,7 +389,7 @@ void UGamerBuildComponent::ServerPlace_Implementation(FName BuildableId, FTransf
 	}
 	Building->FinishSpawning(Transform);
 
-	UE_LOG(LogGamer, Log, TEXT("Build placed: player=%d id=%s flow=%s at %s yaw %.0f"), PlayerIdOf(Owner), *BuildableId.ToString(),
+	UE_LOG(LogGamer, Log, TEXT("Build placed: player=%d id=%s flow=%s at %s yaw %.0f"), BuildPlayerIdOf(Owner), *BuildableId.ToString(),
 		FlowName(Options.BuildFlow), *Transform.GetLocation().ToCompactString(), Transform.Rotator().Yaw);
 	if (Options.BuildFlow == EGamerBuildFlow::Instant)
 	{
@@ -421,6 +421,10 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 	if (FVector::Dist(Owner->GetActorLocation(), Building->GetActorLocation()) > WorkReach)
 	{
 		return Message(TEXT("Zu weit weg."));
+	}
+	if (AGamerCharacter* Character = Cast<AGamerCharacter>(Owner))
+	{
+		Character->MulticastAction(EGamerAnimAction::Hammer, true);
 	}
 	if (Def->RequiredTool.IsRequired())
 	{
@@ -479,10 +483,10 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 		Building->AddProgress(Interval * Speed / FMath::Max(0.1f, Def->BuildSeconds));
 	}
 
-	UE_LOG(LogGamer, Log, TEXT("Hammer: player=%d id=%s progress=%.2f"), PlayerIdOf(Owner), *Def->Id.ToString(), Building->GetProgress());
+	UE_LOG(LogGamer, Log, TEXT("Hammer: player=%d id=%s progress=%.2f"), BuildPlayerIdOf(Owner), *Def->Id.ToString(), Building->GetProgress());
 	if (Building->IsFinished())
 	{
-		UE_LOG(LogGamer, Log, TEXT("Build finished: player=%d id=%s inventory: %s"), PlayerIdOf(Owner), *Def->Id.ToString(), *Inventory->Describe());
+		UE_LOG(LogGamer, Log, TEXT("Build finished: player=%d id=%s inventory: %s"), BuildPlayerIdOf(Owner), *Def->Id.ToString(), *Inventory->Describe());
 		Message(FString::Printf(TEXT("Fertig: %s"), *Def->Name));
 	}
 }
@@ -523,7 +527,7 @@ void UGamerBuildComponent::ServerUpgrade_Implementation(AGamerBuilding* Building
 	Spent.Append(Stage->Cost);
 	Building->SetSpent(Spent); // tearing down gives the upgrade material back too
 	Building->Upgrade();
-	UE_LOG(LogGamer, Log, TEXT("Upgrade: player=%d id=%s level %d workers %d inventory: %s"), PlayerIdOf(Owner), *Def->Id.ToString(),
+	UE_LOG(LogGamer, Log, TEXT("Upgrade: player=%d id=%s level %d workers %d inventory: %s"), BuildPlayerIdOf(Owner), *Def->Id.ToString(),
 		Building->GetLevel(), Building->GetWorkers(), *Inventory->Describe());
 	Message(FString::Printf(TEXT("%s ausgebaut: Stufe %d, %d Arbeitsplätze."), *Def->Name, Building->GetLevel(), Building->GetWorkers()));
 }
@@ -572,7 +576,7 @@ void UGamerBuildComponent::ServerDemolish_Implementation(AGamerBuilding* Buildin
 		}
 	}
 	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
-	UE_LOG(LogGamer, Log, TEXT("Demolished: player=%d id=%s finished=%d refund [%s] inventory: %s"), PlayerIdOf(Owner),
+	UE_LOG(LogGamer, Log, TEXT("Demolished: player=%d id=%s finished=%d refund [%s] inventory: %s"), BuildPlayerIdOf(Owner),
 		*Def->Id.ToString(), Building->IsFinished() ? 1 : 0, *BuildAmountsText(Data, Given), *Inventory->Describe());
 	FString Text = FString::Printf(TEXT("Abgerissen: %s"), *Def->Name);
 	if (Given.Num() > 0)

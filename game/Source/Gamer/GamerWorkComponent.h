@@ -36,6 +36,14 @@ struct FGamerWorkState
 
 	UPROPERTY()
 	float Duration = 0.f;
+
+	/** What is worked on, for animations: the resource node id (Harvest) or the recipe id (Craft). */
+	UPROPERTY()
+	FName Subject;
+
+	/** Harvest: the target lies low (ground, bush, plant) - the figure should crouch and reach for it. Craft: made at a station. */
+	UPROPERTY()
+	bool bLowOrStation = false;
 };
 
 /**
@@ -147,7 +155,7 @@ protected:
 	FGamerWorkState Work;
 
 private:
-	void StartWork(EGamerWorkKind Kind, const FString& Label, float Duration);
+	void StartWork(EGamerWorkKind Kind, const FString& Label, float Duration, FName Subject = NAME_None, bool bLowOrStation = false);
 	void FinishWork();
 	void FinishWorkInner();
 	void StartNextQueued();

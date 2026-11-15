@@ -11,8 +11,12 @@
 #include "GamerFarmBuilding.h"
 #include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerListenComponent.h"
 #include "GamerScanComponent.h"
 #include "GamerWorkComponent.h"
+#include "GamerAnimInstance.h"
+#include "GamerPlayerState.h"
+#include "Engine/SkeletalMesh.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Camera/CameraComponent.h"
@@ -32,6 +36,8 @@
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Components/PrimitiveComponent.h"
+#include "Misc/PackageName.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Net/UnrealNetwork.h"
@@ -45,13 +51,27 @@ namespace
 		TEXT("If > 0, every character writes its position to the log every N seconds (for multiplayer tests). ")
 		TEXT("Can also be set with -GamerLogPositions=N on the command line."));
 
-	// Placeholder colours so players can tell each other apart, picked by PlayerId.
-	const FLinearColor PlayerColors[] = {
-		FLinearColor(0.80f, 0.20f, 0.15f), FLinearColor(0.15f, 0.45f, 0.85f),
-		FLinearColor(0.20f, 0.65f, 0.25f), FLinearColor(0.90f, 0.70f, 0.10f),
-		FLinearColor(0.55f, 0.25f, 0.75f), FLinearColor(0.10f, 0.70f, 0.70f),
-		FLinearColor(0.90f, 0.45f, 0.10f), FLinearColor(0.85f, 0.85f, 0.85f),
-	};
+	// Interim figure (Manny/Quinn): cloth colour of the character editor as tint. Values (sRGB) from the style
+	// design/stil_norden_gezeitenhall.md, table "Kleidungsfarben"; FLinearColor(FColor) converts to linear.
+	FLinearColor ClothTint(FName Option)
+	{
+		static const TMap<FName, FLinearColor> Colors = {
+			{ TEXT("cloth_natural"), FLinearColor(FColor::FromHex(TEXT("A99B80"))) }, { TEXT("cloth_grey"), FLinearColor(FColor::FromHex(TEXT("8A8C86"))) },
+			{ TEXT("cloth_brown"), FLinearColor(FColor::FromHex(TEXT("716957"))) },   { TEXT("cloth_ochre"), FLinearColor(FColor::FromHex(TEXT("A9844A"))) },
+			{ TEXT("cloth_red"), FLinearColor(FColor::FromHex(TEXT("904C3E"))) },     { TEXT("cloth_blue"), FLinearColor(FColor::FromHex(TEXT("4E6475"))) },
+			{ TEXT("cloth_green"), FLinearColor(FColor::FromHex(TEXT("56654F"))) },
+		};
+		const FLinearColor* Found = Colors.Find(Option);
+		return Found ? *Found : Colors[TEXT("cloth_natural")];
+	}
+
+	EGamerAnimAction ActionForTool(FName ToolType)
+	{
+		return ToolType == TEXT("axe") ? EGamerAnimAction::Chop
+			: ToolType == TEXT("pickaxe") ? EGamerAnimAction::Mine
+			: ToolType == TEXT("hammer") ? EGamerAnimAction::Hammer
+			: EGamerAnimAction::Gather;
+	}
 }
 
 AGamerCharacter::AGamerCharacter()
@@ -83,30 +103,21 @@ AGamerCharacter::AGamerCharacter()
 	Work = CreateDefaultSubobject<UGamerWorkComponent>(TEXT("Work"));
 	Build = CreateDefaultSubobject<UGamerBuildComponent>(TEXT("Build"));
 	Scan = CreateDefaultSubobject<UGamerScanComponent>(TEXT("Scan"));
+	Listen = CreateDefaultSubobject<UGamerListenComponent>(TEXT("Listen"));
 	Buffs = CreateDefaultSubobject<UGamerBuffComponent>(TEXT("Buffs"));
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
-
-	// Engine cylinder: 100 x 100 x 100 units, centred. Scaled to the capsule (84 wide, 192 high).
-	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(GetCapsuleComponent());
-	BodyMesh->SetRelativeScale3D(FVector(0.84f, 0.84f, 1.92f));
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	if (CylinderMesh.Succeeded())
-	{
-		BodyMesh->SetStaticMesh(CylinderMesh.Object);
-	}
-
-	FacingMarker = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FacingMarker"));
-	FacingMarker->SetupAttachment(GetCapsuleComponent());
-	FacingMarker->SetRelativeLocation(FVector(45.f, 0.f, 60.f));
-	FacingMarker->SetRelativeScale3D(FVector(0.3f, 0.2f, 0.2f));
-	FacingMarker->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	if (CubeMesh.Succeeded())
-	{
-		FacingMarker->SetStaticMesh(CubeMesh.Object);
-	}
+	// Figure on the UE5 skeleton: Epic Manny/Quinn for now, MetaHuman bodies later (same skeleton, same animation).
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MannyMesh(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> QuinnMesh(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple"));
+	BodyStrong = MannyMesh.Object;
+	BodySlim = QuinnMesh.Object;
+	USkeletalMeshComponent* Body = GetMesh();
+	Body->SetSkeletalMesh(BodyStrong);
+	Body->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -96.f), FRotator(0.f, -90.f, 0.f));
+	Body->SetAnimInstanceClass(UGamerAnimInstance::StaticClass());
+	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// A dedicated server never renders: no pose work there (gameplay does not read bones).
+	Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 }
 
 void AGamerCharacter::BeginPlay()
@@ -132,6 +143,11 @@ void AGamerCharacter::BeginPlay()
 void AGamerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	ApplyBodyLook(); // cheap when unchanged; the profile can replicate after the player state
+	if (PendingGrab.IsValid() && IsLocallyControlled())
+	{
+		TickGrab(DeltaSeconds);
+	}
 
 	if (TestWalkRemaining > 0.f && IsLocallyControlled())
 	{
@@ -142,6 +158,7 @@ void AGamerCharacter::Tick(float DeltaSeconds)
 	if (IsLocallyControlled())
 	{
 		UpdateFocus();
+		UpdateOutline();
 		// Holding the interact key for half a second picks up everything within 3 m (the first press already did one).
 		if (bInteractDown && !bHoldFired && GetWorld()->GetTimeSeconds() - InteractDownTime >= 0.5 && !bCraftMenuOpen)
 		{
@@ -207,6 +224,7 @@ void AGamerCharacter::BuildInput()
 	SprintAction = MakeAction(TEXT("IA_Sprint"), EInputActionValueType::Boolean);
 	FocusNextAction = MakeAction(TEXT("IA_FocusNext"), EInputActionValueType::Boolean);
 	ScanAction = MakeAction(TEXT("IA_Scan"), EInputActionValueType::Boolean);
+	ListenAction = MakeAction(TEXT("IA_Listen"), EInputActionValueType::Boolean);
 	HotbarNextAction = MakeAction(TEXT("IA_HotbarNext"), EInputActionValueType::Boolean);
 	HotbarPrevAction = MakeAction(TEXT("IA_HotbarPrev"), EInputActionValueType::Boolean);
 
@@ -273,6 +291,8 @@ void AGamerCharacter::ApplyKeyBindings()
 	MappingContext->MapKey(VillageMenuAction, EKeys::Gamepad_Special_Left);
 	MappingContext->MapKey(ScanAction, Keys->GetKey(GamerInputActions::Scan));
 	MappingContext->MapKey(ScanAction, EKeys::Gamepad_DPad_Down);
+	MappingContext->MapKey(ListenAction, Keys->GetKey(GamerInputActions::Listen));
+	MappingContext->MapKey(ListenAction, EKeys::Gamepad_LeftShoulder);
 	MappingContext->MapKey(FocusNextAction, Keys->GetKey(GamerInputActions::FocusNext));
 	MappingContext->MapKey(FocusNextAction, EKeys::Gamepad_DPad_Up);
 	MappingContext->MapKey(SprintAction, Keys->GetKey(GamerInputActions::Sprint));
@@ -376,6 +396,7 @@ void AGamerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		Input->BindAction(VillageMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::OpenVillageMenu);
 		Input->BindAction(FocusNextAction, ETriggerEvent::Started, this, &AGamerCharacter::CycleFocus);
 		Input->BindAction(ScanAction, ETriggerEvent::Started, this, &AGamerCharacter::DoScan);
+		Input->BindAction(ListenAction, ETriggerEvent::Started, this, &AGamerCharacter::DoListen);
 		Input->BindAction(SprintAction, ETriggerEvent::Started, this, &AGamerCharacter::SprintStart);
 		Input->BindAction(SprintAction, ETriggerEvent::Completed, this, &AGamerCharacter::SprintStop);
 		Input->BindAction(HotbarNextAction, ETriggerEvent::Started, this, &AGamerCharacter::HotbarNext);
@@ -452,6 +473,78 @@ void AGamerCharacter::InteractReleased()
 void AGamerCharacter::DoScan()
 {
 	Scan->TryScan();
+}
+
+void AGamerCharacter::DoListen()
+{
+	Listen->TryListen();
+}
+
+void AGamerCharacter::SetOutlined(AActor* Actor, bool bOn)
+{
+	if (!Actor)
+	{
+		return;
+	}
+	TArray<UPrimitiveComponent*> Primitives;
+	Actor->GetComponents<UPrimitiveComponent>(Primitives);
+	for (UPrimitiveComponent* Primitive : Primitives)
+	{
+		if (bOn)
+		{
+			Primitive->SetCustomDepthStencilValue(1);
+		}
+		Primitive->SetRenderCustomDepth(bOn);
+	}
+}
+
+void AGamerCharacter::SetupOutline()
+{
+	bOutlineSetupTried = true;
+	// The stencil needs r.CustomDepth 3; set at run time instead of in DefaultEngine.ini (core file).
+	if (IConsoleVariable* CustomDepth = IConsoleManager::Get().FindConsoleVariable(TEXT("r.CustomDepth")))
+	{
+		if (CustomDepth->GetInt() < 3)
+		{
+			CustomDepth->Set(3, ECVF_SetByConsole);
+		}
+	}
+	const FString Package = TEXT("/Game/Gamer/Materials/M_Outline");
+	if (!FPackageName::DoesPackageExist(Package))
+	{
+		UE_LOG(LogGamer, Warning, TEXT("Outline: %s missing (run tools/unreal/build_outline_material.py), the HUD rectangle is used"), *Package);
+		return;
+	}
+	UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, *(Package + TEXT(".M_Outline")));
+	if (!Base || !FollowCamera)
+	{
+		return;
+	}
+	OutlineMaterial = UMaterialInstanceDynamic::Create(Base, this);
+	FollowCamera->PostProcessSettings.AddBlendable(OutlineMaterial, 1.f);
+	FollowCamera->PostProcessBlendWeight = 1.f;
+	UE_LOG(LogGamer, Log, TEXT("Outline: post-process material set up"));
+}
+
+void AGamerCharacter::UpdateOutline()
+{
+	if (!bOutlineSetupTried)
+	{
+		SetupOutline();
+	}
+	if (!OutlineMaterial)
+	{
+		return;
+	}
+	AActor* Target = FocusNode.Get() ? static_cast<AActor*>(FocusNode.Get())
+		: FocusGroundItem.Get() ? static_cast<AActor*>(FocusGroundItem.Get())
+		: static_cast<AActor*>(FocusBuilding.Get());
+	if (Target != OutlineTarget.Get())
+	{
+		SetOutlined(OutlineTarget.Get(), false);
+		OutlineTarget = Target;
+	}
+	SetOutlined(Target, true);   // also after a mesh change of the target (growth stages)
 }
 
 void AGamerCharacter::CycleFocus()
@@ -632,7 +725,7 @@ void AGamerCharacter::Interact()
 	}
 	if (AGamerGroundItem* Ground = FocusGroundItem.Get())
 	{
-		Work->ServerPickUp(Ground);
+		StartGrab(Ground); // walk up, then ServerPickUp
 		return;
 	}
 	// A finished station with recipes of its own: E opens (or closes) its station window.
@@ -651,7 +744,65 @@ void AGamerCharacter::Interact()
 	}
 	if (AGamerResourceNode* Node = FocusNode.Get())
 	{
-		Work->ServerHarvest(Node);
+		const FGamerResourceNodeDef* Def = Node->GetDef();
+		if (Def && !Def->RequiredTool.IsRequired())
+		{
+			StartGrab(Node); // by hand: walk up, then ServerHarvest
+		}
+		else
+		{
+			Work->ServerHarvest(Node);
+		}
+	}
+}
+
+void AGamerCharacter::StartGrab(AActor* Target)
+{
+	PendingGrab = Target;
+	PendingGrabTime = 0.f;
+	PendingGrabBestDistance = TNumericLimits<float>::Max();
+	TickGrab(0.f); // close enough already: grab at once
+}
+
+void AGamerCharacter::TickGrab(float DeltaSeconds)
+{
+	AActor* Target = PendingGrab.Get();
+	if (!Target)
+	{
+		PendingGrab.Reset();
+		return;
+	}
+	PendingGrabTime += DeltaSeconds;
+	const FVector Delta = Target->GetActorLocation() - GetActorLocation();
+	const float Distance = Delta.Size2D();
+	// Done when close, out of time, or no longer getting closer (the bush itself blocks the way).
+	const bool bStuck = PendingGrabTime > 0.3f && Distance > PendingGrabBestDistance - 1.f;
+	PendingGrabBestDistance = FMath::Min(PendingGrabBestDistance, Distance);
+	if (Distance <= GrabDistance || PendingGrabTime >= GrabApproachSeconds || bStuck)
+	{
+		FinishGrab();
+		return;
+	}
+	AddMovementInput(FVector(Delta.X, Delta.Y, 0.f).GetSafeNormal(), 1.f);
+}
+
+void AGamerCharacter::FinishGrab()
+{
+	AActor* Target = PendingGrab.Get();
+	PendingGrab.Reset();
+	if (!Target)
+	{
+		return;
+	}
+	FaceTowards(Target);
+	if (AGamerGroundItem* Ground = Cast<AGamerGroundItem>(Target))
+	{
+		PlayActionLocally(EGamerAnimAction::GatherLow); // the server's copy skips this player
+		Work->ServerPickUp(Ground);
+	}
+	else if (AGamerResourceNode* Node = Cast<AGamerResourceNode>(Target))
+	{
+		Work->ServerHarvest(Node); // work loop (crouch) comes from the replicated work state
 	}
 }
 
@@ -784,6 +935,7 @@ void AGamerCharacter::PerformStrike()
 	// A dish or drink in hand: eat it (meal buffs, Taverne-Session; architecture rule 5).
 	if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef(); Held && Held->Food.IsMeal())
 	{
+		PlayActionLocally(EGamerAnimAction::Consume);
 		Buffs->ServerEat(Held->Id);
 		return;
 	}
@@ -791,6 +943,8 @@ void AGamerCharacter::PerformStrike()
 	AGamerBuilding* Building = FocusBuilding.Get();
 	if (Building && !Building->IsFinished() && TakeToolInHand(TEXT("hammer"), 1))
 	{
+		FaceTowards(Building);
+		PlayActionLocally(EGamerAnimAction::Hammer);
 		Build->ServerHammer(Building);
 		return;
 	}
@@ -815,6 +969,11 @@ void AGamerCharacter::PerformStrike()
 		if (const FGamerResourceNodeDef* Def = Node->GetDef(); Def && Def->RequiredTool.IsRequired())
 		{
 			TakeToolInHand(Def->RequiredTool.Type, Def->RequiredTool.MinTier);
+			if (!Work->IsBusy())
+			{
+				FaceTowards(Node);
+				PlayActionLocally(ActionForTool(Def->RequiredTool.Type));
+			}
 		}
 	}
 	Work->ServerStrike(FocusNode.Get());
@@ -868,6 +1027,7 @@ void AGamerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	// The owner sets it itself; the others need it for the right speed of their smoothed copy.
 	DOREPLIFETIME_CONDITION(AGamerCharacter, bSprinting, COND_SkipOwner);
+	DOREPLIFETIME(AGamerCharacter, ActionPulse);
 }
 
 void AGamerCharacter::OpenBuildMenu()
@@ -934,15 +1094,95 @@ void AGamerCharacter::OnRep_PlayerState()
 
 void AGamerCharacter::ApplyPlayerColor()
 {
-	const APlayerState* PS = GetPlayerState();
-	if (!PS || !BodyMesh || !BodyMesh->GetStaticMesh())
+	AppliedBodyLook = NAME_None; // apply again with the (new) player state
+	ApplyBodyLook();
+}
+
+void AGamerCharacter::ApplyBodyLook()
+{
+	const AGamerPlayerState* PS = GetPlayerState<AGamerPlayerState>();
+	if (!PS || GetNetMode() == NM_DedicatedServer)
 	{
 		return;
 	}
-	const FLinearColor Color = PlayerColors[FMath::Abs(PS->GetPlayerId()) % UE_ARRAY_COUNT(PlayerColors)];
-	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateAndSetMaterialInstanceDynamic(0))
+	const FGamerCharacterProfile& Profile = PS->GetProfile();
+	const FName BodyLook = Profile.GetLook(TEXT("look_body"));
+	const FName Cloth = Profile.GetLook(TEXT("look_cloth_color"));
+	const FName Key(*FString::Printf(TEXT("%s|%s"), *BodyLook.ToString(), *Cloth.ToString()));
+	if (Key == AppliedBodyLook)
 	{
-		// "Color" is the parameter of the engine's BasicShapeMaterial.
-		Material->SetVectorParameterValue(TEXT("Color"), Color);
+		return;
+	}
+	AppliedBodyLook = Key;
+	USkeletalMesh* Wanted = BodyLook == TEXT("body_slim") && BodySlim ? BodySlim.Get() : BodyStrong.Get();
+	if (Wanted && GetMesh()->GetSkeletalMeshAsset() != Wanted)
+	{
+		GetMesh()->SetSkeletalMesh(Wanted);
+	}
+	// Mannequin material: "Paint Tint" colours the painted panels (the clothing stand-in).
+	const FLinearColor Tint = ClothTint(Cloth);
+	for (int32 i = 0; i < GetMesh()->GetNumMaterials(); ++i)
+	{
+		if (UMaterialInstanceDynamic* Material = GetMesh()->CreateAndSetMaterialInstanceDynamic(i))
+		{
+			Material->SetVectorParameterValue(TEXT("Paint Tint"), Tint);
+		}
+	}
+}
+
+void AGamerCharacter::FillAnimInputs(FGamerAnimInputs& Out) const
+{
+	Out.bSprinting = bSprinting;
+	const FGamerWorkState& State = Work->GetWork();
+	// bLowOrStation (Gameplay-Session): Harvest = target lies low (crouch); Craft = at a station.
+	// Crafting the first tools by hand (no station) kneels and hammers.
+	Out.Loop = State.Kind == EGamerWorkKind::Harvest ? (State.bLowOrStation ? EGamerAnimAction::GatherLow : EGamerAnimAction::Gather)
+		: State.Kind == EGamerWorkKind::Craft ? (State.bLowOrStation ? EGamerAnimAction::CraftStation : EGamerAnimAction::Craft)
+		: EGamerAnimAction::None;
+	Out.Pulse = LocalAction;
+}
+
+void AGamerCharacter::FaceTowards(const AActor* Target)
+{
+	if (!Target || !IsLocallyControlled())
+	{
+		return;
+	}
+	const FVector Delta = Target->GetActorLocation() - GetActorLocation();
+	if (Delta.SizeSquared2D() > 1.f)
+	{
+		SetActorRotation(FRotator(0.f, Delta.Rotation().Yaw, 0.f));
+	}
+}
+
+void AGamerCharacter::PlayActionLocally(EGamerAnimAction Kind)
+{
+	LocalAction.Kind = Kind;
+	++LocalAction.Count;
+}
+
+void AGamerCharacter::MulticastAction(EGamerAnimAction Kind, bool bPredicted)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	ActionPulse.Kind = Kind;
+	ActionPulse.bPredicted = bPredicted;
+	++ActionPulse.Count;
+	if (!bPredicted || !IsLocallyControlled())
+	{
+		PlayActionLocally(Kind); // the listen server shows it too
+	}
+}
+
+void AGamerCharacter::OnRep_ActionPulse()
+{
+	const bool bPlay = !(ActionPulse.bPredicted && IsLocallyControlled());
+	UE_LOG(LogGamer, Log, TEXT("Anim action %d #%d of %s: %s"), static_cast<int32>(ActionPulse.Kind), ActionPulse.Count,
+		*GetName(), bPlay ? TEXT("played") : TEXT("already played locally"));
+	if (bPlay)
+	{
+		PlayActionLocally(ActionPulse.Kind);
 	}
 }

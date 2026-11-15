@@ -99,15 +99,17 @@ def setup_scene():
     scene.view_settings.view_transform = 'Standard'
     world = bpy.data.worlds.new('IconWorld')
     world.use_nodes = True
-    world.node_tree.nodes['Background'].inputs['Color'].default_value = (0.55, 0.55, 0.55, 1)
-    world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.9
+    # Cool, soft light: mist grey #9AA8A5 as sky colour (style guide design/stil_norden_gezeitenhall.md)
+    world.node_tree.nodes['Background'].inputs['Color'].default_value = (0.331, 0.401, 0.384, 1)
+    world.node_tree.nodes['Background'].inputs['Strength'].default_value = 1.0
     scene.world = world
     try:
         scene.eevee.taa_render_samples = 48
     except AttributeError:
         pass
     sun_d = bpy.data.lights.new('IconSun', 'SUN')
-    sun_d.energy = 3.0
+    sun_d.energy = 2.6
+    sun_d.color = (0.92, 0.96, 1.0)
     sun_d.angle = math.radians(25)
     sun = bpy.data.objects.new('IconSun', sun_d)
     scene.collection.objects.link(sun)

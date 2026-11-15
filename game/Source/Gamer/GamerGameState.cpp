@@ -34,6 +34,12 @@ FGamerWorldOptions FGamerWorldOptions::FromUrlOptions(const FString& Options)
 	else if (Inventory == TEXT("character")) { Result.bCarryInventory = true; }
 	else if (!Inventory.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Inventory=%s unknown (world, character)"), *Inventory); }
 
+	const FString Tempo = Read(TEXT("Tempo"));
+	if (Tempo == TEXT("slow")) { Result.GespuerTempo = EGamerGespuerTempo::Slow; }
+	else if (Tempo == TEXT("normal")) { Result.GespuerTempo = EGamerGespuerTempo::Normal; }
+	else if (Tempo == TEXT("fast")) { Result.GespuerTempo = EGamerGespuerTempo::Fast; }
+	else if (!Tempo.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Tempo=%s unknown (slow, normal, fast)"), *Tempo); }
+
 	const FString Season = Read(TEXT("SeasonMinutes"));
 	if (!Season.IsEmpty())
 	{
@@ -51,8 +57,9 @@ FString FGamerWorldOptions::Describe() const
 	const TCHAR* Place = Placement == EGamerPlacement::FreeSnap ? TEXT("frei mit Einrasten") : TEXT("festes Raster");
 	const TCHAR* Tear = Demolish == EGamerDemolish::FullRefund ? TEXT("Abreißen: volles Material")
 		: Demolish == EGamerDemolish::HalfRefund ? TEXT("Abreißen: halbes Material") : TEXT("kein Abreißen");
-	return FString::Printf(TEXT("%s · %s · %s · Jahreszeit %g Min. · Inventar %s"), Flow, Place, Tear, SeasonMinutes,
-		bCarryInventory ? TEXT("mit dem Charakter") : TEXT("pro Welt"));
+	const TCHAR* Gespuer = GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("langsam") : GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("schnell") : TEXT("normal");
+	return FString::Printf(TEXT("%s · %s · %s · Jahreszeit %g Min. · Inventar %s · Gespür %s"), Flow, Place, Tear, SeasonMinutes,
+		bCarryInventory ? TEXT("mit dem Charakter") : TEXT("pro Welt"), Gespuer);
 }
 
 FString FGamerWorldOptions::ToLogString() const
@@ -62,8 +69,9 @@ FString FGamerWorldOptions::ToLogString() const
 	const TCHAR* Place = Placement == EGamerPlacement::FreeSnap ? TEXT("free") : TEXT("grid");
 	const TCHAR* Tear = Demolish == EGamerDemolish::FullRefund ? TEXT("full")
 		: Demolish == EGamerDemolish::HalfRefund ? TEXT("half") : TEXT("off");
-	return FString::Printf(TEXT("BuildFlow=%s Placement=%s Demolish=%s SeasonMinutes=%g Inventory=%s"), Flow, Place, Tear, SeasonMinutes,
-		bCarryInventory ? TEXT("character") : TEXT("world"));
+	const TCHAR* Tempo = GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("slow") : GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("fast") : TEXT("normal");
+	return FString::Printf(TEXT("BuildFlow=%s Placement=%s Demolish=%s SeasonMinutes=%g Inventory=%s Tempo=%s"), Flow, Place, Tear, SeasonMinutes,
+		bCarryInventory ? TEXT("character") : TEXT("world"), Tempo);
 }
 
 FString FGamerWorldOptions::ToUrlOptions() const

@@ -28,6 +28,8 @@ namespace GamerInputActions
 	/** Held together with the interact key: pick up everything of the aimed type nearby. */
 	inline const FName PickSame(TEXT("pick_same"));
 	inline const FName Scan(TEXT("scan"));
+	/** Listen for magic (the Gezeitenhall); decision 2026-11-15, separate from looking around (Scan). */
+	inline const FName Listen(TEXT("listen"));
 	inline const FName HotbarNext(TEXT("hotbar_next"));
 	inline const FName HotbarPrev(TEXT("hotbar_prev"));
 
