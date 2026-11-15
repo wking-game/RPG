@@ -1,10 +1,12 @@
 #include "GamerVillager.h"
+#include "GamerTavern.h"
 
 #include "Gamer.h"
 #include "GamerBuilding.h"
 #include "GamerDataSubsystem.h"
 #include "GamerGameState.h"
 #include "GamerPlayerController.h"
+#include "GamerFarmBuilding.h"
 #include "GamerResourceNode.h"
 #include "GamerSettlement.h"
 #include "Camera/PlayerCameraManager.h"
@@ -45,18 +47,18 @@ namespace
 		return FLinearColor(0.45f, 0.62f, 0.35f); // gatherer / unknown
 	}
 
-	FString ItemName(const UGamerDataSubsystem* Data, FName Id)
+	FString VillagerItemName(const UGamerDataSubsystem* Data, FName Id)
 	{
 		const FGamerItemDef* Def = Data ? Data->FindItem(Id) : nullptr;
 		return Def ? Def->Name : Id.ToString();
 	}
 
-	FString AmountsText(const UGamerDataSubsystem* Data, const TArray<FGamerItemAmount>& Amounts)
+	FString VillagerAmountsText(const UGamerDataSubsystem* Data, const TArray<FGamerItemAmount>& Amounts)
 	{
 		TArray<FString> Parts;
 		for (const FGamerItemAmount& Amount : Amounts)
 		{
-			Parts.Add(FString::Printf(TEXT("%d %s"), Amount.Count, *ItemName(Data, Amount.Item)));
+			Parts.Add(FString::Printf(TEXT("%d %s"), Amount.Count, *VillagerItemName(Data, Amount.Item)));
 		}
 		return FString::Join(Parts, TEXT(", "));
 	}
@@ -117,6 +119,7 @@ void AGamerVillager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AGamerVillager, Activity);
 	DOREPLIFETIME(AGamerVillager, Hunger);
 	DOREPLIFETIME(AGamerVillager, Sleep);
+	DOREPLIFETIME(AGamerVillager, Mood);
 	DOREPLIFETIME(AGamerVillager, bShelter);
 	DOREPLIFETIME(AGamerVillager, Bed);
 	DOREPLIFETIME(AGamerVillager, HeldTool);
@@ -137,12 +140,32 @@ void AGamerVillager::InitVillager(const FString& InName, AGamerBuilding* InBed)
 	ForceNetUpdate();
 }
 
-void AGamerVillager::SetJob(FName InJobId)
+bool AGamerVillager::SetJob(FName InJobId, FString* OutWhyNot)
 {
 	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
-	if (!HasAuthority() || InJobId == JobId || !Data || !Data->FindJob(InJobId))
+	const FGamerJobDef* Job = Data ? Data->FindJob(InJobId) : nullptr;
+	if (!HasAuthority() || InJobId == JobId || !Job)
 	{
-		return;
+		return InJobId == JobId;
+	}
+	// Work places (decision 2026-11-14): stations offer a number of them, upgrades add more.
+	if (const AGamerSettlement* Settlement = GetSettlement())
+	{
+		const int32 Capacity = Settlement->GetJobCapacity(InJobId);
+		if (Capacity != INDEX_NONE && Settlement->CountWithJob(InJobId) >= Capacity)
+		{
+			const FGamerBuildableDef* Station = Data->FindBuildable(Job->Station);
+			const FString Why = Capacity == 0
+				? FString::Printf(TEXT("%s braucht erst %s."), *Job->Name, Station ? *Station->Name : *Job->Station.ToString())
+				: FString::Printf(TEXT("Alle %d Arbeitsplätze als %s sind besetzt – Gebäude ausbauen oder ein weiteres bauen."), Capacity, *Job->Name);
+			UE_LOG(LogGamer, Log, TEXT("Villager %s: job %s refused (%d of %d places taken)"), *VillagerName, *InJobId.ToString(),
+				Settlement->CountWithJob(InJobId), Capacity);
+			if (OutWhyNot)
+			{
+				*OutWhyNot = Why;
+			}
+			return false;
+		}
 	}
 	JobId = InJobId;
 	UE_LOG(LogGamer, Log, TEXT("Villager %s: job set to %s"), *VillagerName, *JobId.ToString());
@@ -152,6 +175,7 @@ void AGamerVillager::SetJob(FName InJobId)
 	}
 	ApplyLook();
 	ForceNetUpdate();
+	return true;
 }
 
 void AGamerVillager::SetShelter(bool bInShelter)
@@ -530,6 +554,12 @@ void AGamerVillager::UpdateNeeds(float GameDays)
 	{
 		Sleep = FMath::Max(0.f, Sleep - Rest->DecayPerDay * GameDays);
 	}
+
+	// Mood: base from the needs (hunger 40 %, sleep 30 %, roof 30 %) plus the fading tavern bonus; it moves slowly (about 4 per game day).
+	const float Base = 0.4f * Hunger + 0.3f * Sleep + 0.3f * (bShelter ? 1.f : 0.3f);
+	PendingMoodGain = FMath::Max(0.f, PendingMoodGain - 0.1f * GameDays);
+	const float MoodTarget = FMath::Clamp(Base + PendingMoodGain, 0.f, 1.f);
+	Mood = FMath::Clamp(Mood + (MoodTarget - Mood) * FMath::Min(1.f, 4.f * GameDays), 0.f, 1.f);
 }
 
 void AGamerVillager::Think()
@@ -538,7 +568,17 @@ void AGamerVillager::Think()
 	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
 	AGamerBuilding* Storage = Settlement ? Settlement->FindNearestStorageBuilding(GetActorLocation()) : nullptr;
 
-	// 1. Hunger, if there is food in the storage.
+	// 1. Hunger: in the tavern if it has food (mood bonus, decision 2026-11-15), else from the storage.
+	if (const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food); Food && Hunger < Food->Threshold)
+	{
+		if (AGamerTavern* Tavern = FindTavernWithFood())
+		{
+			Task = ETask::Eat;
+			Target = Tavern;
+			SetActivity(TEXT("geht in die Taverne essen"));
+			return;
+		}
+	}
 	if (const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food); Food && Hunger < Food->Threshold && Storage)
 	{
 		const bool bAnyFood = Food->Foods.ContainsByPredicate([Settlement](const FGamerFoodValue& F) { return Settlement->CountInStorage(F.Item) > 0; });
@@ -640,7 +680,7 @@ bool AGamerVillager::PlanJob(const FGamerJobDef& Job, bool bIsFallback, FString&
 		Task = ETask::FetchTool;
 		Target = Storage;
 		TaskRecipe = ToolToFetch;
-		SetActivity(FString::Printf(TEXT("holt %s aus dem Lager"), *ItemName(Data, ToolToFetch)));
+		SetActivity(FString::Printf(TEXT("holt %s aus dem Lager"), *VillagerItemName(Data, ToolToFetch)));
 		return true;
 	};
 
@@ -694,29 +734,39 @@ bool AGamerVillager::PlanJob(const FGamerJobDef& Job, bool bIsFallback, FString&
 			const FGamerItemAmount& Output = Recipe->Outputs[0];
 			if (Settlement->CountInStorage(Output.Item) >= Job.StockTarget)
 			{
-				OutWhyNot = FString::Printf(TEXT("genug %s im Lager"), *ItemName(Data, Output.Item));
+				OutWhyNot = FString::Printf(TEXT("genug %s im Lager"), *VillagerItemName(Data, Output.Item));
+				continue;
+			}
+			if (!CraftStationFor(*Recipe, Job, Station))
+			{
+				const FGamerBuildableDef* Place = Data->FindBuildable(Recipe->Station);
+				OutWhyNot = FString::Printf(TEXT("für %s fehlt %s in der Nähe"), *VillagerItemName(Data, Output.Item), Place ? *Place->Name : *Recipe->Station.ToString());
 				continue;
 			}
 			if (!Settlement->HasInStorage(Recipe->Inputs))
 			{
-				OutWhyNot = FString::Printf(TEXT("für %s fehlt: %s"), *ItemName(Data, Output.Item), *AmountsText(Data, Recipe->Inputs));
+				OutWhyNot = FString::Printf(TEXT("für %s fehlt: %s"), *VillagerItemName(Data, Output.Item), *VillagerAmountsText(Data, Recipe->Inputs));
 				continue;
 			}
 			TaskRecipe = RecipeId;
 			Task = ETask::FetchIngredients;
 			Target = Storage;
-			SetActivity(FString::Printf(TEXT("holt Zutaten für %s"), *ItemName(Data, Output.Item)));
+			SetActivity(FString::Printf(TEXT("holt Zutaten für %s"), *VillagerItemName(Data, Output.Item)));
 			return true;
 		}
 		return false;
 	}
+	case EGamerJobKind::Farm:
+		return PlanFarm(Job, Center, Storage, OutWhyNot);
+	case EGamerJobKind::Serve:
+		return PlanServe(Job, Station, Storage, OutWhyNot);
 	case EGamerJobKind::Build:
 	{
 		TArray<FGamerItemAmount> Missing;
 		AGamerBuilding* Plan = FindPlan(Center, Job.Radius, Missing);
 		if (!Plan)
 		{
-			OutWhyNot = Missing.Num() > 0 ? TEXT("für den Bauplan fehlt: ") + AmountsText(Data, Missing) : FString(TEXT("keine Baupläne"));
+			OutWhyNot = Missing.Num() > 0 ? TEXT("für den Bauplan fehlt: ") + VillagerAmountsText(Data, Missing) : FString(TEXT("keine Baupläne"));
 			return false;
 		}
 		if (!ToolToFetch.IsNone())
@@ -761,6 +811,11 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		return;
 	}
 
+	if (Task == ETask::FetchFarmInput || Task == ETask::FarmWork)
+	{
+		RunFarmWork(DeltaSeconds);
+		return;
+	}
 	switch (Task)
 	{
 	case ETask::Wait:
@@ -791,27 +846,70 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		{
 			break;
 		}
-		// At the storage: hand in what is carried, then eat the best food until full.
-		for (const FGamerItemAmount& Amount : Carry)
-		{
-			Settlement->AddToStorage(Amount.Item, Amount.Count);
-		}
-		Carry.Reset();
+		AGamerTavern* Tavern = Cast<AGamerTavern>(TargetActor);
 		TArray<FString> Eaten;
-		if (const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food))
+		if (Tavern)
 		{
-			for (int32 Bite = 0; Bite < 12 && Hunger < 0.95f; ++Bite)
+			// In the tavern: eat from its stock, then one drink if there is one; both raise the mood.
+			const FGamerBuildableDef* TavernDef = Tavern->GetDef();
+			int32 BestTier = 0;
+			if (const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food))
 			{
-				const FGamerFoodValue* Choice = Food->Foods.FindByPredicate([Settlement](const FGamerFoodValue& F) { return Settlement->CountInStorage(F.Item) > 0; });
-				if (!Choice || Settlement->TakeFromStorage(Choice->Item, 1) == 0)
+				for (int32 Bite = 0; Bite < 12 && Hunger < 0.95f; ++Bite)
 				{
-					break;
+					const FGamerFoodValue* Choice = Food->Foods.FindByPredicate([Tavern](const FGamerFoodValue& F) { return Tavern->CountStock(F.Item) > 0; });
+					if (!Choice || Tavern->TakeStock(Choice->Item, 1) == 0)
+					{
+						break;
+					}
+					Hunger = FMath::Min(1.f, Hunger + Choice->Value);
+					Eaten.Add(VillagerItemName(Data, Choice->Item));
+					const FGamerItemDef* Def = Data->FindItem(Choice->Item);
+					BestTier = FMath::Max(BestTier, Def ? Def->Tier : 1);
 				}
-				Hunger = FMath::Min(1.f, Hunger + Choice->Value);
-				Eaten.Add(ItemName(Data, Choice->Item));
+				// A drink: a meal item that is not on the hunger list.
+				const TArray<FGamerItemAmount> StockCopy = Tavern->GetStock();
+				for (const FGamerItemAmount& Amount : StockCopy)
+				{
+					const FGamerItemDef* Def = Data->FindItem(Amount.Item);
+					const bool bFills = Food->Foods.ContainsByPredicate([&Amount](const FGamerFoodValue& F) { return F.Item == Amount.Item; });
+					if (Def && Def->Food.IsMeal() && !bFills && Tavern->TakeStock(Amount.Item, 1) > 0)
+					{
+						Eaten.Add(VillagerItemName(Data, Amount.Item));
+						OnTavernMeal(TavernDef ? TavernDef->Tavern.MoodDrink : 0.f);
+						break;
+					}
+				}
+			}
+			if (BestTier > 0)
+			{
+				OnTavernMeal(TavernDef ? TavernDef->Tavern.MoodPerTier * BestTier : 0.f);
 			}
 		}
-		UE_LOG(LogGamer, Log, TEXT("Villager %s ate [%s], hunger %.2f"), *VillagerName, *FString::Join(Eaten, TEXT(", ")), Hunger);
+		else
+		{
+			// At the storage: hand in what is carried, then eat the best food until full.
+			for (const FGamerItemAmount& Amount : Carry)
+			{
+				Settlement->AddToStorage(Amount.Item, Amount.Count);
+			}
+			Carry.Reset();
+			if (const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food))
+			{
+				for (int32 Bite = 0; Bite < 12 && Hunger < 0.95f; ++Bite)
+				{
+					const FGamerFoodValue* Choice = Food->Foods.FindByPredicate([Settlement](const FGamerFoodValue& F) { return Settlement->CountInStorage(F.Item) > 0; });
+					if (!Choice || Settlement->TakeFromStorage(Choice->Item, 1) == 0)
+					{
+						break;
+					}
+					Hunger = FMath::Min(1.f, Hunger + Choice->Value);
+					Eaten.Add(VillagerItemName(Data, Choice->Item));
+				}
+			}
+		}
+		UE_LOG(LogGamer, Log, TEXT("Villager %s ate [%s]%s, hunger %.2f"), *VillagerName, *FString::Join(Eaten, TEXT(", ")),
+			Tavern ? TEXT(" in the tavern") : TEXT(""), Hunger);
 		SetActivity(Eaten.Num() > 0 ? TEXT("hat gegessen") : TEXT("findet nichts zu essen"));
 		FinishTask();
 		break;
@@ -839,6 +937,50 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		break;
 	}
 
+	case ETask::ServeFetch:
+	{
+		if (!TargetActor)
+		{
+			FinishTask();
+			break;
+		}
+		if (!MoveTo(TargetActor->GetActorLocation(), StorageReach, DeltaSeconds))
+		{
+			break;
+		}
+		AActor* Tavern = ServeTavern.Get();
+		ServeCount = Tavern ? Settlement->TakeFromStorage(ServeItem, ServeWanted, &ServeFreshness) : 0;
+		if (ServeCount <= 0)
+		{
+			ServeCount = 0;
+			FinishTask();
+			break;
+		}
+		Task = ETask::Serve;
+		Target = Tavern;
+		SetActivity(FString::Printf(TEXT("bringt %d %s in die Taverne"), ServeCount, *VillagerItemName(Data, ServeItem)));
+		break;
+	}
+
+	case ETask::Serve:
+	{
+		AGamerTavern* Tavern = Cast<AGamerTavern>(TargetActor);
+		if (!Tavern)
+		{
+			FinishTask(); // tavern gone: the load goes back with the next delivery
+			break;
+		}
+		if (!MoveTo(Tavern->GetActorLocation(), StorageReach, DeltaSeconds))
+		{
+			break;
+		}
+		const int32 Put = Tavern->AddStock(ServeItem, ServeCount, ServeFreshness);
+		ServeCount -= Put;
+		UE_LOG(LogGamer, Log, TEXT("Villager %s served %d %s - tavern stock: %s"), *VillagerName, Put, *ServeItem.ToString(), *Tavern->DescribeStock());
+		FinishTask();
+		break;
+	}
+
 	case ETask::Deliver:
 	{
 		if (!TargetActor)
@@ -857,7 +999,7 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 			const int32 NotFitting = Settlement->AddToStorage(Amount.Item, Amount.Count);
 			if (Amount.Count - NotFitting > 0)
 			{
-				Delivered.Add(FString::Printf(TEXT("%d %s"), Amount.Count - NotFitting, *ItemName(Data, Amount.Item)));
+				Delivered.Add(FString::Printf(TEXT("%d %s"), Amount.Count - NotFitting, *VillagerItemName(Data, Amount.Item)));
 			}
 			if (NotFitting > 0)
 			{
@@ -941,18 +1083,13 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		}
 		if (bDone)
 		{
-			TArray<FGamerItemAmount> Gained;
-			for (const FGamerDrop& Drop : Def->Drops)
+			const TArray<FGamerItemAmount> Gained = Node->Harvest();
+			for (const FGamerItemAmount& Entry : Gained)
 			{
-				const int32 Count = FMath::RandRange(Drop.Min, Drop.Max);
-				AddCarry(Drop.Item, Count);
-				FGamerItemAmount& Entry = Gained.AddDefaulted_GetRef();
-				Entry.Item = Drop.Item;
-				Entry.Count = Count;
+				AddCarry(Entry.Item, Entry.Count);
 			}
-			Node->Deplete();
 			UE_LOG(LogGamer, Log, TEXT("Villager %s harvested %s: [%s], carrying %d"), *VillagerName, *Def->Id.ToString(),
-				*AmountsText(Data, Gained), CarryCount());
+				*VillagerAmountsText(Data, Gained), CarryCount());
 			FinishTask();
 		}
 		break;
@@ -971,7 +1108,8 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		}
 		const FGamerRecipeDef* Recipe = Data->FindRecipe(TaskRecipe);
 		const FGamerJobDef* Job = CurrentJobDef();
-		AActor* Station = Job && !Job->Station.IsNone() ? FindStation(Job->Station) : nullptr;
+		AActor* JobStation = Job && !Job->Station.IsNone() ? FindStation(Job->Station) : nullptr;
+		AActor* Station = Recipe && Job ? CraftStationFor(*Recipe, *Job, JobStation) : nullptr;
 		if (!Recipe || !Station || !Settlement->TakeAllFromStorage(Recipe->Inputs))
 		{
 			FinishTask();
@@ -980,7 +1118,7 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 		Task = ETask::Craft;
 		Target = Station;
 		TaskTimer = 0.f;
-		SetActivity(FString::Printf(TEXT("kocht %s"), Recipe->Outputs.Num() > 0 ? *ItemName(Data, Recipe->Outputs[0].Item) : TEXT("")));
+		SetActivity(FString::Printf(TEXT("kocht %s"), Recipe->Outputs.Num() > 0 ? *VillagerItemName(Data, Recipe->Outputs[0].Item) : TEXT("")));
 		break;
 	}
 
@@ -1013,7 +1151,7 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 			{
 				AddCarry(Output.Item, Output.Count);
 			}
-			UE_LOG(LogGamer, Log, TEXT("Villager %s made %s"), *VillagerName, *AmountsText(Data, Recipe->Outputs));
+			UE_LOG(LogGamer, Log, TEXT("Villager %s made %s"), *VillagerName, *VillagerAmountsText(Data, Recipe->Outputs));
 			bDeliverNow = true;
 			FinishTask();
 		}
@@ -1139,6 +1277,256 @@ void AGamerVillager::RunTask(float DeltaSeconds)
 	}
 }
 
+namespace
+{
+	enum class EFarmAction : uint8 { None, Harvest, Sow, Water, Fertilize, CollectWater, CollectCompost, FillComposter };
+}
+
+bool AGamerVillager::PlanFarm(const FGamerJobDef& Job, const FVector& Center, AActor* Storage, FString& OutWhyNot)
+{
+	AGamerSettlement* Settlement = GetSettlement();
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (!Settlement || !Data || !Storage)
+	{
+		return false;
+	}
+	// Farm buildings in the work area, nearest first.
+	TArray<AGamerFarmBuilding*> Farms;
+	for (TActorIterator<AGamerFarmBuilding> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsPreview() && It->IsFinished() && FVector::Dist2D(It->GetActorLocation(), Center) <= Job.Radius
+			&& !Settlement->IsReservedByOther(*It, this) && !Unreachable.Contains(*It))
+		{
+			Farms.Add(*It);
+		}
+	}
+	Farms.Sort([this](const AGamerFarmBuilding& A, const AGamerFarmBuilding& B)
+	{
+		return FVector::DistSquared(A.GetActorLocation(), GetActorLocation()) < FVector::DistSquared(B.GetActorLocation(), GetActorLocation());
+	});
+	if (Farms.Num() == 0)
+	{
+		OutWhyNot = TEXT("keine Felder beim Hof");
+		return false;
+	}
+
+	auto Start = [&](AGamerFarmBuilding* Farm, EFarmAction Action, FName Item, int32 Count, const FString& Text)
+	{
+		Settlement->Reserve(Farm, this);
+		FarmTarget = Farm;
+		FarmAction = static_cast<uint8>(Action);
+		FarmItem = Item;
+		FarmWanted = Count;
+		FarmCount = 0;
+		TaskTimer = 0.f;
+		if (!Item.IsNone() && Count > 0)
+		{
+			Task = ETask::FetchFarmInput;
+			Target = Storage;
+			SetActivity(FString::Printf(TEXT("holt %d %s für %s"), Count, *VillagerItemName(Data, Item), *Text));
+		}
+		else
+		{
+			Task = ETask::FarmWork;
+			Target = Farm;
+			SetActivity(Text);
+		}
+		return true;
+	};
+
+	FString Missing;
+	// 1) Harvest ripe fields first (nothing spoils on the field, but the harvest feeds the village).
+	for (AGamerFarmBuilding* Farm : Farms)
+	{
+		if (Farm->GetFieldNeed() == EGamerFieldNeed::Harvest)
+		{
+			return Start(Farm, EFarmAction::Harvest, NAME_None, 0, TEXT("erntet ein Feld"));
+		}
+	}
+	for (AGamerFarmBuilding* Farm : Farms)
+	{
+		const FGamerFarmProps* Props = Farm->GetFarm();
+		const EGamerFieldNeed Need = Farm->GetFieldNeed();
+		const int32 Units = Farm->GetUnits();
+		if (Need == EGamerFieldNeed::Water)
+		{
+			const int32 Have = Settlement->CountInStorage(Props->WaterItem);
+			if (Have > 0)
+			{
+				return Start(Farm, EFarmAction::Water, Props->WaterItem, FMath::Min3(Have, Farm->WaterItemsNeeded(), CarryLimit * 2), TEXT("gießt ein Feld"));
+			}
+			Missing = VillagerItemName(Data, Props->WaterItem);
+		}
+		else if (Need == EGamerFieldNeed::Sow)
+		{
+			// The seed the storage has most of (enough for the whole field).
+			FName Best;
+			int32 BestCount = 0;
+			for (const FGamerItemAmount& Stock : Settlement->GetStorage())
+			{
+				const FGamerItemDef* Def = Data->FindItem(Stock.Item);
+				if (Def && Def->Plant.IsSeed() && Stock.Count >= Units && Stock.Count > BestCount)
+				{
+					Best = Stock.Item;
+					BestCount = Stock.Count;
+				}
+			}
+			if (!Best.IsNone())
+			{
+				return Start(Farm, EFarmAction::Sow, Best, Units, TEXT("sät ein Feld"));
+			}
+			Missing = FString::Printf(TEXT("%d Saatgut"), Units);
+		}
+		else if (Need == EGamerFieldNeed::Fertilize && Settlement->CountInStorage(Props->FertilizerItem) >= Units)
+		{
+			return Start(Farm, EFarmAction::Fertilize, Props->FertilizerItem, Units, TEXT("düngt ein Feld"));
+		}
+	}
+	// 2) Keep water and compost moving: empty rain catchers and composters into the storage, fill composters.
+	for (AGamerFarmBuilding* Farm : Farms)
+	{
+		const FGamerFarmProps* Props = Farm->GetFarm();
+		if (Farm->GetKind() == EGamerFarmKind::Water && Farm->GetReadyOutput() >= 2)
+		{
+			return Start(Farm, EFarmAction::CollectWater, NAME_None, 0, TEXT("holt Wasser vom Regenfänger"));
+		}
+		if (Farm->GetKind() == EGamerFarmKind::Composter && Farm->GetReadyOutput() >= 1)
+		{
+			return Start(Farm, EFarmAction::CollectCompost, NAME_None, 0, TEXT("holt Kompost"));
+		}
+		if (Farm->GetKind() == EGamerFarmKind::Composter && Farm->GetInputSpace() > 0)
+		{
+			for (const FName Input : Props->Inputs)
+			{
+				const int32 Have = Settlement->CountInStorage(Input);
+				if (Have >= Props->PerOutput)
+				{
+					return Start(Farm, EFarmAction::FillComposter, Input, FMath::Min3(Have, Farm->GetInputSpace(), CarryLimit), TEXT("füllt den Komposter"));
+				}
+			}
+		}
+	}
+	OutWhyNot = Missing.IsEmpty() ? FString(TEXT("keine Feldarbeit")) : TEXT("im Lager fehlt ") + Missing;
+	return false;
+}
+
+void AGamerVillager::RunFarmWork(float DeltaSeconds)
+{
+	AGamerSettlement* Settlement = GetSettlement();
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	AGamerFarmBuilding* Farm = FarmTarget.Get();
+	auto GiveBack = [this]()
+	{
+		// Whatever was fetched and not used goes back with the next delivery.
+		if (FarmCount > 0)
+		{
+			AddCarry(FarmItem, FarmCount);
+			bDeliverNow = true;
+		}
+		FarmCount = 0;
+	};
+	if (!Settlement || !Data || !Farm)
+	{
+		GiveBack();
+		FinishTask();
+		return;
+	}
+	if (Task == ETask::FetchFarmInput)
+	{
+		AActor* Storage = Target.Get();
+		if (!Storage)
+		{
+			FinishTask();
+			return;
+		}
+		if (!MoveTo(Storage->GetActorLocation(), StorageReach, DeltaSeconds))
+		{
+			return;
+		}
+		FarmCount = Settlement->TakeFromStorage(FarmItem, FarmWanted);
+		const bool bSowing = FarmAction == static_cast<uint8>(EFarmAction::Sow);
+		if (FarmCount <= 0 || (bSowing && FarmCount < Farm->GetUnits()))
+		{
+			GiveBack();
+			FinishTask();
+			return;
+		}
+		Task = ETask::FarmWork;
+		Target = Farm;
+		TaskTimer = 0.f;
+		return;
+	}
+
+	// At the building: the size of a drawn field counts for the walking distance.
+	const FVector2D Size = Farm->GetSizeCm();
+	if (!MoveTo(Farm->GetActorLocation(), 200.f + 0.5f * FMath::Max(Size.X, Size.Y), DeltaSeconds))
+	{
+		return;
+	}
+	TaskTimer += DeltaSeconds * WorkSpeed();
+	if (TaskTimer < 2.f + 0.15f * Farm->GetUnits())
+	{
+		return;
+	}
+	TArray<FGamerItemAmount> Gained;
+	switch (static_cast<EFarmAction>(FarmAction))
+	{
+	case EFarmAction::Harvest:
+		Gained = Farm->HarvestCrop();
+		break;
+	case EFarmAction::Sow:
+		if (Farm->GetFieldNeed() == EGamerFieldNeed::Sow && FarmCount >= Farm->GetUnits() && Farm->Sow(FarmItem))
+		{
+			FarmCount -= Farm->GetUnits();
+		}
+		break;
+	case EFarmAction::Water:
+	{
+		const int32 Poured = FMath::Min(FarmCount, Farm->WaterItemsNeeded());
+		Farm->AddWater(Poured);
+		FarmCount -= Poured;
+		break;
+	}
+	case EFarmAction::Fertilize:
+		if (FarmCount >= Farm->GetUnits() && Farm->Fertilize())
+		{
+			FarmCount -= Farm->GetUnits();
+		}
+		break;
+	case EFarmAction::CollectWater:
+	case EFarmAction::CollectCompost:
+	{
+		const FGamerFarmProps* Props = Farm->GetFarm();
+		const int32 Taken = Props ? Farm->TakeOutput(CarryLimit) : 0;
+		if (Taken > 0)
+		{
+			FGamerItemAmount& Entry = Gained.AddDefaulted_GetRef();
+			Entry.Item = Props->Output;
+			Entry.Count = Taken;
+		}
+		break;
+	}
+	case EFarmAction::FillComposter:
+	{
+		const int32 Put = FMath::Min(FarmCount, Farm->GetInputSpace());
+		Farm->PutInput(Put);
+		FarmCount -= Put;
+		break;
+	}
+	default:
+		break;
+	}
+	for (const FGamerItemAmount& Entry : Gained)
+	{
+		AddCarry(Entry.Item, Entry.Count);
+		bDeliverNow = true;
+	}
+	UE_LOG(LogGamer, Log, TEXT("Villager %s farm work %d at %s: gained [%s], left over %d - %s"), *VillagerName, FarmAction, *Farm->GetName(),
+		*VillagerAmountsText(Data, Gained), FarmCount, *Farm->GetStatusText());
+	GiveBack();
+	FinishTask();
+}
+
 bool AGamerVillager::NeedIsUrgent() const
 {
 	const AGamerSettlement* Settlement = GetSettlement();
@@ -1156,6 +1544,20 @@ bool AGamerVillager::NeedIsUrgent() const
 
 void AGamerVillager::FinishTask()
 {
+	// Farm input fetched but not used (task given up): it goes back with the next delivery.
+	if (FarmCount > 0)
+	{
+		AddCarry(FarmItem, FarmCount);
+		FarmCount = 0;
+		bDeliverNow = true;
+	}
+	// Innkeeper load not put into the tavern: back with the next delivery.
+	if (ServeCount > 0)
+	{
+		AddCarry(ServeItem, ServeCount);
+		ServeCount = 0;
+		bDeliverNow = true;
+	}
 	Task = ETask::None;
 	TaskAge = 0.f;
 	PathPoints.Reset();
@@ -1320,4 +1722,100 @@ bool AGamerVillager::MoveTo(const FVector& Destination, float Accept, float Delt
 		}
 	}
 	return false;
+}
+
+// --- Tavern: cook at the cooking places, innkeeper, meals in the tavern (Taverne-Session 2026-11-15) ---
+
+AActor* AGamerVillager::CraftStationFor(const FGamerRecipeDef& Recipe, const FGamerJobDef& Job, AActor* JobStation) const
+{
+	if (Recipe.Station.IsNone() || Recipe.Station == Job.Station)
+	{
+		return JobStation;
+	}
+	// A cooking place of the recipe near the job's building (tavern), e.g. clay oven or camp fire.
+	return JobStation ? AGamerTavern::FindNear(GetWorld(), Recipe.Station, 1, JobStation->GetActorLocation(), Job.Radius) : nullptr;
+}
+
+AGamerTavern* AGamerVillager::FindTavernWithFood() const
+{
+	const FGamerNeedDef* Food = NeedOfKind(EGamerNeedKind::Food);
+	AGamerTavern* Best = nullptr;
+	float BestDistance = TNumericLimits<float>::Max();
+	for (TActorIterator<AGamerTavern> It(GetWorld()); Food && It; ++It)
+	{
+		if (It->IsPreview() || !It->IsFinished() || Unreachable.Contains(TWeakObjectPtr<AActor>(*It)))
+		{
+			continue;
+		}
+		AGamerTavern* Tavern = *It;
+		const bool bHasFood = Food->Foods.ContainsByPredicate([Tavern](const FGamerFoodValue& F) { return Tavern->CountStock(F.Item) > 0; });
+		const float Distance = FVector::Dist(Tavern->GetActorLocation(), GetActorLocation());
+		if (bHasFood && Distance < BestDistance)
+		{
+			BestDistance = Distance;
+			Best = Tavern;
+		}
+	}
+	return Best;
+}
+
+bool AGamerVillager::PlanServe(const FGamerJobDef& Job, AActor* Station, AActor* Storage, FString& OutWhyNot)
+{
+	AGamerTavern* Tavern = Cast<AGamerTavern>(Station);
+	AGamerSettlement* Settlement = GetSettlement();
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (!Tavern || !Settlement || !Data)
+	{
+		OutWhyNot = TEXT("keine Taverne");
+		return false;
+	}
+	const int32 Free = FMath::Min(Tavern->FreeSpace(), Job.StockTarget - Tavern->TotalStock());
+	if (Free <= 0)
+	{
+		OutWhyNot = TEXT("die Taverne ist voll");
+		return false;
+	}
+	// The dish or drink the tavern has least of (only things with meal buffs, i.e. cooked).
+	FName Pick;
+	int32 PickStock = TNumericLimits<int32>::Max();
+	for (const FGamerItemAmount& Amount : Settlement->GetStorage())
+	{
+		const FGamerItemDef* Def = Data->FindItem(Amount.Item);
+		const int32 InTavern = Tavern->CountStock(Amount.Item);
+		if (Def && Def->Food.IsMeal() && Amount.Count > 0 && InTavern < PickStock)
+		{
+			Pick = Amount.Item;
+			PickStock = InTavern;
+		}
+	}
+	if (Pick.IsNone())
+	{
+		OutWhyNot = TEXT("keine Gerichte im Lager");
+		return false;
+	}
+	ServeItem = Pick;
+	ServeCount = 0;
+	const int32 Want = FMath::Min3(Free, 4, Settlement->CountInStorage(Pick));
+	ServeTavern = Tavern;
+	Task = ETask::ServeFetch;
+	Target = Storage;
+	// ServeCount is set when the pieces are taken at the storage.
+	ServeWanted = Want;
+	SetActivity(FString::Printf(TEXT("holt %s für die Taverne"), *VillagerItemName(Data, Pick)));
+	return true;
+}
+
+void AGamerVillager::OnTavernMeal(float MoodGain)
+{
+	if (MoodGain <= 0.f)
+	{
+		return;
+	}
+	AddMood(MoodGain);
+	UE_LOG(LogGamer, Log, TEXT("Villager %s: tavern mood +%.2f (bonus %.2f, mood %.2f)"), *VillagerName, MoodGain, PendingMoodGain, Mood);
+}
+
+void AGamerVillager::AddMood(float Delta)
+{
+	PendingMoodGain = FMath::Clamp(PendingMoodGain + Delta, 0.f, 0.4f);
 }

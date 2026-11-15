@@ -1,5 +1,6 @@
 #include "GamerDataLoader.h"
 
+#include "GamerCharacterData.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "Misc/Crc.h"
@@ -378,16 +379,82 @@ namespace
 		}
 	}
 
+	/** Reads a list of { "item", "min", "max" } (resource drops, field harvests). */
+	void ReadDrops(FRowReader& Row, const TCHAR* Field, TArray<FGamerDrop>& Out, bool bRequired)
+	{
+		const TArray<TSharedPtr<FJsonValue>>* Drops = Row.GetArray(Field, bRequired);
+		if (!Drops)
+		{
+			return;
+		}
+		if (Drops->Num() == 0)
+		{
+			Row.Error(FString::Printf(TEXT("\"%s\" ist leer"), Field));
+		}
+		for (int32 Index = 0; Index < Drops->Num(); ++Index)
+		{
+			const TSharedPtr<FJsonValue>& Value = (*Drops)[Index];
+			if (!Value.IsValid() || Value->Type != EJson::Object)
+			{
+				Row.Error(FString::Printf(TEXT("%s[%d] muss ein Objekt sein"), Field, Index + 1));
+				continue;
+			}
+			FRowReader DropRow(Value->AsObject(), FString::Printf(TEXT("%s, %s[%d]"), *Row.GetContext(), Field, Index + 1), Row.GetReport());
+			DropRow.CheckKnownFields({ TEXT("item"), TEXT("min"), TEXT("max") });
+			FGamerDrop Drop;
+			FString Item;
+			const bool bItem = DropRow.GetString(TEXT("item"), Item, true);
+			const bool bMin = DropRow.GetInt(TEXT("min"), Drop.Min, true);
+			const bool bMax = DropRow.GetInt(TEXT("max"), Drop.Max, true);
+			if (bMin && bMax && (Drop.Min < 0 || Drop.Max < 1 || Drop.Min > Drop.Max))
+			{
+				DropRow.Error(TEXT("es muss gelten: 0 <= min <= max und max >= 1"));
+			}
+			if (bItem)
+			{
+				Drop.Item = FName(*Item);
+				Out.Add(Drop);
+			}
+		}
+	}
+
+	/** Reads a list of Unreal asset paths (growing stages). */
+	void ReadAssetList(FRowReader& Row, const TCHAR* Field, TArray<FSoftObjectPath>& Out, bool bCheckAssetPaths)
+	{
+		const TArray<TSharedPtr<FJsonValue>>* List = Row.GetArray(Field, false);
+		if (!List)
+		{
+			return;
+		}
+		for (int32 Stage = 0; Stage < List->Num(); ++Stage)
+		{
+			FString Path;
+			if (!(*List)[Stage].IsValid() || !(*List)[Stage]->TryGetString(Path)
+				|| !(Path.StartsWith(TEXT("/Game/")) || Path.StartsWith(TEXT("/Engine/"))))
+			{
+				Row.Error(FString::Printf(TEXT("%s[%d] muss ein Unreal-Pfad sein (/Game/...)"), Field, Stage + 1));
+				continue;
+			}
+			const FSoftObjectPath Soft(Path);
+			if (bCheckAssetPaths && !FPackageName::DoesPackageExist(Soft.GetLongPackageName()))
+			{
+				Row.Warning(FString::Printf(TEXT("%s[%d]: Asset %s nicht gefunden (noch nicht importiert?)"), Field, Stage + 1, *Path));
+			}
+			Out.Add(Soft);
+		}
+	}
+
 	void ParseItems(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
 		for (const FRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("category"), TEXT("tier"), TEXT("max_stack"), TEXT("weight_kg"),
-				TEXT("icon"), TEXT("world_mesh"), TEXT("tool"), TEXT("food"), TEXT("deprecated") });
+				TEXT("icon"), TEXT("world_mesh"), TEXT("tool"), TEXT("food"), TEXT("spoil_days"), TEXT("spoils_into"), TEXT("plant"),
+				TEXT("weapon"), TEXT("deprecated") });
 
 			FGamerItemDef Def;
-			if (!ReadId(Row, { TEXT("item_"), TEXT("tool_") }, Def.Id))
+			if (!ReadId(Row, { TEXT("item_"), TEXT("tool_"), TEXT("weapon_") }, Def.Id))
 			{
 				continue;
 			}
@@ -400,7 +467,8 @@ namespace
 				else if (Category == TEXT("material")) { Def.Category = EGamerItemCategory::Material; }
 				else if (Category == TEXT("food")) { Def.Category = EGamerItemCategory::Food; }
 				else if (Category == TEXT("tool")) { Def.Category = EGamerItemCategory::Tool; }
-				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: resource, material, food, tool)"), *Category)); }
+				else if (Category == TEXT("weapon")) { Def.Category = EGamerItemCategory::Weapon; }
+				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: resource, material, food, tool, weapon)"), *Category)); }
 			}
 
 			if (Row.GetInt(TEXT("tier"), Def.Tier, true) && (Def.Tier < 1 || Def.Tier > GamerData::MaxTier))
@@ -466,9 +534,156 @@ namespace
 					Row.Warning(TEXT("Werkzeuge sollten max_stack 1 haben"));
 				}
 			}
-			if (Row.Has(TEXT("food")))
+			// Weapons: ID weapon_... and category "weapon" belong together, like tools.
+			const bool bIsWeaponId = Def.Id.ToString().StartsWith(TEXT("weapon_"));
+			const bool bIsWeaponCategory = Def.Category == EGamerItemCategory::Weapon;
+			if (bIsWeaponId != bIsWeaponCategory)
 			{
-				Row.Warning(TEXT("\"food\" wird erst mit dem Buff-System (Phase 2) ausgewertet"));
+				Row.Error(TEXT("Waffen brauchen ID weapon_... und category \"weapon\" (beides oder keins)"));
+			}
+			const TSharedPtr<FJsonObject> Weapon = Row.GetObject(TEXT("weapon"), bIsWeaponCategory);
+			if (Weapon && !bIsWeaponCategory)
+			{
+				Row.Error(TEXT("\"weapon\" nur bei category \"weapon\" erlaubt"));
+			}
+			if (Weapon)
+			{
+				FRowReader WeaponRow(Weapon, Row.GetContext() + TEXT(", weapon"), Report);
+				WeaponRow.CheckKnownFields({ TEXT("type"), TEXT("damage"), TEXT("durability") });
+				FString Type;
+				if (WeaponRow.GetString(TEXT("type"), Type, true))
+				{
+					if (!IsSnakeCase(Type))
+					{
+						WeaponRow.Error(TEXT("type muss snake_case sein"));
+					}
+					Def.Weapon.Type = FName(*Type);
+				}
+				double Damage = 0.0;
+				if (WeaponRow.GetNumber(TEXT("damage"), Damage, true))
+				{
+					if (Damage <= 0.0)
+					{
+						WeaponRow.Error(TEXT("damage muss größer als 0 sein"));
+					}
+					Def.Weapon.Damage = static_cast<float>(Damage);
+				}
+				if (WeaponRow.GetInt(TEXT("durability"), Def.Weapon.Durability, true) && Def.Weapon.Durability < 1)
+				{
+					WeaponRow.Error(TEXT("durability muss mindestens 1 sein"));
+				}
+				if (Def.MaxStack != 1)
+				{
+					Row.Warning(TEXT("Waffen sollten max_stack 1 haben"));
+				}
+			}
+			// Spoiling (decision 2026-11-14: in phase 1). Game days while carried; storage and ground scale it.
+			double SpoilDays = 0.0;
+			if (Row.GetNumber(TEXT("spoil_days"), SpoilDays, false))
+			{
+				if (SpoilDays <= 0.0)
+				{
+					Row.Error(TEXT("spoil_days muss größer als 0 sein (weglassen = verdirbt nicht)"));
+				}
+				Def.SpoilDays = static_cast<float>(SpoilDays);
+				Def.SpoilsInto = TEXT("item_spoiled_food");
+			}
+			FString SpoilsInto;
+			if (Row.GetString(TEXT("spoils_into"), SpoilsInto, false))
+			{
+				if (Def.SpoilDays <= 0.f)
+				{
+					Row.Error(TEXT("spoils_into nur zusammen mit spoil_days"));
+				}
+				Def.SpoilsInto = FName(*SpoilsInto);
+			}
+			if (!Def.SpoilsInto.IsNone() && Def.SpoilsInto == Def.Id)
+			{
+				Row.Error(TEXT("spoils_into darf nicht der Gegenstand selbst sein"));
+			}
+			// Seeds: what grows from them in a field.
+			if (const TSharedPtr<FJsonObject> Plant = Row.GetObject(TEXT("plant"), false))
+			{
+				FRowReader PlantRow(Plant, Row.GetContext() + TEXT(", plant"), Report);
+				PlantRow.CheckKnownFields({ TEXT("grow_days"), TEXT("harvest"), TEXT("meshes") });
+				double GrowDays = 0.0;
+				if (PlantRow.GetNumber(TEXT("grow_days"), GrowDays, true))
+				{
+					if (GrowDays <= 0.0)
+					{
+						PlantRow.Error(TEXT("grow_days muss größer als 0 sein"));
+					}
+					Def.Plant.GrowDays = static_cast<float>(GrowDays);
+				}
+				ReadDrops(PlantRow, TEXT("harvest"), Def.Plant.Harvest, true);
+				ReadAssetList(PlantRow, TEXT("meshes"), Def.Plant.Meshes, bCheckAssetPaths);
+			}
+
+			// Meal buffs (decision 2026-11-14, docs/12_taverne_gerichte.md).
+			if (const TSharedPtr<FJsonObject> Food = Row.GetObject(TEXT("food"), false))
+			{
+				FRowReader FoodRow(Food, Row.GetContext() + TEXT(", food"), Report);
+				FoodRow.CheckKnownFields({ TEXT("minutes"), TEXT("buffs") });
+				if (Def.Category != EGamerItemCategory::Food)
+				{
+					Row.Error(TEXT("\"food\" nur bei category \"food\""));
+				}
+				double Minutes = 0.0;
+				if (FoodRow.GetNumber(TEXT("minutes"), Minutes, true))
+				{
+					if (Minutes <= 0.0)
+					{
+						FoodRow.Error(TEXT("minutes muss größer als 0 sein"));
+					}
+					Def.Food.Minutes = static_cast<float>(Minutes);
+				}
+				if (const TArray<TSharedPtr<FJsonValue>>* Buffs = FoodRow.GetArray(TEXT("buffs"), true))
+				{
+					if (Buffs->Num() == 0)
+					{
+						FoodRow.Error(TEXT("buffs ist leer"));
+					}
+					TSet<EGamerBuffStat> Seen;
+					for (int32 Index = 0; Index < Buffs->Num(); ++Index)
+					{
+						const TSharedPtr<FJsonValue>& Value = (*Buffs)[Index];
+						if (!Value.IsValid() || Value->Type != EJson::Object)
+						{
+							FoodRow.Error(FString::Printf(TEXT("buffs[%d] muss ein Objekt { \"stat\", \"value\" } sein"), Index + 1));
+							continue;
+						}
+						FRowReader BuffRow(Value->AsObject(), FString::Printf(TEXT("%s, food.buffs[%d]"), *Row.GetContext(), Index + 1), Report);
+						BuffRow.CheckKnownFields({ TEXT("stat"), TEXT("value") });
+						FGamerBuffEffect Effect;
+						FString Stat;
+						if (BuffRow.GetString(TEXT("stat"), Stat, true))
+						{
+							if (Stat == TEXT("health")) { Effect.Stat = EGamerBuffStat::Health; }
+							else if (Stat == TEXT("regen")) { Effect.Stat = EGamerBuffStat::Regen; }
+							else if (Stat == TEXT("carry")) { Effect.Stat = EGamerBuffStat::Carry; }
+							else if (Stat == TEXT("cold_resist")) { Effect.Stat = EGamerBuffStat::ColdResist; }
+							else if (Stat == TEXT("poison_resist")) { Effect.Stat = EGamerBuffStat::PoisonResist; }
+							else if (Stat == TEXT("damage")) { Effect.Stat = EGamerBuffStat::Damage; }
+							else
+							{
+								BuffRow.Error(FString::Printf(TEXT("stat \"%s\" unbekannt (erlaubt: health, regen, carry, cold_resist, poison_resist, damage)"), *Stat));
+								continue;
+							}
+						}
+						double Amount = 0.0;
+						if (BuffRow.GetNumber(TEXT("value"), Amount, true) && Amount <= 0.0)
+						{
+							BuffRow.Error(TEXT("value muss größer als 0 sein (Essen gibt nur Boni, Regel 5)"));
+						}
+						Effect.Value = static_cast<float>(Amount);
+						if (Seen.Contains(Effect.Stat))
+						{
+							BuffRow.Error(FString::Printf(TEXT("stat \"%s\" doppelt"), *Stat));
+						}
+						Seen.Add(Effect.Stat);
+						Def.Food.Buffs.Add(Effect);
+					}
+				}
 			}
 
 			if (Out.Items.Contains(Def.Id))
@@ -480,13 +695,78 @@ namespace
 		}
 	}
 
+	/** resource_nodes.json "season": yearly fruit cycle in season phases 0..4. */
+	void ReadSeason(FRowReader& Row, FGamerResourceNodeDef& Def)
+	{
+		const TSharedPtr<FJsonObject> Season = Row.GetObject(TEXT("season"), false);
+		if (!Season)
+		{
+			return;
+		}
+		FRowReader S(Season, Row.GetContext() + TEXT(", season"), Row.GetReport());
+		S.CheckKnownFields({ TEXT("bloom"), TEXT("unripe"), TEXT("ripe"), TEXT("fall"), TEXT("bare"), TEXT("pick"),
+			TEXT("drop_height_cm"), TEXT("bruise_cm"), TEXT("bruised_item") });
+		FGamerSeasonProps& P = Def.Season;
+		double V = 0.0;
+		if (S.GetNumber(TEXT("bloom"), V, true)) { P.Bloom = static_cast<float>(V); }
+		if (S.GetNumber(TEXT("unripe"), V, true)) { P.Unripe = static_cast<float>(V); }
+		if (S.GetNumber(TEXT("ripe"), V, true)) { P.Ripe = static_cast<float>(V); }
+		if (S.GetNumber(TEXT("bare"), V, true)) { P.Bare = static_cast<float>(V); }
+		P.Fall = P.Bare;
+		if (S.GetNumber(TEXT("fall"), V, false)) { P.Fall = static_cast<float>(V); }
+		if (!(P.Bloom >= 0.f && P.Bloom < P.Unripe && P.Unripe < P.Ripe && P.Ripe <= P.Fall && P.Fall <= P.Bare && P.Bare < 4.f))
+		{
+			S.Error(TEXT("es muss gelten: 0 <= bloom < unripe < ripe <= fall <= bare < 4 (Jahreszeit-Phasen)"));
+		}
+		S.GetInt(TEXT("pick"), P.Pick, false);
+		if (P.Pick < 0)
+		{
+			S.Error(TEXT("pick darf nicht negativ sein (0 = alles auf einmal)"));
+		}
+		if (const TArray<TSharedPtr<FJsonValue>>* Heights = S.GetArray(TEXT("drop_height_cm"), false))
+		{
+			double Low = 0.0, High = 0.0;
+			if (Heights->Num() != 2 || !(*Heights)[0]->TryGetNumber(Low) || !(*Heights)[1]->TryGetNumber(High) || Low < 0.0 || Low > High)
+			{
+				S.Error(TEXT("drop_height_cm muss [min, max] mit 0 <= min <= max sein"));
+			}
+			P.DropHeightMin = static_cast<float>(Low);
+			P.DropHeightMax = static_cast<float>(High);
+		}
+		if (S.GetNumber(TEXT("bruise_cm"), V, false))
+		{
+			P.BruiseHeight = static_cast<float>(V);
+		}
+		FString Bruised;
+		if (S.GetString(TEXT("bruised_item"), Bruised, false))
+		{
+			P.BruisedItem = FName(*Bruised);
+		}
+		if (P.Falls() && P.DropHeightMax <= 0.f)
+		{
+			S.Error(TEXT("mit \"fall\" vor \"bare\" fällt Obst herunter: drop_height_cm fehlt"));
+		}
+		if ((P.BruiseHeight > 0.f) != !P.BruisedItem.IsNone())
+		{
+			S.Error(TEXT("bruise_cm und bruised_item nur zusammen"));
+		}
+		if (Def.Drops.Num() != 1)
+		{
+			S.Error(TEXT("Vorkommen mit \"season\" brauchen genau einen Eintrag in drops (die Früchte des Jahres)"));
+		}
+		if (Def.RegrowDays > 0.f)
+		{
+			S.Warning(TEXT("regrow_days wird bei \"season\" nicht benutzt (Früchte kommen jedes Jahr wieder)"));
+		}
+	}
+
 	void ParseNodes(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
 		for (const FRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("required_tool"), TEXT("work_seconds"), TEXT("drops"),
-				TEXT("regrow_days"), TEXT("meshes"), TEXT("deprecated") });
+				TEXT("regrow_days"), TEXT("meshes"), TEXT("season"), TEXT("deprecated") });
 
 			FGamerResourceNodeDef Def;
 			if (!ReadId(Row, { TEXT("res_") }, Def.Id))
@@ -506,38 +786,7 @@ namespace
 				Def.WorkSeconds = static_cast<float>(Seconds);
 			}
 
-			if (const TArray<TSharedPtr<FJsonValue>>* Drops = Row.GetArray(TEXT("drops"), true))
-			{
-				if (Drops->Num() == 0)
-				{
-					Row.Error(TEXT("\"drops\" ist leer"));
-				}
-				for (int32 Index = 0; Index < Drops->Num(); ++Index)
-				{
-					const TSharedPtr<FJsonValue>& Value = (*Drops)[Index];
-					if (!Value.IsValid() || Value->Type != EJson::Object)
-					{
-						Row.Error(FString::Printf(TEXT("drops[%d] muss ein Objekt sein"), Index + 1));
-						continue;
-					}
-					FRowReader DropRow(Value->AsObject(), FString::Printf(TEXT("%s, drops[%d]"), *Row.GetContext(), Index + 1), Report);
-					DropRow.CheckKnownFields({ TEXT("item"), TEXT("min"), TEXT("max") });
-					FGamerDrop Drop;
-					FString Item;
-					const bool bItem = DropRow.GetString(TEXT("item"), Item, true);
-					const bool bMin = DropRow.GetInt(TEXT("min"), Drop.Min, true);
-					const bool bMax = DropRow.GetInt(TEXT("max"), Drop.Max, true);
-					if (bMin && bMax && (Drop.Min < 0 || Drop.Max < 1 || Drop.Min > Drop.Max))
-					{
-						DropRow.Error(TEXT("es muss gelten: 0 <= min <= max und max >= 1"));
-					}
-					if (bItem)
-					{
-						Drop.Item = FName(*Item);
-						Def.Drops.Add(Drop);
-					}
-				}
-			}
+			ReadDrops(Row, TEXT("drops"), Def.Drops, true);
 
 			double Regrow = 0.0;
 			if (Row.GetNumber(TEXT("regrow_days"), Regrow, false))
@@ -552,11 +801,16 @@ namespace
 			if (const TSharedPtr<FJsonObject> Meshes = Row.GetObject(TEXT("meshes"), false))
 			{
 				FRowReader MeshRow(Meshes, Row.GetContext() + TEXT(", meshes"), Report);
-				MeshRow.CheckKnownFields({ TEXT("full"), TEXT("depleted"), TEXT("remains") });
+				MeshRow.CheckKnownFields({ TEXT("full"), TEXT("depleted"), TEXT("remains"), TEXT("growing"), TEXT("bloom"), TEXT("unripe") });
+				ReadAssetPath(MeshRow, TEXT("bloom"), Def.MeshBloom, bCheckAssetPaths);
+				ReadAssetPath(MeshRow, TEXT("unripe"), Def.MeshUnripe, bCheckAssetPaths);
 				ReadAssetPath(MeshRow, TEXT("full"), Def.MeshFull, bCheckAssetPaths);
 				ReadAssetPath(MeshRow, TEXT("depleted"), Def.MeshDepleted, bCheckAssetPaths);
 				ReadAssetPath(MeshRow, TEXT("remains"), Def.MeshRemains, bCheckAssetPaths);
+				// Visible regrowth: models shown one after another while the node grows back (sapling, young tree).
+				ReadAssetList(MeshRow, TEXT("growing"), Def.MeshGrowing, bCheckAssetPaths);
 			}
+			ReadSeason(Row, Def);
 			Row.GetBool(TEXT("deprecated"), Def.bDeprecated);
 
 			if (Out.ResourceNodes.Contains(Def.Id))
@@ -608,6 +862,112 @@ namespace
 		}
 	}
 
+	/** buildables.json "farm" (category farm only). */
+	void ReadFarm(FRowReader& Row, FGamerBuildableDef& Def)
+	{
+		const bool bIsFarm = Def.Category == EGamerBuildCategory::Farm;
+		const TSharedPtr<FJsonObject> Farm = Row.GetObject(TEXT("farm"), bIsFarm);
+		if (!Farm)
+		{
+			return;
+		}
+		if (!bIsFarm)
+		{
+			Row.Error(TEXT("\"farm\" nur bei category \"farm\""));
+			return;
+		}
+		FRowReader F(Farm, Row.GetContext() + TEXT(", farm"), Row.GetReport());
+		FGamerFarmProps& P = Def.Farm;
+		FString Kind;
+		F.GetString(TEXT("kind"), Kind, true);
+		auto ReadName = [&F](const TCHAR* Field, FName& Out)
+		{
+			FString Text;
+			if (F.GetString(Field, Text, true))
+			{
+				Out = FName(*Text);
+			}
+		};
+		auto ReadPositive = [&F](const TCHAR* Field, float& Out)
+		{
+			double V = 0.0;
+			if (F.GetNumber(Field, V, true))
+			{
+				if (V <= 0.0)
+				{
+					F.Error(FString::Printf(TEXT("%s muss größer als 0 sein"), Field));
+				}
+				Out = static_cast<float>(V);
+			}
+		};
+		if (Kind == TEXT("field"))
+		{
+			P.Kind = EGamerFarmKind::Field;
+			F.CheckKnownFields({ TEXT("kind"), TEXT("water_item"), TEXT("water_per_day"), TEXT("fertilizer_item"), TEXT("fertilizer_bonus"),
+				TEXT("grow_from"), TEXT("grow_to"), TEXT("min_size_cm"), TEXT("max_size_cm"), TEXT("unit_m2") });
+			ReadPositive(TEXT("min_size_cm"), P.MinSizeCm);
+			ReadPositive(TEXT("max_size_cm"), P.MaxSizeCm);
+			ReadPositive(TEXT("unit_m2"), P.UnitM2);
+			if (P.MinSizeCm > P.MaxSizeCm)
+			{
+				F.Error(TEXT("min_size_cm muss kleiner oder gleich max_size_cm sein"));
+			}
+			ReadName(TEXT("water_item"), P.WaterItem);
+			ReadPositive(TEXT("water_per_day"), P.WaterPerDay);
+			ReadName(TEXT("fertilizer_item"), P.FertilizerItem);
+			double V = 0.0;
+			if (F.GetNumber(TEXT("fertilizer_bonus"), V, true))
+			{
+				if (V < 0.0) { F.Error(TEXT("fertilizer_bonus darf nicht negativ sein")); }
+				P.FertilizerBonus = static_cast<float>(V);
+			}
+			if (F.GetNumber(TEXT("grow_from"), V, true)) { P.GrowFrom = static_cast<float>(V); }
+			if (F.GetNumber(TEXT("grow_to"), V, true)) { P.GrowTo = static_cast<float>(V); }
+			if (!(P.GrowFrom >= 0.f && P.GrowFrom < P.GrowTo && P.GrowTo <= 4.f))
+			{
+				F.Error(TEXT("es muss gelten: 0 <= grow_from < grow_to <= 4 (Jahreszeit-Phasen)"));
+			}
+		}
+		else if (Kind == TEXT("composter"))
+		{
+			P.Kind = EGamerFarmKind::Composter;
+			F.CheckKnownFields({ TEXT("kind"), TEXT("inputs"), TEXT("per_output"), TEXT("output"), TEXT("days_per_output"), TEXT("capacity") });
+			if (const TArray<TSharedPtr<FJsonValue>>* Inputs = F.GetArray(TEXT("inputs"), true))
+			{
+				for (const TSharedPtr<FJsonValue>& Value : *Inputs)
+				{
+					FString Item;
+					if (Value.IsValid() && Value->TryGetString(Item) && !Item.IsEmpty()) { P.Inputs.Add(FName(*Item)); }
+					else { F.Error(TEXT("inputs muss eine Liste von Gegenstands-IDs sein")); }
+				}
+				if (P.Inputs.Num() == 0) { F.Error(TEXT("inputs ist leer")); }
+			}
+			if (F.GetInt(TEXT("per_output"), P.PerOutput, true) && P.PerOutput < 1) { F.Error(TEXT("per_output muss mindestens 1 sein")); }
+			ReadName(TEXT("output"), P.Output);
+			ReadPositive(TEXT("days_per_output"), P.Rate);
+			if (F.GetInt(TEXT("capacity"), P.Capacity, true) && P.Capacity < P.PerOutput) { F.Error(TEXT("capacity muss mindestens per_output sein")); }
+		}
+		else if (Kind == TEXT("water"))
+		{
+			P.Kind = EGamerFarmKind::Water;
+			F.CheckKnownFields({ TEXT("kind"), TEXT("output"), TEXT("per_day"), TEXT("capacity") });
+			ReadName(TEXT("output"), P.Output);
+			ReadPositive(TEXT("per_day"), P.Rate);
+			if (F.GetInt(TEXT("capacity"), P.Capacity, true) && P.Capacity < 1) { F.Error(TEXT("capacity muss mindestens 1 sein")); }
+		}
+		else if (Kind == TEXT("tree"))
+		{
+			P.Kind = EGamerFarmKind::Tree;
+			F.CheckKnownFields({ TEXT("kind"), TEXT("node"), TEXT("grow_days") });
+			ReadName(TEXT("node"), P.Node);
+			ReadPositive(TEXT("grow_days"), P.TreeGrowDays);
+		}
+		else if (!Kind.IsEmpty())
+		{
+			F.Error(FString::Printf(TEXT("kind \"%s\" unbekannt (erlaubt: field, composter, water, tree)"), *Kind));
+		}
+	}
+
 	void ParseBuildables(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
 		// Where a structure snaps to (sockets in GamerBuildSnapping.cpp). wall_door = wall with a door opening
@@ -619,7 +979,8 @@ namespace
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("category"), TEXT("snap"), TEXT("mesh"), TEXT("cost"),
-				TEXT("build_seconds"), TEXT("required_tool"), TEXT("deprecated") });
+				TEXT("build_seconds"), TEXT("required_tool"), TEXT("farm"), TEXT("workers"), TEXT("upgrades"), TEXT("requires"), TEXT("tavern"),
+				TEXT("deprecated") });
 
 			FGamerBuildableDef Def;
 			if (!ReadId(Row, { TEXT("building_") }, Def.Id))
@@ -635,7 +996,8 @@ namespace
 				else if (Category == TEXT("workstation")) { Def.Category = EGamerBuildCategory::Workstation; }
 				else if (Category == TEXT("storage")) { Def.Category = EGamerBuildCategory::Storage; }
 				else if (Category == TEXT("comfort")) { Def.Category = EGamerBuildCategory::Comfort; }
-				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: structure, workstation, storage, comfort)"), *Category)); }
+				else if (Category == TEXT("farm")) { Def.Category = EGamerBuildCategory::Farm; }
+				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: structure, workstation, storage, comfort, farm)"), *Category)); }
 			}
 
 			FString Snap;
@@ -671,6 +1033,83 @@ namespace
 				Def.BuildSeconds = static_cast<float>(Seconds);
 			}
 			ReadToolRequirement(Row, TEXT("required_tool"), Def.RequiredTool);
+			ReadFarm(Row, Def);
+			// Work places and upgrade stages (decision 2026-11-14).
+			if (Row.GetInt(TEXT("workers"), Def.Workers, false) && Def.Workers < 0)
+			{
+				Row.Error(TEXT("workers darf nicht negativ sein"));
+			}
+			if (const TArray<TSharedPtr<FJsonValue>>* Upgrades = Row.GetArray(TEXT("upgrades"), false))
+			{
+				for (int32 Index = 0; Index < Upgrades->Num(); ++Index)
+				{
+					const TSharedPtr<FJsonValue>& Value = (*Upgrades)[Index];
+					if (!Value.IsValid() || Value->Type != EJson::Object)
+					{
+						Row.Error(FString::Printf(TEXT("upgrades[%d] muss ein Objekt sein"), Index + 1));
+						continue;
+					}
+					FRowReader Up(Value->AsObject(), FString::Printf(TEXT("%s, upgrades[%d]"), *Row.GetContext(), Index + 1), Report);
+					Up.CheckKnownFields({ TEXT("cost"), TEXT("workers") });
+					FGamerUpgradeDef& Stage = Def.Upgrades.AddDefaulted_GetRef();
+					ReadAmounts(Up, TEXT("cost"), Stage.Cost, true);
+					const int32 Previous = Def.WorkersAt(Index + 1);
+					if (Up.GetInt(TEXT("workers"), Stage.Workers, true) && Stage.Workers <= Previous)
+					{
+						Up.Error(FString::Printf(TEXT("workers muss mehr sein als auf der Stufe davor (%d)"), Previous));
+					}
+				}
+				if (Def.Workers <= 0 && Def.Upgrades.Num() > 0)
+				{
+					Row.Error(TEXT("upgrades braucht workers (Arbeitsplätze auf Stufe 1)"));
+				}
+			}
+			// Tavern and cooking places (decision 2026-11-14, docs/12_taverne_gerichte.md).
+			if (const TSharedPtr<FJsonObject> Requires = Row.GetObject(TEXT("requires"), false))
+			{
+				FRowReader Req(Requires, Row.GetContext() + TEXT(", requires"), Report);
+				Req.CheckKnownFields({ TEXT("building"), TEXT("level"), TEXT("radius_cm") });
+				FString Building;
+				if (Req.GetString(TEXT("building"), Building, true))
+				{
+					Def.Requires.Building = FName(*Building);
+				}
+				if (Req.GetInt(TEXT("level"), Def.Requires.Level, false) && Def.Requires.Level < 1)
+				{
+					Req.Error(TEXT("level muss mindestens 1 sein"));
+				}
+				double Radius = 0.0;
+				if (Req.GetNumber(TEXT("radius_cm"), Radius, false))
+				{
+					if (Radius <= 0.0)
+					{
+						Req.Error(TEXT("radius_cm muss größer als 0 sein"));
+					}
+					Def.Requires.RadiusCm = static_cast<float>(Radius);
+				}
+			}
+			if (const TSharedPtr<FJsonObject> Tavern = Row.GetObject(TEXT("tavern"), false))
+			{
+				FRowReader Tav(Tavern, Row.GetContext() + TEXT(", tavern"), Report);
+				Tav.CheckKnownFields({ TEXT("stock"), TEXT("mood_per_tier"), TEXT("mood_drink") });
+				if (Tav.GetInt(TEXT("stock"), Def.Tavern.Stock, true) && Def.Tavern.Stock < 1)
+				{
+					Tav.Error(TEXT("stock muss mindestens 1 sein"));
+				}
+				double Mood = 0.0;
+				if (Tav.GetNumber(TEXT("mood_per_tier"), Mood, false))
+				{
+					Def.Tavern.MoodPerTier = static_cast<float>(Mood);
+				}
+				if (Tav.GetNumber(TEXT("mood_drink"), Mood, false))
+				{
+					Def.Tavern.MoodDrink = static_cast<float>(Mood);
+				}
+				if (Def.Tavern.MoodPerTier < 0.f || Def.Tavern.MoodDrink < 0.f || Def.Tavern.MoodPerTier > 1.f || Def.Tavern.MoodDrink > 1.f)
+				{
+					Tav.Error(TEXT("mood_per_tier und mood_drink müssen zwischen 0 und 1 liegen"));
+				}
+			}
 			Row.GetBool(TEXT("deprecated"), Def.bDeprecated);
 
 			if (Out.Buildables.Contains(Def.Id))
@@ -704,7 +1143,9 @@ namespace
 				if (Kind == TEXT("harvest")) { Def.Kind = EGamerJobKind::Harvest; }
 				else if (Kind == TEXT("craft")) { Def.Kind = EGamerJobKind::Craft; }
 				else if (Kind == TEXT("build")) { Def.Kind = EGamerJobKind::Build; }
-				else { Row.Error(FString::Printf(TEXT("kind \"%s\" unbekannt (erlaubt: harvest, craft, build)"), *Kind)); }
+				else if (Kind == TEXT("farm")) { Def.Kind = EGamerJobKind::Farm; }
+				else if (Kind == TEXT("serve")) { Def.Kind = EGamerJobKind::Serve; }
+				else { Row.Error(FString::Printf(TEXT("kind \"%s\" unbekannt (erlaubt: harvest, craft, build, farm, serve)"), *Kind)); }
 			}
 			FString Station;
 			if (Row.GetString(TEXT("station"), Station, false))
@@ -868,7 +1309,21 @@ namespace
 				}
 				else if (Recipe->Station != Job.Station)
 				{
-					Report.Warnings.Add(FString::Printf(TEXT("%s: Rezept %s gehört zu einer anderen Station"), *Where, *RecipeId.ToString()));
+					// Cooking places that belong to the job's building (requires) are fine; the campfire may stand near the tavern too.
+					const FGamerBuildableDef* RecipeStation = Data.Buildables.Find(Recipe->Station);
+					const bool bBelongs = RecipeStation && RecipeStation->Requires.Building == Job.Station;
+					if (!bBelongs && Recipe->Station.IsNone())
+					{
+						Report.Warnings.Add(FString::Printf(TEXT("%s: Rezept %s gehört zu einer anderen Station"), *Where, *RecipeId.ToString()));
+					}
+				}
+			}
+			if (Job.Kind == EGamerJobKind::Serve)
+			{
+				const FGamerBuildableDef* Station = Data.Buildables.Find(Job.Station);
+				if (!Station || !Station->Tavern.IsTavern())
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s: Beruf \"serve\" braucht als station eine Taverne (Block \"tavern\")"), *Where));
 				}
 			}
 		}
@@ -932,6 +1387,18 @@ namespace
 			}
 		};
 
+		for (const TPair<FName, FGamerItemDef>& Pair : Data.Items)
+		{
+			const FString Where = FString::Printf(TEXT("%s (%s)"), ItemsFile, *Pair.Key.ToString());
+			if (Pair.Value.SpoilDays > 0.f)
+			{
+				CheckItem(Where + TEXT(", spoils_into"), Pair.Value.SpoilsInto);
+			}
+			for (const FGamerDrop& Drop : Pair.Value.Plant.Harvest)
+			{
+				CheckItem(Where + TEXT(", plant.harvest"), Drop.Item);
+			}
+		}
 		for (const TPair<FName, FGamerResourceNodeDef>& Pair : Data.ResourceNodes)
 		{
 			const FString Where = FString::Printf(TEXT("%s (%s)"), NodesFile, *Pair.Key.ToString());
@@ -939,6 +1406,10 @@ namespace
 			for (const FGamerDrop& Drop : Pair.Value.Drops)
 			{
 				CheckItem(Where, Drop.Item);
+			}
+			if (!Pair.Value.Season.BruisedItem.IsNone())
+			{
+				CheckItem(Where + TEXT(", season.bruised_item"), Pair.Value.Season.BruisedItem);
 			}
 		}
 		for (const TPair<FName, FGamerRecipeDef>& Pair : Data.Recipes)
@@ -973,6 +1444,54 @@ namespace
 			{
 				CheckItem(Where, Amount.Item);
 			}
+			const FGamerFarmProps& Farm = Pair.Value.Farm;
+			for (const FName Item : { Farm.WaterItem, Farm.FertilizerItem, Farm.Output })
+			{
+				if (!Item.IsNone())
+				{
+					CheckItem(Where + TEXT(", farm"), Item);
+				}
+			}
+			for (const FName Item : Farm.Inputs)
+			{
+				CheckItem(Where + TEXT(", farm.inputs"), Item);
+			}
+			if (Farm.Kind == EGamerFarmKind::Tree)
+			{
+				const FGamerResourceNodeDef* Node = Data.ResourceNodes.Find(Farm.Node);
+				if (!Node)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s, farm.node: Vorkommen \"%s\" gibt es nicht"), *Where, *Farm.Node.ToString()));
+				}
+				else if (Node->MeshGrowing.Num() == 0)
+				{
+					Report.Warnings.Add(FString::Printf(TEXT("%s, farm.node: %s hat keine Wachstumsmodelle (meshes.growing)"), *Where, *Farm.Node.ToString()));
+				}
+			}
+			for (const FGamerUpgradeDef& Stage : Pair.Value.Upgrades)
+			{
+				for (const FGamerItemAmount& Amount : Stage.Cost)
+				{
+					CheckItem(Where + TEXT(", upgrades"), Amount.Item);
+				}
+			}
+			if (const FGamerBuildRequirement& Req = Pair.Value.Requires; Req.IsSet())
+			{
+				const FGamerBuildableDef* Needed = Data.Buildables.Find(Req.Building);
+				if (!Needed)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s, requires: Gebäude \"%s\" gibt es nicht"), *Where, *Req.Building.ToString()));
+				}
+				else if (Req.Level > Needed->MaxLevel())
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s, requires: %s hat nur %d Stufen, verlangt ist Stufe %d"), *Where,
+						*Req.Building.ToString(), Needed->MaxLevel(), Req.Level));
+				}
+				else if (Req.Building == Pair.Key)
+				{
+					Report.Errors.Add(FString::Printf(TEXT("%s, requires: verweist auf sich selbst"), *Where));
+				}
+			}
 		}
 	}
 }
@@ -984,7 +1503,8 @@ namespace
 	 * build what can be paid for, craft what has its station and inputs, repeat until nothing new appears.
 	 * Everything that never becomes reachable is an error (e.g. "axe needs a log, logs need an axe").
 	 */
-	void CheckReachability(const FGamerDataSet& Data, FGamerDataReport& Report)
+	/** StartItems: start equipment of the origins (characters.json); only a warning when that is the only source. */
+	void CheckReachability(const FGamerDataSet& Data, FGamerDataReport& Report, const TSet<FName>& StartItems)
 	{
 		TSet<FName> Items;
 		TMap<FName, int32> ToolTiers;
@@ -1044,12 +1564,79 @@ namespace
 					bChanged = true;
 				}
 			}
+			// Required building (tavern) with its upgrade stages up to the needed level.
+			auto RequirementMet = [&](const FGamerBuildRequirement& Req)
+			{
+				if (!Req.IsSet())
+				{
+					return true;
+				}
+				const FGamerBuildableDef* Needed = Data.Buildables.Find(Req.Building);
+				if (!Needed || !Buildables.Contains(Req.Building))
+				{
+					return false;
+				}
+				for (int32 Stage = 0; Stage < Req.Level - 1; ++Stage)
+				{
+					if (!Needed->Upgrades.IsValidIndex(Stage) || !HaveAll(Needed->Upgrades[Stage].Cost))
+					{
+						return false;
+					}
+				}
+				return true;
+			};
 			for (const TPair<FName, FGamerBuildableDef>& Pair : Data.Buildables)
 			{
-				if (!Buildables.Contains(Pair.Key) && ToolAvailable(Pair.Value.RequiredTool) && HaveAll(Pair.Value.Cost))
+				if (!Buildables.Contains(Pair.Key) && ToolAvailable(Pair.Value.RequiredTool) && HaveAll(Pair.Value.Cost)
+					&& RequirementMet(Pair.Value.Requires))
 				{
 					Buildables.Add(Pair.Key);
 					bChanged = true;
+				}
+			}
+			// Farming: spoiling, bruised fruit, fields, composter, rain catcher.
+			auto ObtainNew = [&](FName Item)
+			{
+				if (!Item.IsNone() && !Items.Contains(Item))
+				{
+					Obtain(Item);
+					bChanged = true;
+				}
+			};
+			for (const TPair<FName, FGamerItemDef>& Pair : Data.Items)
+			{
+				if (Items.Contains(Pair.Key) && Pair.Value.SpoilDays > 0.f)
+				{
+					ObtainNew(Pair.Value.SpoilsInto);
+				}
+			}
+			for (const FName NodeId : Nodes.Array())
+			{
+				ObtainNew(Data.ResourceNodes[NodeId].Season.BruisedItem);
+			}
+			for (const FName BuildableId : Buildables.Array())
+			{
+				const FGamerFarmProps& Farm = Data.Buildables[BuildableId].Farm;
+				if (Farm.Kind == EGamerFarmKind::Water)
+				{
+					ObtainNew(Farm.Output);
+				}
+				else if (Farm.Kind == EGamerFarmKind::Composter && Farm.Inputs.ContainsByPredicate([&](FName In) { return Items.Contains(In); }))
+				{
+					ObtainNew(Farm.Output);
+				}
+				else if (Farm.Kind == EGamerFarmKind::Field && Items.Contains(Farm.WaterItem))
+				{
+					for (const TPair<FName, FGamerItemDef>& Seed : Data.Items)
+					{
+						if (Seed.Value.Plant.IsSeed() && Items.Contains(Seed.Key))
+						{
+							for (const FGamerDrop& Drop : Seed.Value.Plant.Harvest)
+							{
+								ObtainNew(Drop.Item);
+							}
+						}
+					}
 				}
 			}
 			for (const TPair<FName, FGamerRecipeDef>& Pair : Data.Recipes)
@@ -1069,7 +1656,11 @@ namespace
 
 		for (const TPair<FName, FGamerItemDef>& Pair : Data.Items)
 		{
-			if (!Pair.Value.bDeprecated && !Items.Contains(Pair.Key))
+			if (!Pair.Value.bDeprecated && !Items.Contains(Pair.Key) && StartItems.Contains(Pair.Key))
+			{
+				Report.Warnings.Add(FString::Printf(TEXT("%s (%s): nur als Startausrüstung erhältlich (weder sammelbar noch herstellbar)"), ItemsFile, *Pair.Key.ToString()));
+			}
+			else if (!Pair.Value.bDeprecated && !Items.Contains(Pair.Key))
 			{
 				Report.Errors.Add(FString::Printf(TEXT("%s (%s): nicht erreichbar ab Spielstart (weder sammelbar noch herstellbar)"), ItemsFile, *Pair.Key.ToString()));
 			}
@@ -1138,7 +1729,9 @@ bool GamerData::LoadFromDirectory(const FString& Directory, FGamerDataSet& Out, 
 	ParseNeeds(NeedRows, Out, Report);
 	CheckReferences(Out, Report);
 	CheckVillagerReferences(Out, Report);
-	CheckReachability(Out, Report);
+	TSet<FName> StartItems;
+	GamerData::ReadStartItems(Directory, StartItems); // characters.json, if the data set has one
+	CheckReachability(Out, Report, StartItems);
 
 	return Report.Errors.Num() == ErrorsBefore;
 }

@@ -39,6 +39,14 @@ private:
 	void DrawMenu(const class AGamerPlayerController& PC);
 	void DrawBuildMenu(const class AGamerPlayerController& PC);
 	void DrawStartMenu(const class AGamerPlayerController& PC);
+	/** Start menu pages "Charakter" and "Aussehen" (GamerHUDCharacter.cpp). */
+	void DrawCharacterMenu(const class AGamerPlayerController& PC);
+	/** Start menu page "Welt laden" (GamerHUDSave.cpp). */
+	void DrawLoadWorldMenu(const class AGamerPlayerController& PC);
+	/** "Charakter: Ragnar, Krieger · STÄ 8 ..." of the own player, or empty (GamerHUDCharacter.cpp). */
+	FString DescribeOwnCharacter() const;
+	/** Splits Text into lines no wider than MaxWidth. */
+	TArray<FString> WrapText(const FString& Text, float MaxWidth, float Scale);
 	void DrawVillageMenu(const class AGamerPlayerController& PC);
 	void DrawStorageMenu(const class AGamerPlayerController& PC);
 	/** Graphics page: one row per setting (click the value for the next one), measured frame rate, buttons. */
@@ -46,6 +54,9 @@ private:
 	/** Bird's-eye view: name tags over villagers, help line, info panel of the selection. */
 	void DrawBirdView(const class AGamerPlayerController& PC);
 	void DrawBar(float X, float Y, float W, float H, float Value);
+
+	/** Icon tile: the rendered icon of the item/piece if it has one, else a named placeholder (first letters of the name). */
+	void DrawIconTile(FName Id, const FString& Name, float X, float Y, float Size);
 	void DrawButton(FName Id, const FString& Text, float X, float Y, float W, float H, float Scale, bool bActive = false);
 	bool IsMouseOver(float X, float Y, float W, float H) const;
 

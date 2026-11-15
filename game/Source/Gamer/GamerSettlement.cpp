@@ -4,6 +4,7 @@
 #include "GamerBuilding.h"
 #include "GamerCharacter.h"
 #include "GamerDataSubsystem.h"
+#include "GamerSpoilage.h"
 #include "GamerVillager.h"
 #include "GamerWorkComponent.h"
 #include "EngineUtils.h"
@@ -57,6 +58,10 @@ void AGamerSettlement::BeginPlay()
 	{
 		CVarVillagerTimeScale->Set(Scale, ECVF_SetByCommandline);
 		UE_LOG(LogGamer, Log, TEXT("Villager time scale %.1f"), Scale);
+	}
+	if (HasAuthority())
+	{
+		UGamerSpoilage::ApplyCommandLine();
 	}
 }
 
@@ -128,7 +133,7 @@ AGamerBuilding* AGamerSettlement::FindNearestStorageBuilding(const FVector& From
 	return Best;
 }
 
-int32 AGamerSettlement::AddToStorage(FName Item, int32 Count)
+int32 AGamerSettlement::AddToStorage(FName Item, int32 Count, float Freshness)
 {
 	if (!HasAuthority() || Item.IsNone() || Count <= 0)
 	{
@@ -140,6 +145,7 @@ int32 AGamerSettlement::AddToStorage(FName Item, int32 Count)
 		FGamerItemAmount* Found = Storage.FindByPredicate([Item](const FGamerItemAmount& A) { return A.Item == Item; });
 		if (Found)
 		{
+			Found->Freshness = UGamerSpoilage::Merge(Found->Count, Found->Freshness, Fits, Freshness);
 			Found->Count += Fits;
 		}
 		else
@@ -147,13 +153,14 @@ int32 AGamerSettlement::AddToStorage(FName Item, int32 Count)
 			FGamerItemAmount& Added = Storage.AddDefaulted_GetRef();
 			Added.Item = Item;
 			Added.Count = Fits;
+			Added.Freshness = FMath::Clamp(Freshness, 0.f, 1.f);
 		}
 		ForceNetUpdate();
 	}
 	return Count - Fits;
 }
 
-int32 AGamerSettlement::TakeFromStorage(FName Item, int32 Count)
+int32 AGamerSettlement::TakeFromStorage(FName Item, int32 Count, float* OutFreshness)
 {
 	if (!HasAuthority() || Count <= 0)
 	{
@@ -165,6 +172,10 @@ int32 AGamerSettlement::TakeFromStorage(FName Item, int32 Count)
 		return 0;
 	}
 	const int32 Taken = FMath::Min(Count, Storage[Index].Count);
+	if (OutFreshness)
+	{
+		*OutFreshness = Storage[Index].Freshness;
+	}
 	Storage[Index].Count -= Taken;
 	if (Storage[Index].Count <= 0)
 	{
@@ -290,12 +301,94 @@ void AGamerSettlement::MulticastNews_Implementation(const FString& Text)
 	}
 }
 
+int32 AGamerSettlement::GetJobCapacity(FName JobId) const
+{
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	const FGamerJobDef* Job = Data ? Data->FindJob(JobId) : nullptr;
+	const FGamerBuildableDef* Station = Job && !Job->Station.IsNone() ? Data->FindBuildable(Job->Station) : nullptr;
+	if (!Station || Station->Workers <= 0)
+	{
+		return INDEX_NONE;
+	}
+	int32 Places = 0;
+	for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsPreview() && It->IsFinished() && It->GetBuildableId() == Job->Station)
+		{
+			Places += It->GetWorkers();
+		}
+	}
+	return Places;
+}
+
+int32 AGamerSettlement::CountWithJob(FName JobId) const
+{
+	int32 Count = 0;
+	for (TActorIterator<AGamerVillager> It(GetWorld()); It; ++It)
+	{
+		Count += It->GetJobId() == JobId ? 1 : 0;
+	}
+	return Count;
+}
+
+void AGamerSettlement::TickSpoilage()
+{
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (!Data || Storage.Num() == 0)
+	{
+		return;
+	}
+	TArray<FGamerItemAmount> Spoiled;
+	TArray<FString> Warnings;
+	for (int32 Index = Storage.Num() - 1; Index >= 0; --Index)
+	{
+		FGamerItemAmount& Entry = Storage[Index];
+		const FGamerItemDef* Def = Data->FindItem(Entry.Item);
+		if (!Def || !Def->Spoils() || Entry.Count <= 0)
+		{
+			continue;
+		}
+		const float Before = Entry.Freshness;
+		Entry.Freshness = FMath::Max(0.f, Entry.Freshness - UGamerSpoilage::Loss(*Def, UGamerSpoilage::Get().TickSeconds, EGamerSpoilPlace::Storage));
+		if (Entry.Freshness <= 0.f)
+		{
+			FGamerItemAmount& Into = Spoiled.AddDefaulted_GetRef();
+			Into.Item = Def->SpoilsInto;
+			Into.Count = Entry.Count;
+			UE_LOG(LogGamer, Log, TEXT("Spoiled in storage: %s x%d -> %s"), *Def->Id.ToString(), Entry.Count, *Def->SpoilsInto.ToString());
+			Broadcast(FString::Printf(TEXT("Im Lager verdorben: %s."), *Def->Name));
+			Storage.RemoveAt(Index);
+		}
+		else if (UGamerSpoilage::CrossedWarning(Before, Entry.Freshness))
+		{
+			Warnings.Add(Def->Name);
+		}
+	}
+	for (const FGamerItemAmount& Into : Spoiled)
+	{
+		AddToStorage(Into.Item, Into.Count);
+	}
+	if (Warnings.Num() > 0)
+	{
+		UE_LOG(LogGamer, Log, TEXT("Spoil warning in storage: %s"), *FString::Join(Warnings, TEXT(", ")));
+		Broadcast(FString::Printf(TEXT("Im Lager verderben bald: %s (noch %d %%)."), *FString::Join(Warnings, TEXT(", ")),
+			UGamerSpoilage::Percent(UGamerSpoilage::Get().WarnAt)));
+	}
+	ForceNetUpdate();
+}
+
 void AGamerSettlement::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	if (!HasAuthority())
 	{
 		return;
+	}
+	SpoilTimer -= DeltaSeconds;
+	if (SpoilTimer <= 0.f)
+	{
+		SpoilTimer = UGamerSpoilage::Get().TickSeconds;
+		TickSpoilage();
 	}
 	BuildingCheckTimer -= DeltaSeconds;
 	if (BuildingCheckTimer <= 0.f)

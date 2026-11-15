@@ -1,18 +1,24 @@
 #include "GamerPlayerController.h"
 
 #include "Gamer.h"
+#include "GamerBuffComponent.h"
 #include "GamerBuildComponent.h"
 #include "GamerBuilding.h"
 #include "GamerCharacter.h"
 #include "GamerDataTypes.h"
+#include "GamerGameState.h"
 #include "GamerGraphicsSettings.h"
 #include "GamerHUD.h"
 #include "GamerInventoryComponent.h"
 #include "GamerKeyBindings.h"
 #include "GamerMenuGameMode.h"
 #include "GamerSessionSubsystem.h"
+#include "GamerFarmBuilding.h"
+#include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerScanComponent.h"
 #include "GamerSettlement.h"
+#include "GamerTavern.h"
 #include "GamerVillager.h"
 #include "GamerDataSubsystem.h"
 #include "GamerWorkComponent.h"
@@ -20,6 +26,7 @@
 #include "Camera/CameraComponent.h"
 #include "EngineUtils.h"
 #include "Engine/GameViewportClient.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "InputKeyEventArgs.h"
 #include "Misc/CommandLine.h"
@@ -66,9 +73,19 @@ bool AGamerPlayerController::InputKey(const FInputKeyEventArgs& Params)
 		{
 			return true;
 		}
+		if (MenuPage == EGamerMenuPage::Character && TypeIntoCharacterName(Params.Key))
+		{
+			return true;
+		}
+		if (bMenuKey && MenuPage == EGamerMenuPage::CharacterLook)
+		{
+			HandleCharacterButton(TEXT("char:lookdone"));
+			return true;
+		}
 		if (bMenuKey)
 		{
 			if (MenuPage == EGamerMenuPage::Controls || MenuPage == EGamerMenuPage::CreateWorld || MenuPage == EGamerMenuPage::Join
+				|| MenuPage == EGamerMenuPage::Character || MenuPage == EGamerMenuPage::LoadWorld
 				|| MenuPage == EGamerMenuPage::Graphics)
 			{
 				PressMenuButton(TEXT("back"));
@@ -206,7 +223,11 @@ void AGamerPlayerController::CloseMenu()
 void AGamerPlayerController::PressMenuButton(FName ButtonId)
 {
 	const FString Id = ButtonId.ToString();
-	if (Id == TEXT("resume"))
+	if (HandleSaveButton(Id))
+	{
+		// save system: loadpage, load:<id>, save
+	}
+	else if (Id == TEXT("resume"))
 	{
 		CloseMenu();
 	}
@@ -249,14 +270,15 @@ void AGamerPlayerController::PressMenuButton(FName ButtonId)
 	}
 	else if (Id == TEXT("create"))
 	{
-		MenuPage = EGamerMenuPage::CreateWorld;
-		MenuNote.Reset();
+		OpenCharacterPage(EGamerMenuPage::CreateWorld); // character first, then the world options
 	}
 	else if (Id == TEXT("joinpage"))
 	{
-		MenuPage = EGamerMenuPage::Join;
-		JoinAddress = UGamerMenuSettings::Get()->JoinAddress;
-		MenuNote.Reset();
+		OpenCharacterPage(EGamerMenuPage::Join);
+	}
+	else if (Id.StartsWith(TEXT("char:")))
+	{
+		HandleCharacterButton(Id);
 	}
 	else if (Id.StartsWith(TEXT("opt:")))
 	{
@@ -274,6 +296,10 @@ void AGamerPlayerController::PressMenuButton(FName ButtonId)
 		else if (Which == TEXT("demolish"))
 		{
 			Options.Demolish = static_cast<EGamerDemolish>((static_cast<uint8>(Options.Demolish) + 1) % 3);
+		}
+		else if (Which == TEXT("inventory"))
+		{
+			Options.bCarryInventory = !Options.bCarryInventory; // save system 2026-11-15: asked when creating a world
 		}
 		UGamerMenuSettings::Get()->Save();
 		UE_LOG(LogGamer, Log, TEXT("Start menu world options: %s"), *Options.ToLogString());
@@ -360,10 +386,9 @@ void AGamerPlayerController::HostWorld()
 	{
 		Session->ClearError();
 	}
-	const FString Options = TEXT("listen?game=/Script/Gamer.GamerGameMode") + Settings->WorldOptions.ToUrlOptions();
-	UE_LOG(LogGamer, Log, TEXT("Hosting world %s?%s"), GamerMaps::World, *Options);
-	MenuNote = TEXT("Welt wird gestartet …");
-	UGameplayStatics::OpenLevel(this, FName(GamerMaps::World), true, Options);
+	// Every new world gets a save (save system 2026-11-15): name and id are new, the options come along.
+	const FString Name = MakeNewWorldName();
+	HostSavedWorld(GamerSave::MakeWorldId(Name), Name, &Settings->WorldOptions);
 }
 
 void AGamerPlayerController::JoinWorld()
@@ -510,9 +535,10 @@ void AGamerPlayerController::ServerStorageTake_Implementation(FName Item, int32 
 		GamerCharacter->GetWork()->ClientMessage(Inventory->SpaceFor(Item) <= 0 ? TEXT("Kein Platz im Inventar.") : TEXT("Davon ist nichts im Lager."));
 		return;
 	}
-	const int32 Taken = Settlement->TakeFromStorage(Item, Wanted);
-	const int32 Back = Inventory->AddItem(Item, Taken);
-	Settlement->AddToStorage(Item, Back);
+	float Freshness = 1.f;
+	const int32 Taken = Settlement->TakeFromStorage(Item, Wanted, &Freshness);
+	const int32 Back = Inventory->AddItem(Item, Taken, Freshness);
+	Settlement->AddToStorage(Item, Back, Freshness);
 	UE_LOG(LogGamer, Log, TEXT("Storage take: %s x%d - %s"), *Item.ToString(), Taken - Back, *Settlement->Describe());
 }
 
@@ -530,7 +556,7 @@ void AGamerPlayerController::ServerStorageDeposit_Implementation(FName Item, int
 	{
 		return;
 	}
-	const int32 NotFitting = Settlement->AddToStorage(Item, Have);
+	const int32 NotFitting = Settlement->AddToStorage(Item, Have, Inventory->FreshnessOf(Item));
 	const int32 Stored = Have - NotFitting;
 	if (Stored > 0)
 	{
@@ -558,7 +584,7 @@ void AGamerPlayerController::ServerStorageDepositAll_Implementation(bool bInclud
 	for (const FGamerInventorySlot& Slot : GamerCharacter->GetInventory()->GetSlots())
 	{
 		const FGamerItemDef* Def = Slot.IsEmpty() ? nullptr : Data->FindItem(Slot.Item);
-		if (Def && (bIncludeTools || Def->Category != EGamerItemCategory::Tool))
+		if (Def && (bIncludeTools || (Def->Category != EGamerItemCategory::Tool && Def->Category != EGamerItemCategory::Weapon)))
 		{
 			Items.Add(Slot.Item);
 		}
@@ -574,7 +600,14 @@ void AGamerPlayerController::ServerSetVillagerJob_Implementation(AGamerVillager*
 	// The village management works from anywhere (no reach check): it is the settlement's job board.
 	if (Villager && GetPawn())
 	{
-		Villager->SetJob(JobId);
+		FString WhyNot;
+		if (!Villager->SetJob(JobId, &WhyNot) && !WhyNot.IsEmpty())
+		{
+			if (const AGamerCharacter* GamerCharacter = Cast<AGamerCharacter>(GetPawn()))
+			{
+				GamerCharacter->GetWork()->ClientMessage(WhyNot);
+			}
+		}
 	}
 }
 
@@ -792,8 +825,10 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	}
 	UE_LOG(LogGamer, Log, TEXT("Test step %d/%d: %s"), TestStepIndex, TestSteps.Num(), *Step);
 
-	if (Kind == TEXT("harvest"))
+	if (Kind == TEXT("harvest") || Kind == TEXT("autoharvest"))
 	{
+		// autoharvest: no slot is chosen here; the server must take the right tool from the hotbar by itself.
+		const bool bAutoTool = Kind == TEXT("autoharvest");
 		AGamerResourceNode* Nearest = nullptr;
 		float BestDistance = TNumericLimits<float>::Max();
 		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
@@ -819,8 +854,12 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 		{
 			// Like a player: take the matching tool from the hotbar into the hand, then strike.
 			UGamerInventoryComponent* Inventory = GamerCharacter->GetInventory();
-			const int32 Slot = Inventory->FindToolInHotbar(Def->RequiredTool.Type, Def->RequiredTool.MinTier);
-			if (Slot != INDEX_NONE)
+			const int32 Slot = bAutoTool ? INDEX_NONE : Inventory->FindToolInHotbar(Def->RequiredTool.Type, Def->RequiredTool.MinTier);
+			if (bAutoTool)
+			{
+				UE_LOG(LogGamer, Log, TEXT("Test step: auto tool, hand holds slot %d before the strikes"), Inventory->GetSelectedSlot() + 1);
+			}
+			else if (Slot != INDEX_NONE)
 			{
 				Inventory->SelectSlot(Slot);
 				UE_LOG(LogGamer, Log, TEXT("Test step: hotbar slot %d selected"), Slot + 1);
@@ -852,6 +891,89 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	else if (Kind == TEXT("select"))
 	{
 		GamerCharacter->GetInventory()->SelectSlot(FCString::Atoi(*Argument) - 1);
+	}
+	else if (Kind == TEXT("scan"))
+	{
+		// scan - same path as the scan key; the result is in the log ("Scan: N marks ...")
+		GamerCharacter->GetScan()->TryScan();
+	}
+	else if (Kind == TEXT("pickall") || Kind == TEXT("picksame"))
+	{
+		// pickall / picksame: as holding E / Shift+E; the anchor is the nearest hand-pickable thing (no aiming in tests)
+		AActor* Anchor = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerGroundItem> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Anchor = *It;
+			}
+		}
+		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+		{
+			const FGamerResourceNodeDef* Def = It->GetDef();
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (Def && !It->IsDepleted() && !Def->RequiredTool.IsRequired() && Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Anchor = *It;
+			}
+		}
+		UE_LOG(LogGamer, Log, TEXT("Test %s: anchor %s at %.0f cm"), *Kind, *GetNameSafe(Anchor), BestDistance);
+		Work->ServerPickUpAll(Anchor, Kind == TEXT("picksame"));
+	}
+	else if (Kind == TEXT("focusnext"))
+	{
+		GamerCharacter->CycleFocus();
+	}
+	else if (Kind == TEXT("pile"))
+	{
+		UE_LOG(LogGamer, Log, TEXT("Test pile: %d candidates, pick %d"), GamerCharacter->GetPile().Num(), GamerCharacter->GetPilePick() + 1);
+	}
+	else if (Kind == TEXT("station"))
+	{
+		// station:<buildable id> - go to the nearest finished one and open its station window like E does
+		AGamerBuilding* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (!It->IsPreview() && It->IsFinished() && It->GetBuildableId() == FName(*Argument) && Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Nearest = *It;
+			}
+		}
+		if (Nearest)
+		{
+			GamerCharacter->OpenStationWindow(Nearest);
+			UE_LOG(LogGamer, Log, TEXT("Test station: window %s open, %d recipes, menu open %d"), *Argument, GamerCharacter->GetHandRecipes().Num(),
+				GamerCharacter->IsCraftMenuOpen() ? 1 : 0);
+		}
+		else
+		{
+			UE_LOG(LogGamer, Warning, TEXT("Test station: no finished %s"), *Argument);
+		}
+	}
+	else if (Kind == TEXT("wheel"))
+	{
+		// wheel:1 / wheel:-1 - same path as the mouse wheel
+		GamerCharacter->CycleHotbar(FCString::Atoi(*Argument) >= 0 ? 1 : -1);
+	}
+	else if (Kind == TEXT("sprint"))
+	{
+		// sprint:on / sprint:off - same path as the held key
+		GamerCharacter->SetSprinting(Argument != TEXT("off"));
+		UE_LOG(LogGamer, Log, TEXT("Test sprint %s: local speed %.0f"), *Argument, GamerCharacter->GetCharacterMovement()->MaxWalkSpeed);
+	}
+	else if (Kind == TEXT("hand"))
+	{
+		const UGamerInventoryComponent* Inventory = GamerCharacter->GetInventory();
+		const FGamerItemDef* Held = Inventory->GetSelectedItemDef();
+		UE_LOG(LogGamer, Log, TEXT("Test hand: slot %d holds %s, sprint %d speed %.0f"), Inventory->GetSelectedSlot() + 1,
+			Held ? *Held->Id.ToString() : TEXT("nothing"), GamerCharacter->IsSprinting() ? 1 : 0, GamerCharacter->GetCharacterMovement()->MaxWalkSpeed);
 	}
 	else if (Kind == TEXT("bind"))
 	{
@@ -906,9 +1028,13 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	}
 	else if (Kind == TEXT("place"))
 	{
-		// place:<buildable>@x,y[,z]
+		// place:<buildable>@x,y[,z][+multi][#WxH]  (+multi = as if the "build several" key were held;
+		// #WxH = a drawn field of W x H cm, the same rectangle the two clicks would give)
 		FString Id, Coords;
 		Argument.Split(TEXT("@"), &Id, &Coords);
+		FString AreaSize;
+		Coords.Split(TEXT("#"), &Coords, &AreaSize);
+		const bool bMulti = Coords.RemoveFromEnd(TEXT("+multi"));
 		TArray<FString> Parts;
 		Coords.ParseIntoArray(Parts, TEXT(","));
 		const FVector Local(Parts.IsValidIndex(0) ? FCString::Atof(*Parts[0]) : 0.f, Parts.IsValidIndex(1) ? FCString::Atof(*Parts[1]) : 0.f,
@@ -949,13 +1075,27 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 			bHit = GetWorld()->LineTraceSingleByChannel(Hit, Ahead + FVector(0, 0, 500.f), Ahead - FVector(0, 0, 2000.f), ECC_Visibility, Params);
 			Aim = (bHit ? Hit.ImpactPoint : Ahead) + FVector(0, 0, Local.Z);
 		}
-		const FGamerPlacement Placement = GamerCharacter->GetBuild()->ComputePlacement(FName(*Id), Aim, bHit, GetControlRotation().Yaw);
+		FGamerPlacement Placement = GamerCharacter->GetBuild()->ComputePlacement(FName(*Id), Aim, bHit, GetControlRotation().Yaw);
+		const UGamerDataSubsystem* AreaData = UGamerDataSubsystem::Get(this);
+		const FGamerBuildableDef* AreaDef = AreaData ? AreaData->FindBuildable(FName(*Id)) : nullptr;
+		if (AreaDef && AreaDef->IsAreaPiece() && !AreaSize.IsEmpty())
+		{
+			FString W, H;
+			AreaSize.Split(TEXT("x"), &W, &H);
+			const FVector Corner = Placement.Transform.GetLocation();
+			const float Yaw = Placement.Transform.Rotator().Yaw;
+			const FVector Opposite = Corner + FRotator(0.f, Yaw, 0.f).RotateVector(FVector(FCString::Atof(*W), FCString::Atof(*H), 0.f));
+			Placement.Transform = UGamerBuildComponent::AreaTransform(*AreaDef, Corner, Yaw, Opposite);
+		}
 		UE_LOG(LogGamer, Log, TEXT("Test place %s: %s%s at %s yaw %.0f%s"), *Id, Placement.bValid ? TEXT("valid") : TEXT("INVALID"),
 			Placement.bSnapped ? TEXT(" (snapped)") : TEXT(""), *Placement.Transform.GetLocation().ToCompactString(),
 			Placement.Transform.Rotator().Yaw, Placement.Problem.IsEmpty() ? TEXT("") : *(TEXT(" - ") + Placement.Problem));
 		if (Placement.bValid)
 		{
+			UE_LOG(LogGamer, Log, TEXT("Test place: affordable before %d"), GamerCharacter->GetBuild()->CountAffordable(FName(*Id)));
 			GamerCharacter->GetBuild()->ServerPlace(FName(*Id), Placement.Transform);
+			GamerCharacter->GetBuild()->AfterPlaced(bMulti);
+			UE_LOG(LogGamer, Log, TEXT("Test place: piece in hand afterwards: %s"), *GamerCharacter->GetBuild()->GetSelected().ToString());
 		}
 	}
 	else if (Kind == TEXT("give"))
@@ -968,6 +1108,147 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 			Count = TEXT("1");
 		}
 		Work->ServerDebugGiveItem(FName(*Item), FCString::Atoi(*Count));
+	}
+	else if (Kind == TEXT("season"))
+	{
+		// season:<phase 0..4> (0 spring, 1 summer, 2 autumn, 3 winter); the server sets it, all machines follow
+		const float Phase = FCString::Atof(*Argument);
+		Work->ServerDebugSetSeason(Phase);
+		UE_LOG(LogGamer, Log, TEXT("Test season: request %.2f (%s), local phase before %.2f"), Phase,
+			*AGamerGameState::DescribeSeason(Phase), GetWorld()->GetGameState<AGamerGameState>() ? GetWorld()->GetGameState<AGamerGameState>()->GetSeasonPhase() : -1.f);
+	}
+	else if (Kind == TEXT("upgrade"))
+	{
+		// upgrade:<buildable id> - interact key on the nearest finished building of that type (needs a hammer in the hotbar)
+		AGamerBuilding* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (!It->IsPreview() && It->GetBuildableId() == FName(*Argument) && It->IsFinished() && Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Nearest = *It;
+			}
+		}
+		if (!Nearest)
+		{
+			UE_LOG(LogGamer, Warning, TEXT("Test upgrade: no finished %s found"), *Argument);
+			return;
+		}
+		Work->ServerDebugTeleportNear(Nearest);
+		GamerCharacter->GetBuild()->ServerUpgrade(Nearest);
+	}
+	else if (Kind == TEXT("jobs"))
+	{
+		// jobs - work places per job as this machine sees the buildings (capacity is computed on the server)
+		if (const AGamerSettlement* Settlement = AGamerSettlement::Get(this); Settlement && HasAuthority())
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test jobs: (server) farmer %d of %d"), Settlement->CountWithJob(TEXT("job_farmer")), Settlement->GetJobCapacity(TEXT("job_farmer")));
+		}
+		for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+		{
+			if (!It->IsPreview() && It->GetWorkers() > 0)
+			{
+				UE_LOG(LogGamer, Log, TEXT("Test jobs: %s %s level %d, %d work places"), *It->GetName(), *It->GetBuildableId().ToString(), It->GetLevel(), It->GetWorkers());
+			}
+		}
+	}
+	else if (Kind == TEXT("use"))
+	{
+		// use:<buildable id> - interact key on the nearest finished farm building of that type (field, composter, rain catcher)
+		AGamerFarmBuilding* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerFarmBuilding> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if (It->GetBuildableId() == FName(*Argument) && It->IsFinished() && Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Nearest = *It;
+			}
+		}
+		if (!Nearest)
+		{
+			UE_LOG(LogGamer, Warning, TEXT("Test use: no finished %s found"), *Argument);
+			return;
+		}
+		if (BestDistance > Work->GetStationReach() * 0.8f)
+		{
+			Work->ServerDebugTeleportNear(Nearest);
+		}
+		Work->ServerUseFarm(Nearest);
+	}
+	else if (Kind == TEXT("pickup"))
+	{
+		// pickup or pickup:<item id> - nearest item on the ground
+		AGamerGroundItem* Nearest = nullptr;
+		float BestDistance = TNumericLimits<float>::Max();
+		for (TActorIterator<AGamerGroundItem> It(GetWorld()); It; ++It)
+		{
+			const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+			if ((Argument.IsEmpty() || It->GetItem() == FName(*Argument)) && Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				Nearest = *It;
+			}
+		}
+		if (!Nearest)
+		{
+			UE_LOG(LogGamer, Warning, TEXT("Test pickup: nothing on the ground"));
+			return;
+		}
+		// Reliable RPCs on the same component arrive in order: teleport first, then the pick-up.
+		Work->ServerDebugTeleportNear(Nearest);
+		Work->ServerPickUp(Nearest);
+	}
+	else if (Kind == TEXT("farm"))
+	{
+		// farm - log fruit trees, ground items, farm buildings and the inventory as this machine sees them
+		int32 Ground = 0;
+		TMap<FName, int32> GroundByItem;
+		for (TActorIterator<AGamerGroundItem> It(GetWorld()); It; ++It)
+		{
+			++Ground;
+			GroundByItem.FindOrAdd(It->GetItem())++;
+		}
+		TArray<FString> GroundParts;
+		for (const TPair<FName, int32>& Pair : GroundByItem)
+		{
+			GroundParts.Add(FString::Printf(TEXT("%s x%d"), *Pair.Key.ToString(), Pair.Value));
+		}
+		TMap<FString, FString> Nodes;
+		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+		{
+			if (It->GetFruitStage() != EGamerFruitStage::None)
+			{
+				FString& Line = Nodes.FindOrAdd(It->GetNodeId().ToString());
+				Line += FString::Printf(TEXT(" %d/%d"), static_cast<int32>(It->GetFruitStage()), It->GetFruitLeft());
+			}
+		}
+		TArray<FString> NodeParts;
+		for (const TPair<FString, FString>& Pair : Nodes)
+		{
+			NodeParts.Add(Pair.Key + TEXT(":") + Pair.Value);
+		}
+		UE_LOG(LogGamer, Log, TEXT("Test farm: season %.2f, fruit nodes (stage/fruit) [%s]"),
+			GetWorld()->GetGameState<AGamerGameState>() ? GetWorld()->GetGameState<AGamerGameState>()->GetSeasonPhase() : -1.f, *FString::Join(NodeParts, TEXT("; ")));
+		UE_LOG(LogGamer, Log, TEXT("Test farm: %d ground items [%s]"), Ground, *FString::Join(GroundParts, TEXT(", ")));
+		for (TActorIterator<AGamerFarmBuilding> It(GetWorld()); It; ++It)
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test farm: %s %s"), *It->GetName(), *It->GetStatusText());
+		}
+		UE_LOG(LogGamer, Log, TEXT("Test farm: inventory %s"), *GamerCharacter->GetInventory()->Describe());
+		if (const AGamerSettlement* Settlement = AGamerSettlement::Get(this))
+		{
+			TArray<FString> Parts;
+			for (const FGamerItemAmount& Amount : Settlement->GetStorage())
+			{
+				Parts.Add(FString::Printf(TEXT("%s x%d (%d %%)"), *Amount.Item.ToString(), Amount.Count, FMath::RoundToInt(Amount.Freshness * 100.f)));
+			}
+			UE_LOG(LogGamer, Log, TEXT("Test farm: storage [%s]"), *FString::Join(Parts, TEXT(", ")));
+		}
+		UE_LOG(LogGamer, Log, TEXT("Test farm: last message \"%s\""), *Work->GetLastMessage());
 	}
 	else if (Kind == TEXT("hammer"))
 	{
@@ -1112,15 +1393,38 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	{
 		SetBirdView(Argument != TEXT("off"));
 	}
+	else if (Kind == TEXT("birdfocus") && Argument.StartsWith(TEXT("at:")))
+	{
+		// birdfocus:at:<x>,<y> (world cm), e.g. for the asset showcase map
+		TArray<FString> Parts;
+		Argument.Mid(3).ParseIntoArray(Parts, TEXT(","));
+		BirdFocus = FVector(Parts.IsValidIndex(0) ? FCString::Atof(*Parts[0]) : 0.f, Parts.IsValidIndex(1) ? FCString::Atof(*Parts[1]) : 0.f, BirdFocus.Z);
+		ApplyBirdCamera();
+		UE_LOG(LogGamer, Log, TEXT("Test birdfocus at %s"), *BirdFocus.ToCompactString());
+	}
 	else if (Kind == TEXT("birdfocus") || Kind == TEXT("birdselect"))
 	{
-		// <target> = villager:<n> (name order) or a buildable id (the nearest one).
+		// <target> = villager:<n> (name order), node:<id> or a buildable id (the nearest one).
 		AActor* Target = nullptr;
 		if (Argument.StartsWith(TEXT("villager:")))
 		{
 			const TArray<AGamerVillager*> Villagers = GetVillagersSorted();
 			const int32 N = FCString::Atoi(*Argument.Mid(9)) - 1;
 			Target = Villagers.IsValidIndex(N) ? Villagers[N] : nullptr;
+		}
+		else if (Argument.StartsWith(TEXT("node:")))
+		{
+			// node:<resource id>: the nearest resource node of that kind (e.g. node:res_tree_pine)
+			float BestDistance = TNumericLimits<float>::Max();
+			for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+			{
+				const float Distance = FVector::Dist(It->GetActorLocation(), GamerCharacter->GetActorLocation());
+				if (It->GetNodeId() == FName(*Argument.Mid(5)) && Distance < BestDistance)
+				{
+					BestDistance = Distance;
+					Target = *It;
+				}
+			}
 		}
 		else
 		{
@@ -1196,6 +1500,39 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	else if (Kind == TEXT("craft"))
 	{
 		Work->ServerCraft(FName(*Argument));
+	}
+	else if (Kind == TEXT("eat"))
+	{
+		// eat:<item id> - eat a dish or drink from the inventory (meal buffs, Taverne-Session)
+		GamerCharacter->GetBuffs()->ServerEat(FName(*Argument));
+	}
+	else if (Kind == TEXT("meals"))
+	{
+		// meals - active meal buffs as this machine sees them (owner copy on the client)
+		const UGamerBuffComponent* Buffs = GamerCharacter->GetBuffs();
+		UE_LOG(LogGamer, Log, TEXT("Test meals: %s%s: %s | health +%.1f regen +%.2f carry +%.1f cold %.0f%% poison %.0f%% damage %.1f%%"),
+			HasAuthority() ? TEXT("(server)") : TEXT("(client)"), IsLocalController() ? TEXT(" local") : TEXT(""), *Buffs->Describe(),
+			Buffs->GetBonus(EGamerBuffStat::Health), Buffs->GetBonus(EGamerBuffStat::Regen), Buffs->GetBonus(EGamerBuffStat::Carry),
+			Buffs->GetBonus(EGamerBuffStat::ColdResist), Buffs->GetBonus(EGamerBuffStat::PoisonResist), Buffs->GetBonus(EGamerBuffStat::Damage));
+	}
+	else if (Kind == TEXT("tavern"))
+	{
+		// tavern - level, work places and stock of every tavern as this machine sees it
+		for (TActorIterator<AGamerTavern> It(GetWorld()); It; ++It)
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test tavern: %s level %d, %d work places, stock: %s"), *It->GetName(), It->GetLevel(), It->GetWorkers(), *It->DescribeStock());
+		}
+	}
+	else if (Kind == TEXT("save"))
+	{
+		// save - ask the server to save the world now (save system; host, or any player on a dedicated server)
+		HandleSaveButton(TEXT("save"));
+	}
+	else if (Kind == TEXT("whoami"))
+	{
+		// whoami - position, hotbar slot and inventory as this player sees them (re-join checks of the save system)
+		UE_LOG(LogGamer, Log, TEXT("Test whoami: at %s yaw %.0f, slot %d, inventory: %s"), *GamerCharacter->GetActorLocation().ToCompactString(),
+			GetControlRotation().Yaw, GamerCharacter->GetInventory()->GetSelectedSlot() + 1, *GamerCharacter->GetInventory()->Describe());
 	}
 	else if (Kind == TEXT("wait"))
 	{
@@ -1450,7 +1787,8 @@ TArray<FString> AGamerPlayerController::DescribeBirdSelection() const
 		Lines.Add(Villager->GetVillagerName());
 		Lines.Add(FString::Printf(TEXT("Beruf: %s"), Job ? *Job->Name : TEXT("-")));
 		Lines.Add(FString::Printf(TEXT("Tätigkeit: %s"), *Villager->GetActivity()));
-		Lines.Add(FString::Printf(TEXT("Hunger: %d %%   Schlaf: %d %%"), FMath::RoundToInt(Villager->GetHunger() * 100.f), FMath::RoundToInt(Villager->GetSleep() * 100.f)));
+		Lines.Add(FString::Printf(TEXT("Hunger: %d %%   Schlaf: %d %%   Stimmung: %d %%"), FMath::RoundToInt(Villager->GetHunger() * 100.f),
+			FMath::RoundToInt(Villager->GetSleep() * 100.f), FMath::RoundToInt(Villager->GetMood() * 100.f)));
 		Lines.Add(FString::Printf(TEXT("Unterkunft: %s"), !Villager->GetBed() ? TEXT("kein Bett") : Villager->HasShelter() ? TEXT("ja") : TEXT("Bett ohne Dach")));
 		Lines.Add(FString::Printf(TEXT("Werkzeug: %s"), Tool ? *Tool->Name : TEXT("keins")));
 	}

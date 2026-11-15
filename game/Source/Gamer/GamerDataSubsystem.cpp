@@ -55,15 +55,20 @@ void UGamerDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	FGamerDataReport Report;
 	bHasLoadErrors = !GamerData::LoadFromDirectory(GamerData::DefaultDirectory(), Data, Report);
+	bHasLoadErrors |= !GamerData::LoadCharacters(GamerData::DefaultDirectory(), Data, Characters, Report);
 	LogReport(Report);
 	LogSummary(TEXT("loaded"), Data, Report);
+	UE_LOG(LogGamer, Log, TEXT("Character data: %d origins, %d stats, %d abilities, %d appearance slots"),
+		Characters.Origins.Num(), Characters.Stats.Num(), Characters.Abilities.Num(), Characters.LookSlots.Num());
 }
 
 bool UGamerDataSubsystem::Reload()
 {
 	FGamerDataSet NewData;
 	FGamerDataReport Report;
-	const bool bOk = GamerData::LoadFromDirectory(GamerData::DefaultDirectory(), NewData, Report);
+	FGamerCharacterDataSet NewCharacters;
+	bool bOk = GamerData::LoadFromDirectory(GamerData::DefaultDirectory(), NewData, Report);
+	bOk &= GamerData::LoadCharacters(GamerData::DefaultDirectory(), NewData, NewCharacters, Report);
 	LogReport(Report);
 	if (!bOk)
 	{
@@ -71,6 +76,7 @@ bool UGamerDataSubsystem::Reload()
 		return false;
 	}
 	Data = MoveTemp(NewData);
+	Characters = MoveTemp(NewCharacters);
 	bHasLoadErrors = false;
 	LogSummary(TEXT("reloaded"), Data, Report);
 	return true;

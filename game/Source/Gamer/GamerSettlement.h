@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GamerDataTypes.h"
+#include "GamerSaveable.h"
 #include "GamerSettlement.generated.h"
 
 class AGamerBuilding;
@@ -18,9 +19,15 @@ class AGamerVillager;
  * The villagers' own decisions are in AGamerVillager (server only, needs instead of a clock).
  */
 UCLASS(Config = Game)
-class GAMER_API AGamerSettlement : public AActor
+class GAMER_API AGamerSettlement : public AActor, public IGamerSaveable
 {
 	GENERATED_BODY()
+
+public:
+	// IGamerSaveable (save system, implemented in GamerSaveImpl.cpp)
+	virtual FString GetSaveKey() const override { return TEXT("settlement"); }
+	virtual void WriteSaveState(FGamerSaveRecord& Out) const override;
+	virtual void ReadSaveState(const FGamerSaveRecord& In) override;
 
 public:
 	AGamerSettlement();
@@ -41,10 +48,10 @@ public:
 	int32 GetCapacity() const { return Capacity; }
 	AGamerBuilding* FindNearestStorageBuilding(const FVector& From) const;
 
-	/** Server: returns how many did not fit. */
-	int32 AddToStorage(FName Item, int32 Count);
-	/** Server: returns how many were taken (0..Count). */
-	int32 TakeFromStorage(FName Item, int32 Count);
+	/** Server: returns how many did not fit. Freshness 0..1 for perishable items (merged as a weighted mean). */
+	int32 AddToStorage(FName Item, int32 Count, float Freshness = 1.f);
+	/** Server: returns how many were taken (0..Count). OutFreshness: freshness of what was taken. */
+	int32 TakeFromStorage(FName Item, int32 Count, float* OutFreshness = nullptr);
 	/** Server: all or nothing. */
 	bool TakeAllFromStorage(const TArray<FGamerItemAmount>& Amounts);
 	/** Server: first item of this tool type (best tier) in the storage, or NAME_None. */
@@ -62,6 +69,14 @@ public:
 
 	/** Server: new villager near Location (arrival or tests). Gets a free bed if there is one. */
 	AGamerVillager* SpawnVillager(const FVector& Location);
+
+	/**
+	 * Work places for a job: the sum over the finished stations of that job at their upgrade level
+	 * (decision 2026-11-14). INDEX_NONE = no limit (jobs without a station, or stations without "workers").
+	 */
+	int32 GetJobCapacity(FName JobId) const;
+	/** Villagers that have this job. */
+	int32 CountWithJob(FName JobId) const;
 
 	/** Server: work target reservations, so two villagers do not fell the same tree. */
 	bool IsReservedByOther(const AActor* Target, const AGamerVillager* Villager) const;
@@ -104,6 +119,9 @@ protected:
 
 private:
 	void UpdateBuildings();
+	/** Perishable stock spoils slowly under the storage roof; warns everyone once at 30 %. */
+	void TickSpoilage();
+	float SpoilTimer = 0.f;
 	FString NextName();
 
 	TMap<TWeakObjectPtr<AActor>, TWeakObjectPtr<AGamerVillager>> Reservations;

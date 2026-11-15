@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GamerCharacterData.h"
 #include "GamerDataLoader.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "GamerDataSubsystem.generated.h"
@@ -32,10 +33,14 @@ public:
 	const FGamerJobDef* FindJob(FName Id) const { return Data.Jobs.Find(Id); }
 	const FGamerNeedDef* FindNeed(FName Id) const { return Data.Needs.Find(Id); }
 
+	/** Character creation data (characters.json): origins, values, abilities, appearance options. */
+	const FGamerCharacterDataSet& GetCharacters() const { return Characters; }
+
 	/** Convenience: the subsystem of the game instance that owns WorldContextObject. */
 	static UGamerDataSubsystem* Get(const UObject* WorldContextObject);
 
 private:
 	FGamerDataSet Data;
+	FGamerCharacterDataSet Characters;
 	bool bHasLoadErrors = false;
 };

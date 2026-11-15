@@ -1,0 +1,181 @@
+{
+  "generator": "tools/blender/render_icons.py",
+  "icons": [
+    {
+      "id": "item_log",
+      "name": "T_Icon_item_log",
+      "file": "UI/Icons/T_Icon_item_log.png",
+      "model": "Items/SM_Item_Log.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "item_stone",
+      "name": "T_Icon_item_stone",
+      "file": "UI/Icons/T_Icon_item_stone.png",
+      "model": "Nature/Rocks/SM_StonesLoose.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "item_stick",
+      "name": "T_Icon_item_stick",
+      "file": "UI/Icons/T_Icon_item_stick.png",
+      "model": "Nature/Plants/SM_Branches.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "item_fiber",
+      "name": "T_Icon_item_fiber",
+      "file": "UI/Icons/T_Icon_item_fiber.png",
+      "model": "Nature/Plants/SM_NettleCut.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.75
+    },
+    {
+      "id": "item_apple",
+      "name": "T_Icon_item_apple",
+      "file": "UI/Icons/T_Icon_item_apple.png",
+      "model": "Items/SM_Item_Apple.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "item_pear",
+      "name": "T_Icon_item_pear",
+      "file": "UI/Icons/T_Icon_item_pear.png",
+      "model": "Items/SM_Item_Pear.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_foundation_wood",
+      "name": "T_Icon_building_foundation_wood",
+      "file": "UI/Icons/T_Icon_building_foundation_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Foundation_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_floor_wood",
+      "name": "T_Icon_building_floor_wood",
+      "file": "UI/Icons/T_Icon_building_floor_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Floor_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_wall_wood",
+      "name": "T_Icon_building_wall_wood",
+      "file": "UI/Icons/T_Icon_building_wall_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Wall_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_wall_door_wood",
+      "name": "T_Icon_building_wall_door_wood",
+      "file": "UI/Icons/T_Icon_building_wall_door_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Wall_Door_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_door_wood",
+      "name": "T_Icon_building_door_wood",
+      "file": "UI/Icons/T_Icon_building_door_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Door_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_pillar_wood",
+      "name": "T_Icon_building_pillar_wood",
+      "file": "UI/Icons/T_Icon_building_pillar_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Pillar_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_beam_wood",
+      "name": "T_Icon_building_beam_wood",
+      "file": "UI/Icons/T_Icon_building_beam_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Beam_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_roof_wood",
+      "name": "T_Icon_building_roof_wood",
+      "file": "UI/Icons/T_Icon_building_roof_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Roof_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_roof_ridge_wood",
+      "name": "T_Icon_building_roof_ridge_wood",
+      "file": "UI/Icons/T_Icon_building_roof_ridge_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Roof_Ridge_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_roof_gable_wood",
+      "name": "T_Icon_building_roof_gable_wood",
+      "file": "UI/Icons/T_Icon_building_roof_gable_wood.png",
+      "model": "Buildings/WoodKit/SM_Building_Roof_Gable_Wood.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    }
+  ]
+}

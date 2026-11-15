@@ -2,7 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GamerSaveSubsystem.h"
 #include "GamerPlayerController.generated.h"
+
+struct FGamerWorldOptions;
 
 /** Which menu page is open (local player only; in a world the game keeps running). */
 enum class EGamerMenuPage : uint8
@@ -16,7 +19,10 @@ enum class EGamerMenuPage : uint8
 	Join,         // type the host's address, then connect
 	Village,      // village management: villagers, jobs, needs (key V)
 	Storage,      // settlement storage: take and put (E at a storage building)
-	Graphics      // graphics settings (GamerGraphicsSettings.h), from the Esc menu and the start menu
+	Graphics,     // graphics settings (GamerGraphicsSettings.h), from the Esc menu and the start menu
+	Character,    // start menu: origin, name, values, equipment (before CreateWorld / Join)
+	CharacterLook, // start menu: appearance editor of the character
+	LoadWorld     // start menu: saved worlds (GamerPlayerControllerSave.cpp, GamerHUDSave.cpp)
 };
 
 /**
@@ -86,6 +92,15 @@ public:
 	/** True in the start menu (no world, no character). */
 	bool IsInStartMenu() const { return bInStartMenu; }
 
+	/** Character page: the page "Weiter" leads to (CreateWorld or Join). */
+	EGamerMenuPage GetCharacterNext() const { return CharacterNext; }
+
+	/** Page "Welt laden": the saved worlds (read when the page opens) and how many fit on the page. */
+	const TArray<FGamerWorldSaveInfo>& GetSavedWorlds() const { return SavedWorlds; }
+	int32 GetSavedWorldsShown() const { return 6; }
+	/** Name for the next new world ("Welt 3"). */
+	static FString MakeNewWorldName();
+
 	/** Join page: the address being typed. */
 	const FString& GetJoinAddress() const { return JoinAddress; }
 
@@ -128,7 +143,19 @@ private:
 	class AGamerBuilding* StorageInReach() const;
 	void HostWorld();
 	void JoinWorld();
+	// Character pages (GamerPlayerControllerCharacter.cpp). Button ids: char:origin:<id>, char:randomname, char:name:<text>,
+	// char:look:<slot>, char:lookreset, char:edit, char:lookdone, char:next.
+	void OpenCharacterPage(EGamerMenuPage Next);
+	void HandleCharacterButton(const FString& Id);
+	bool TypeIntoCharacterName(const FKey& Key);
+	EGamerMenuPage CharacterNext = EGamerMenuPage::CreateWorld;
 	void LeaveWorld();
+	// Save system (GamerPlayerControllerSave.cpp). Button ids: loadpage, load:<world id>, save.
+	void OpenLoadWorldPage();
+	bool HandleSaveButton(const FString& Id);
+	/** Host a world with a save id: loads it if it exists; NewOptions/NewName only for a new world. */
+	void HostSavedWorld(const FString& WorldId, const FString& NewName, const FGamerWorldOptions* NewOptions);
+	TArray<FGamerWorldSaveInfo> SavedWorlds;
 	/** Join page: a typed character for the address (digits, letters, '.', ':', '-'); false if the key is not one. */
 	bool TypeIntoAddress(const FKey& Key);
 	void ParseScript(const TCHAR* CommandLineKey);

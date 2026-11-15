@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GamerDataTypes.h"
+#include "GamerSaveable.h"
 #include "GamerInventoryComponent.generated.h"
 
 struct FGamerItemDef;
@@ -18,6 +19,10 @@ struct FGamerInventorySlot
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
 	int32 Count = 0;
 
+	/** Perishable items: 1 = fresh .. 0 = spoiled (one value per stack, merged as a weighted mean). */
+	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
+	float Freshness = 1.f;
+
 	bool IsEmpty() const { return Item.IsNone() || Count <= 0; }
 };
 
@@ -27,9 +32,15 @@ struct FGamerInventorySlot
  * Not yet: tool durability per item, carry-weight limit (later steps of Phase 1/2).
  */
 UCLASS(ClassGroup = (Gamer), meta = (BlueprintSpawnableComponent), Config = Game)
-class GAMER_API UGamerInventoryComponent : public UActorComponent
+class GAMER_API UGamerInventoryComponent : public UActorComponent, public IGamerSaveable
 {
 	GENERATED_BODY()
+
+public:
+	// IGamerSaveable (save system, implemented in GamerSaveImpl.cpp)
+	virtual FString GetSaveKey() const override { return TEXT("inventory"); }
+	virtual void WriteSaveState(FGamerSaveRecord& Out) const override;
+	virtual void ReadSaveState(const FGamerSaveRecord& In) override;
 
 public:
 	UGamerInventoryComponent();
@@ -39,8 +50,8 @@ public:
 
 	// --- Server only (changes) ---
 
-	/** Adds as much as fits. Returns the amount that did not fit. */
-	int32 AddItem(FName Item, int32 Count);
+	/** Adds as much as fits. Returns the amount that did not fit. Freshness 0..1 for perishable items. */
+	int32 AddItem(FName Item, int32 Count, float Freshness = 1.f);
 
 	/** Removes all listed amounts, or nothing if one of them is missing. */
 	bool RemoveItems(const TArray<FGamerItemAmount>& Amounts);
@@ -48,6 +59,9 @@ public:
 	// --- Queries (server and owning client) ---
 
 	int32 CountOf(FName Item) const;
+
+	/** Mean freshness of all stacks of Item (1 if none or not perishable). */
+	float FreshnessOf(FName Item) const;
 	bool HasAll(const TArray<FGamerItemAmount>& Amounts) const;
 
 	/** How many of Item would still fit. */
@@ -79,8 +93,18 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSelectSlot(int32 Index);
 
+	/**
+	 * Server: puts the best hotbar tool of that type into the hand if a better (or any) one is there
+	 * (automatic tool choice, decision 2026-11-14). True if a matching tool is in hand afterwards.
+	 */
+	bool SelectBestToolInHotbar(FName ToolType, int32 MinTier);
+
 	/** Short text for logs and tests, e.g. "item_stone x3, tool_axe_t1 x1". */
 	FString Describe() const;
+
+	/** Spoiling messages for the owning player ("Wildäpfel verderben bald"); the first one also shows the beginner tip once. */
+	UFUNCTION(Client, Reliable)
+	void ClientSpoilNotice(const FString& Text);
 
 	/** Fires on the server after a change and on the owning client after replication. */
 	DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
@@ -106,6 +130,11 @@ protected:
 	void OnRep_Slots();
 
 private:
+	/** Server: perishable stacks lose freshness; warn at 30 %, turn into spoiled food at 0. */
+	void TickSpoilage();
+
+	FTimerHandle SpoilTimer;
+
 	int32 MaxStackOf(FName Item) const;
 	const FGamerItemDef* FindDef(FName Item) const;
 };

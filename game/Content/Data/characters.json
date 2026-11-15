@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "rules": {
+    "stat_sum": 25,
+    "stat_min": 2,
+    "stat_max": 8,
+    "name_max_length": 16,
+    "own_branch_cost_factor": 0.5
+  },
+  "stats": [
+    { "id": "stat_strength", "name": "Stärke", "short": "STÄ", "affects": "Nahkampfschaden, Traglast, Abbau-Tempo" },
+    { "id": "stat_dexterity", "name": "Geschick", "short": "GES", "affects": "Fernkampf, Ausweichen, Sammel- und Ernte-Tempo" },
+    { "id": "stat_toughness", "name": "Zähigkeit", "short": "ZÄH", "affects": "Gesundheit, Regeneration, Kälte- und Hungerresistenz" },
+    { "id": "stat_craft", "name": "Handwerk", "short": "HAN", "affects": "Herstell- und Bautempo, Haltbarkeit, Reparatur" },
+    { "id": "stat_will", "name": "Wille", "short": "WIL", "affects": "Magie (Runen, Seidr), Tränke, Stimmung der Bewohner" }
+  ],
+  "abilities": [
+    { "id": "ability_track_reading", "name": "Spuren lesen", "branch": "origin_hunter", "cost": 1,
+      "description": "Tiere und Vorkommen in der Nähe werden markiert." },
+    { "id": "ability_silent_step", "name": "Leiser Gang", "branch": "origin_hunter", "cost": 2, "description": "Tiere bemerken dich später." },
+    { "id": "ability_traps", "name": "Fallen", "branch": "origin_hunter", "cost": 2, "description": "Einfache Fallen für Kleintiere bauen." },
+    { "id": "ability_aimed_shot", "name": "Zielschuss", "branch": "origin_hunter", "cost": 3, "description": "Ein gezielter Schuss mit mehr Schaden (Abklingzeit)." },
+    { "id": "ability_skinning", "name": "Häuten", "branch": "origin_hunter", "cost": 2, "description": "Mehr Fell und Fleisch von erlegten Tieren." },
+
+    { "id": "ability_shield_bash", "name": "Schildstoß", "branch": "origin_warrior", "cost": 1,
+      "description": "Bricht die Haltung des Gegners." },
+    { "id": "ability_war_cry", "name": "Kampfschrei", "branch": "origin_warrior", "cost": 2, "description": "Mitspieler in der Nähe kämpfen kurz stärker." },
+    { "id": "ability_posture_break", "name": "Haltungsbruch", "branch": "origin_warrior", "cost": 2, "description": "Schwere Schläge leeren die Haltungsleiste schneller." },
+    { "id": "ability_berserker", "name": "Berserkerwut", "branch": "origin_warrior", "cost": 3, "description": "Kurz mehr Schaden, danach Abklingzeit (keine Ausdauer)." },
+
+    { "id": "ability_field_repair", "name": "Feldreparatur", "branch": "origin_smith", "cost": 1,
+      "description": "Werkzeuge und Waffen unterwegs reparieren." },
+    { "id": "ability_better_tools", "name": "Bessere Werkzeuge", "branch": "origin_smith", "cost": 2, "description": "Hergestellte Werkzeuge und Waffen halten länger." },
+    { "id": "ability_smelting", "name": "Erz verhütten", "branch": "origin_smith", "cost": 2, "description": "Mehr Metall aus Erz." },
+    { "id": "ability_armor_smithing", "name": "Rüstung schmieden", "branch": "origin_smith", "cost": 3, "description": "Bessere Rüstungen herstellen." },
+    { "id": "ability_master_builder", "name": "Baumeister", "branch": "origin_smith", "cost": 2, "description": "Schneller bauen und hämmern." },
+
+    { "id": "ability_green_thumb", "name": "Grüner Daumen", "branch": "origin_farmer", "cost": 1,
+      "description": "+1 Ertrag bei Feldern und Wildpflanzen." },
+    { "id": "ability_seed_saving", "name": "Saatgut sparen", "branch": "origin_farmer", "cost": 2, "description": "Beim Ernten öfter Saatgut zurück." },
+    { "id": "ability_preserving", "name": "Haltbar machen", "branch": "origin_farmer", "cost": 2, "description": "Essen verdirbt langsamer." },
+    { "id": "ability_animal_keeping", "name": "Tiere halten", "branch": "origin_farmer", "cost": 3, "description": "Nutztiere halten und versorgen." },
+    { "id": "ability_compost_master", "name": "Kompost-Meister", "branch": "origin_farmer", "cost": 2, "description": "Kompost entsteht schneller." },
+
+    { "id": "ability_rune_of_protection", "name": "Rune des Schutzes", "branch": "origin_seer", "cost": 1,
+      "description": "Ein kleiner Schild auf dich oder einen Mitspieler." },
+    { "id": "ability_seidr_vision", "name": "Seidr-Vision", "branch": "origin_seer", "cost": 2, "description": "Wetter und Jahreszeit vorhersehen." },
+    { "id": "ability_healing_potions", "name": "Heiltränke", "branch": "origin_seer", "cost": 2, "description": "Heiltränke brauen." },
+    { "id": "ability_weapon_runes", "name": "Runen auf Waffen", "branch": "origin_seer", "cost": 3, "description": "Waffen mit Runen verstärken." },
+    { "id": "ability_field_blessing", "name": "Segen auf Felder", "branch": "origin_seer", "cost": 2, "description": "Gesegnete Felder wachsen schneller." }
+  ],
+  "appearance": [
+    { "id": "look_body", "name": "Körperbau", "options": [
+      { "id": "body_slim", "name": "schmal" }, { "id": "body_strong", "name": "kräftig" } ] },
+    { "id": "look_face", "name": "Gesicht", "options": [
+      { "id": "face_1", "name": "Gesicht 1" }, { "id": "face_2", "name": "Gesicht 2" }, { "id": "face_3", "name": "Gesicht 3" },
+      { "id": "face_4", "name": "Gesicht 4" } ] },
+    { "id": "look_skin", "name": "Hautton", "options": [
+      { "id": "skin_light", "name": "hell" }, { "id": "skin_medium", "name": "mittel" }, { "id": "skin_tan", "name": "gebräunt" },
+      { "id": "skin_dark", "name": "dunkel" } ] },
+    { "id": "look_weathering", "name": "Wettergerbung", "options": [
+      { "id": "weathering_light", "name": "kaum" }, { "id": "weathering_medium", "name": "deutlich" }, { "id": "weathering_strong", "name": "stark" } ] },
+    { "id": "look_hair", "name": "Frisur", "options": [
+      { "id": "hair_none", "name": "keine" }, { "id": "hair_short", "name": "kurz" }, { "id": "hair_long", "name": "lang, offen" },
+      { "id": "hair_braids", "name": "Zöpfe" }, { "id": "hair_undercut", "name": "Seiten rasiert, Zopf" } ] },
+    { "id": "look_beard", "name": "Bart", "options": [
+      { "id": "beard_none", "name": "kein" }, { "id": "beard_stubble", "name": "Stoppeln" }, { "id": "beard_full", "name": "Vollbart" },
+      { "id": "beard_braided", "name": "geflochten" } ] },
+    { "id": "look_hair_color", "name": "Haarfarbe", "options": [
+      { "id": "hair_color_blond", "name": "blond" }, { "id": "hair_color_red", "name": "rot" }, { "id": "hair_color_brown", "name": "braun" },
+      { "id": "hair_color_black", "name": "schwarz" }, { "id": "hair_color_grey", "name": "grau" },
+      { "id": "hair_color_ash", "name": "aschblond" } ] },
+    { "id": "look_paint", "name": "Tätowierung/Bemalung", "options": [
+      { "id": "paint_none", "name": "keine" }, { "id": "paint_runes", "name": "Runen-Tätowierung" }, { "id": "paint_knots", "name": "Knotenmuster-Tätowierung" },
+      { "id": "paint_soot", "name": "Ruß" }, { "id": "paint_blue", "name": "Waid-Streifen" } ] },
+    { "id": "look_cloth_color", "name": "Kleidungsfarbe", "options": [
+      { "id": "cloth_natural", "name": "ungefärbt" }, { "id": "cloth_grey", "name": "Wollgrau" }, { "id": "cloth_brown", "name": "braun" },
+      { "id": "cloth_ochre", "name": "Ocker" }, { "id": "cloth_red", "name": "Krapprot" }, { "id": "cloth_blue", "name": "Waidblau" },
+      { "id": "cloth_green", "name": "Moosgrün" } ] },
+    { "id": "look_jewelry", "name": "Schmuck", "options": [
+      { "id": "jewelry_none", "name": "keiner" }, { "id": "jewelry_brooch", "name": "Bronzefibel" }, { "id": "jewelry_armring", "name": "Silberarmring" },
+      { "id": "jewelry_beads", "name": "Glasperlenkette" } ] },
+    { "id": "look_shield", "name": "Schildfarbe", "options": [
+      { "id": "shield_plain", "name": "Holz" }, { "id": "shield_red_white", "name": "rot-weiß" }, { "id": "shield_blue_yellow", "name": "waidblau-ocker" },
+      { "id": "shield_black_white", "name": "schwarz-weiß" } ] }
+  ],
+  "names": [ "Ragnar", "Sigrun", "Bjorn", "Astrid", "Leif", "Freydis", "Ivar", "Gudrun", "Eirik", "Thora", "Halvar", "Ylva", "Ulf", "Ingrid", "Torvald", "Runa" ],
+  "origins": [
+    { "id": "origin_hunter", "name": "Jägerin/Jäger", "role": "Erkunden, Jagd",
+      "description": "Leder, Fellumhang, Kapuze. Sieht Tiere und Vorkommen früher als andere.",
+      "stats": { "stat_strength": 4, "stat_dexterity": 8, "stat_toughness": 5, "stat_craft": 4, "stat_will": 4 },
+      "start_items": [ { "item": "weapon_bow_t1", "count": 1 }, { "item": "item_arrow", "count": 20 }, { "item": "weapon_dagger_t1", "count": 1 } ],
+      "start_ability": "ability_track_reading",
+      "appearance": { "look_body": "body_slim", "look_hair": "hair_long", "look_beard": "beard_stubble", "look_hair_color": "hair_color_brown",
+        "look_paint": "paint_none", "look_cloth_color": "cloth_brown",
+        "look_weathering": "weathering_medium", "look_jewelry": "jewelry_none" } },
+    { "id": "origin_warrior", "name": "Kriegerin/Krieger", "role": "Schutz, Front",
+      "description": "Kettenhemd-Andeutung, Rundschild auf dem Rücken, Narben. Hält Gegner auf.",
+      "stats": { "stat_strength": 8, "stat_dexterity": 5, "stat_toughness": 7, "stat_craft": 3, "stat_will": 2 },
+      "start_items": [ { "item": "weapon_bearded_axe_t1", "count": 1 }, { "item": "weapon_round_shield_t1", "count": 1 } ],
+      "start_ability": "ability_shield_bash",
+      "appearance": { "look_body": "body_strong", "look_hair": "hair_undercut", "look_beard": "beard_braided", "look_hair_color": "hair_color_red",
+        "look_paint": "paint_blue", "look_cloth_color": "cloth_red", "look_shield": "shield_red_white",
+        "look_weathering": "weathering_strong", "look_jewelry": "jewelry_armring" } },
+    { "id": "origin_smith", "name": "Schmiedin/Schmied", "role": "Ausrüstung für alle",
+      "description": "Kräftig, Lederschürze, Rußspuren, Zöpfe. Repariert unterwegs.",
+      "stats": { "stat_strength": 7, "stat_dexterity": 3, "stat_toughness": 6, "stat_craft": 7, "stat_will": 2 },
+      "start_items": [ { "item": "tool_smith_hammer_t1", "count": 1 } ],
+      "start_ability": "ability_field_repair",
+      "appearance": { "look_body": "body_strong", "look_hair": "hair_braids", "look_beard": "beard_full", "look_hair_color": "hair_color_black",
+        "look_paint": "paint_soot", "look_cloth_color": "cloth_grey",
+        "look_weathering": "weathering_medium", "look_jewelry": "jewelry_none" } },
+    { "id": "origin_farmer", "name": "Bäuerin/Bauer", "role": "Nahrung für die Siedlung",
+      "description": "Leinenkittel, Strohhut oder Kopftuch, Gürteltasche. Holt mehr aus Feld und Wald.",
+      "stats": { "stat_strength": 4, "stat_dexterity": 5, "stat_toughness": 6, "stat_craft": 6, "stat_will": 4 },
+      "start_items": [ { "item": "tool_sickle_t1", "count": 1 }, { "item": "weapon_cleaver_t1", "count": 1 } ],
+      "start_ability": "ability_green_thumb",
+      "appearance": { "look_body": "body_slim", "look_hair": "hair_short", "look_beard": "beard_none", "look_hair_color": "hair_color_blond",
+        "look_paint": "paint_none", "look_cloth_color": "cloth_natural",
+        "look_weathering": "weathering_strong", "look_jewelry": "jewelry_brooch" } },
+    { "id": "origin_seer", "name": "Seherin/Seher (Völva)", "role": "Unterstützung, Heilung",
+      "description": "Dunkler Umhang, Runenstab, Perlen, Bemalung im Gesicht. Schützt und heilt.",
+      "stats": { "stat_strength": 3, "stat_dexterity": 5, "stat_toughness": 5, "stat_craft": 4, "stat_will": 8 },
+      "start_items": [ { "item": "weapon_rune_staff_t1", "count": 1 }, { "item": "weapon_dagger_t1", "count": 1 } ],
+      "start_ability": "ability_rune_of_protection",
+      "appearance": { "look_body": "body_slim", "look_hair": "hair_braids", "look_beard": "beard_none", "look_hair_color": "hair_color_grey",
+        "look_paint": "paint_runes", "look_cloth_color": "cloth_blue",
+        "look_weathering": "weathering_light", "look_jewelry": "jewelry_beads" } }
+  ]
+}

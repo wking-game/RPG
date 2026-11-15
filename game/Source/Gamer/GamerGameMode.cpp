@@ -7,7 +7,9 @@
 #include "GamerHUD.h"
 #include "GamerNavigationSystem.h"
 #include "GamerPlayerController.h"
+#include "GamerPlayerState.h"
 #include "GamerResourceNode.h"
+#include "GamerSaveSubsystem.h"
 #include "GamerSettlement.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
@@ -20,6 +22,7 @@ AGamerGameMode::AGamerGameMode()
 	PlayerControllerClass = AGamerPlayerController::StaticClass();
 	HUDClass = AGamerHUD::StaticClass();
 	GameStateClass = AGamerGameState::StaticClass();
+	PlayerStateClass = AGamerPlayerState::StaticClass();
 }
 
 void AGamerGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
@@ -75,13 +78,20 @@ void AGamerGameMode::StartPlay()
 {
 	Super::StartPlay();
 
+	// Save system: a world with a save id is loaded here (nodes, buildings, villagers ...); then no start area.
+	bool bLoadedSave = false;
+	if (UGamerSaveSubsystem* Saves = UGamerSaveSubsystem::Get(this))
+	{
+		bLoadedSave = Saves->LoadOrCreate();
+	}
+
 	bool bMapHasNodes = false;
 	for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
 	{
 		bMapHasNodes = true;
 		break;
 	}
-	if (bSpawnStartArea && !bMapHasNodes)
+	if (bSpawnStartArea && !bMapHasNodes && !bLoadedSave)
 	{
 		SpawnStartArea();
 	}
@@ -130,6 +140,25 @@ void AGamerGameMode::SpawnStartArea()
 		{ TEXT("res_rock_small"), 4, 800.f, 2300.f },
 		{ TEXT("res_rock_medium"), 3, 1000.f, 2400.f },
 		{ TEXT("res_rock_large"), 2, 1200.f, 2400.f },
+		// Dead wood (decision 2026-11-14: stumps and fallen trunks are harvestable, not decoration).
+		{ TEXT("res_dead_trunk"), 3, 1200.f, 2400.f },
+		{ TEXT("res_dead_stump"), 3, 900.f, 2300.f },
+		// Fruit and wild plants with a yearly cycle, wild crops as first seeds (decision 2026-11-14: "Alles jetzt").
+		{ TEXT("res_tree_pear"), 2, 1000.f, 2300.f },
+		{ TEXT("res_bush_strawberry"), 3, 500.f, 1800.f },
+		{ TEXT("res_bush_blueberry"), 3, 800.f, 2200.f },
+		{ TEXT("res_bush_blackberry"), 2, 900.f, 2200.f },
+		{ TEXT("res_bush_rose"), 2, 900.f, 2300.f },
+		{ TEXT("res_bush_sloe"), 2, 1000.f, 2300.f },
+		{ TEXT("res_bush_elder"), 2, 1000.f, 2300.f },
+		{ TEXT("res_wild_carrot"), 2, 600.f, 1800.f },
+		{ TEXT("res_wild_onion"), 2, 600.f, 1800.f },
+		{ TEXT("res_wild_flax"), 2, 600.f, 1800.f },
+		{ TEXT("res_wild_potato"), 2, 700.f, 2000.f },
+		// Grain and honey for the tavern dishes (Taverne-Session, decision 2026-11-15).
+		{ TEXT("res_wild_barley"), 2, 600.f, 1800.f },
+		{ TEXT("res_wild_oats"), 2, 600.f, 1800.f },
+		{ TEXT("res_bee_nest"), 2, 1000.f, 2300.f },
 	};
 
 	FVector Center = FVector::ZeroVector;

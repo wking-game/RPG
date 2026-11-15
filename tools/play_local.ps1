@@ -26,7 +26,7 @@
 param(
     [ValidateRange(1, 8)]
     [int]$Clients = 2,
-    [string]$Map = '/Engine/Maps/Templates/Template_Default',
+    [string]$Map = '/Game/Gamer/Maps/World',
     [int]$Port = 7777,
     [ValidateSet('blueprint', 'instant', 'material')]
     [string]$BuildFlow = 'blueprint',

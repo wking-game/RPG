@@ -1,0 +1,718 @@
+{
+  "generator": "tools/blender/restyle_buildings.py",
+  "units": "1 unit = 1 cm, Z up",
+  "normal_maps": "DirectX (Unreal)",
+  "orm": "R=AO, G=Roughness, B=Metallic",
+  "textures": [
+    {
+      "name": "T_BldCloth_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldCloth_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldCloth_N",
+      "file": "Buildings/StyleTest/Textures/T_BldCloth_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldCloth_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldCloth_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigHut_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigHut_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigHut_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigHut_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigHut_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigHut_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitBrick_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitBrick_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitBrick_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitBrick_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitBrick_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitBrick_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitPlaster_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitPlaster_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitPlaster_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitPlaster_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitPlaster_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitPlaster_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRockTrim_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRockTrim_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRockTrim_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRockTrim_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRockTrim_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRockTrim_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRoundTiles_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRoundTiles_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRoundTiles_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRoundTiles_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitRoundTiles_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitRoundTiles_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWindowGlass_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWindowGlass_BC.png",
+      "size": [
+        64,
+        64
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWindowGlass_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWindowGlass_N.png",
+      "size": [
+        64,
+        64
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWindowGlass_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWindowGlass_ORM.png",
+      "size": [
+        64,
+        64
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWoodTrim_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWoodTrim_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWoodTrim_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWoodTrim_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigKitWoodTrim_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigKitWoodTrim_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigWatchTower_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigWatchTower_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigWatchTower_N",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigWatchTower_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldOrigWatchTower_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldOrigWatchTower_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlanks_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldPlanks_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlanks_N",
+      "file": "Buildings/StyleTest/Textures/T_BldPlanks_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlanks_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldPlanks_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlaster_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldPlaster_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlaster_N",
+      "file": "Buildings/StyleTest/Textures/T_BldPlaster_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldPlaster_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldPlaster_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldStone_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldStone_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldStone_N",
+      "file": "Buildings/StyleTest/Textures/T_BldStone_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldStone_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldStone_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldThatch_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldThatch_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldThatch_N",
+      "file": "Buildings/StyleTest/Textures/T_BldThatch_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldThatch_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldThatch_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWood_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldWood_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWood_N",
+      "file": "Buildings/StyleTest/Textures/T_BldWood_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWood_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldWood_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    }
+  ],
+  "materials": [
+    {
+      "name": "M_BldOrig_Hut",
+      "BaseColor": "T_BldOrigHut_BC",
+      "Normal": "T_BldOrigHut_N",
+      "ORM": "T_BldOrigHut_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitBrick",
+      "BaseColor": "T_BldOrigKitBrick_BC",
+      "Normal": "T_BldOrigKitBrick_N",
+      "ORM": "T_BldOrigKitBrick_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitPlaster",
+      "BaseColor": "T_BldOrigKitPlaster_BC",
+      "Normal": "T_BldOrigKitPlaster_N",
+      "ORM": "T_BldOrigKitPlaster_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitRockTrim",
+      "BaseColor": "T_BldOrigKitRockTrim_BC",
+      "Normal": "T_BldOrigKitRockTrim_N",
+      "ORM": "T_BldOrigKitRockTrim_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitRoundTiles",
+      "BaseColor": "T_BldOrigKitRoundTiles_BC",
+      "Normal": "T_BldOrigKitRoundTiles_N",
+      "ORM": "T_BldOrigKitRoundTiles_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitWindowGlass",
+      "BaseColor": "T_BldOrigKitWindowGlass_BC",
+      "Normal": "T_BldOrigKitWindowGlass_N",
+      "ORM": "T_BldOrigKitWindowGlass_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_KitWoodTrim",
+      "BaseColor": "T_BldOrigKitWoodTrim_BC",
+      "Normal": "T_BldOrigKitWoodTrim_N",
+      "ORM": "T_BldOrigKitWoodTrim_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_BldOrig_WatchTower",
+      "BaseColor": "T_BldOrigWatchTower_BC",
+      "Normal": "T_BldOrigWatchTower_N",
+      "ORM": "T_BldOrigWatchTower_ORM",
+      "parent": "base"
+    },
+    {
+      "name": "M_Bld_Cloth",
+      "BaseColor": "T_BldCloth_BC",
+      "Normal": "T_BldCloth_N",
+      "ORM": "T_BldCloth_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.0,
+        "MossHeight": 1.0,
+        "UpMoss": 0.0,
+        "DampHeight": 1.0,
+        "Weathering": 0.25
+      }
+    },
+    {
+      "name": "M_Bld_Planks",
+      "BaseColor": "T_BldPlanks_BC",
+      "Normal": "T_BldPlanks_N",
+      "ORM": "T_BldPlanks_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.45,
+        "MossHeight": 45.0,
+        "UpMoss": 0.25,
+        "DampHeight": 55.0,
+        "Weathering": 0.3
+      }
+    },
+    {
+      "name": "M_Bld_Plaster",
+      "BaseColor": "T_BldPlaster_BC",
+      "Normal": "T_BldPlaster_N",
+      "ORM": "T_BldPlaster_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.25,
+        "MossHeight": 35.0,
+        "UpMoss": 0.1,
+        "DampHeight": 60.0,
+        "Weathering": 0.1
+      }
+    },
+    {
+      "name": "M_Bld_Stone",
+      "BaseColor": "T_BldStone_BC",
+      "Normal": "T_BldStone_N",
+      "ORM": "T_BldStone_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.8,
+        "MossHeight": 90.0,
+        "UpMoss": 0.7,
+        "DampHeight": 70.0,
+        "Weathering": 0.1
+      }
+    },
+    {
+      "name": "M_Bld_Thatch",
+      "BaseColor": "T_BldThatch_BC",
+      "Normal": "T_BldThatch_N",
+      "ORM": "T_BldThatch_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.55,
+        "MossHeight": 60.0,
+        "UpMoss": 0.55,
+        "DampHeight": 40.0,
+        "Weathering": 0.15
+      }
+    },
+    {
+      "name": "M_Bld_Wood",
+      "BaseColor": "T_BldWood_BC",
+      "Normal": "T_BldWood_N",
+      "ORM": "T_BldWood_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.35,
+        "MossHeight": 40.0,
+        "UpMoss": 0.3,
+        "DampHeight": 50.0,
+        "Weathering": 0.45
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "id": "sm_hut",
+      "unreal_name": "SM_Hut",
+      "file": "Buildings/StyleTest/SM_Hut.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 1498,
+      "bbox_min_cm": [
+        -661.0,
+        -324.4,
+        -13.0
+      ],
+      "bbox_max_cm": [
+        661.0,
+        324.4,
+        672.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Stone",
+        "M_Bld_Thatch",
+        "M_Bld_Wood"
+      ],
+      "collision": "ucx",
+      "source": "CC0 Highlands (Visions Mind) restyled"
+    },
+    {
+      "id": "sm_hut_original",
+      "unreal_name": "SM_Hut_Original",
+      "file": "Buildings/StyleTest/SM_Hut_Original.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 780,
+      "bbox_min_cm": [
+        -661.0,
+        -324.4,
+        -13.0
+      ],
+      "bbox_max_cm": [
+        661.0,
+        324.4,
+        673.7
+      ],
+      "materials": [
+        "M_BldOrig_Hut"
+      ],
+      "collision": "ucx",
+      "source": "CC0 Highlands (Visions Mind) original"
+    },
+    {
+      "id": "sm_villagehouse",
+      "unreal_name": "SM_VillageHouse",
+      "file": "Buildings/StyleTest/SM_VillageHouse.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 4096,
+      "bbox_min_cm": [
+        -274.8,
+        -331.1,
+        -14.0
+      ],
+      "bbox_max_cm": [
+        274.8,
+        331.1,
+        631.1
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Plaster",
+        "M_Bld_Stone",
+        "M_Bld_Thatch",
+        "M_Bld_Wood"
+      ],
+      "source": "CC0 Medieval Village MegaKit (Quaternius) restyled"
+    },
+    {
+      "id": "sm_villagehouse_original",
+      "unreal_name": "SM_VillageHouse_Original",
+      "file": "Buildings/StyleTest/SM_VillageHouse_Original.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 4724,
+      "bbox_min_cm": [
+        -256.4,
+        -352.9,
+        -0.9
+      ],
+      "bbox_max_cm": [
+        256.4,
+        352.9,
+        624.8
+      ],
+      "materials": [
+        "M_BldOrig_KitBrick",
+        "M_BldOrig_KitPlaster",
+        "M_BldOrig_KitRockTrim",
+        "M_BldOrig_KitRoundTiles",
+        "M_BldOrig_KitWindowGlass",
+        "M_BldOrig_KitWoodTrim"
+      ],
+      "source": "CC0 Medieval Village MegaKit (Quaternius) original"
+    },
+    {
+      "id": "sm_watchtower",
+      "unreal_name": "SM_WatchTower",
+      "file": "Buildings/StyleTest/SM_WatchTower.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 4057,
+      "bbox_min_cm": [
+        -601.0,
+        -607.0,
+        -31.8
+      ],
+      "bbox_max_cm": [
+        601.0,
+        770.9,
+        2459.3
+      ],
+      "materials": [
+        "M_Bld_Cloth",
+        "M_Bld_Planks",
+        "M_Bld_Stone",
+        "M_Bld_Thatch",
+        "M_Bld_Wood"
+      ],
+      "collision": "ucx",
+      "source": "CC0 Highlands (Visions Mind) restyled"
+    },
+    {
+      "id": "sm_watchtower_original",
+      "unreal_name": "SM_WatchTower_Original",
+      "file": "Buildings/StyleTest/SM_WatchTower_Original.fbx",
+      "group": "Buildings/StyleTest",
+      "tris": 1712,
+      "bbox_min_cm": [
+        -601.0,
+        -607.0,
+        -31.8
+      ],
+      "bbox_max_cm": [
+        601.0,
+        770.9,
+        2459.3
+      ],
+      "materials": [
+        "M_BldOrig_WatchTower"
+      ],
+      "collision": "ucx",
+      "source": "CC0 Highlands (Visions Mind) original"
+    }
+  ]
+}

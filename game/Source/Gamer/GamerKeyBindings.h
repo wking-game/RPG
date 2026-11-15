@@ -21,6 +21,15 @@ namespace GamerInputActions
 	inline const FName Demolish(TEXT("demolish"));
 	inline const FName VillageMenu(TEXT("village_menu"));
 	inline const FName BirdView(TEXT("bird_view"));
+	inline const FName Sprint(TEXT("sprint"));
+	/** Held while placing: keep the piece chosen to build several in a row. */
+	inline const FName BuildMulti(TEXT("build_multi"));
+	inline const FName FocusNext(TEXT("focus_next"));
+	/** Held together with the interact key: pick up everything of the aimed type nearby. */
+	inline const FName PickSame(TEXT("pick_same"));
+	inline const FName Scan(TEXT("scan"));
+	inline const FName HotbarNext(TEXT("hotbar_next"));
+	inline const FName HotbarPrev(TEXT("hotbar_prev"));
 
 	/** hotbar_1 .. hotbar_8 */
 	GAMER_API FName Hotbar(int32 Number);

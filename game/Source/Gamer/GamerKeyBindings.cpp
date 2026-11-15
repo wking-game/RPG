@@ -17,12 +17,17 @@ const TArray<FGamerBindableAction>& UGamerKeyBindings::GetActions()
 			{ GamerInputActions::MoveLeft, TEXT("Links"), EKeys::A },
 			{ GamerInputActions::MoveRight, TEXT("Rechts"), EKeys::D },
 			{ GamerInputActions::Jump, TEXT("Springen"), EKeys::SpaceBar },
+			{ GamerInputActions::Sprint, TEXT("Sprinten (halten)"), EKeys::LeftShift },
 			{ GamerInputActions::Strike, TEXT("Schlagen"), EKeys::LeftMouseButton },
 			{ GamerInputActions::Interact, TEXT("Sammeln"), EKeys::E },
+			{ GamerInputActions::FocusNext, TEXT("Im Haufen wechseln"), EKeys::F },
+			{ GamerInputActions::PickSame, TEXT("Alles gleicher Art (mit Sammeln)"), EKeys::LeftShift },
 			{ GamerInputActions::CraftMenu, TEXT("Herstellen-Menü"), EKeys::Tab },
 			{ GamerInputActions::BuildMenu, TEXT("Baumenü (mit Hammer)"), EKeys::RightMouseButton },
 			{ GamerInputActions::Rotate, TEXT("Bauteil drehen"), EKeys::R },
+			{ GamerInputActions::BuildMulti, TEXT("Mehrfach bauen (halten)"), EKeys::LeftShift },
 			{ GamerInputActions::Demolish, TEXT("Abreißen"), EKeys::X },
+			{ GamerInputActions::Scan, TEXT("Umgebungs-Scan"), EKeys::Z },
 			{ GamerInputActions::VillageMenu, TEXT("Dorfverwaltung"), EKeys::V },
 			{ GamerInputActions::BirdView, TEXT("Vogelperspektive"), EKeys::B },
 		};
@@ -32,6 +37,8 @@ const TArray<FGamerBindableAction>& UGamerKeyBindings::GetActions()
 		{
 			List.Add({ GamerInputActions::Hotbar(Index + 1), FString::Printf(TEXT("Schnellleiste %d"), Index + 1), NumberKeys[Index] });
 		}
+		List.Add({ GamerInputActions::HotbarNext, TEXT("Schnellleiste weiter"), EKeys::MouseScrollDown });
+		List.Add({ GamerInputActions::HotbarPrev, TEXT("Schnellleiste zurück"), EKeys::MouseScrollUp });
 		return List;
 	}();
 	return Actions;
@@ -95,9 +102,15 @@ FName UGamerKeyBindings::SetKey(FName Action, const FKey& Key)
 	}
 	const FKey OldKey = GetKey(Action);
 	FName Swapped = NAME_None;
+	// Sprint and "build several" share Shift by default on purpose (different situations): never swapped against each other.
+	auto MayShare = [](FName A, FName B)
+	{
+		auto IsShiftLike = [](FName Id) { return Id == GamerInputActions::Sprint || Id == GamerInputActions::BuildMulti || Id == GamerInputActions::PickSame; };
+		return IsShiftLike(A) && IsShiftLike(B);
+	};
 	for (const FGamerBindableAction& Def : GetActions())
 	{
-		if (Def.Id != Action && GetKey(Def.Id) == Key)
+		if (Def.Id != Action && GetKey(Def.Id) == Key && !MayShare(Action, Def.Id))
 		{
 			SetOverride(Def.Id, OldKey);
 			Swapped = Def.Id;

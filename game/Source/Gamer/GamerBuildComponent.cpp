@@ -6,6 +6,7 @@
 #include "GamerDataSubsystem.h"
 #include "GamerGameState.h"
 #include "GamerInventoryComponent.h"
+#include "GamerTavern.h"
 #include "GamerWorkComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerState.h"
@@ -27,20 +28,20 @@ namespace
 		return Amount;
 	}
 
-	FString ItemName(const UGamerDataSubsystem* Data, FName Id)
+	FString BuildItemName(const UGamerDataSubsystem* Data, FName Id)
 	{
 		const FGamerItemDef* Def = Data ? Data->FindItem(Id) : nullptr;
 		return Def ? Def->Name : Id.ToString();
 	}
 
-	FString AmountsText(const UGamerDataSubsystem* Data, const TArray<FGamerItemAmount>& Amounts)
+	FString BuildAmountsText(const UGamerDataSubsystem* Data, const TArray<FGamerItemAmount>& Amounts)
 	{
 		TArray<FString> Parts;
 		for (const FGamerItemAmount& Amount : Amounts)
 		{
 			if (Amount.Count > 0)
 			{
-				Parts.Add(FString::Printf(TEXT("%d %s"), Amount.Count, *ItemName(Data, Amount.Item)));
+				Parts.Add(FString::Printf(TEXT("%d %s"), Amount.Count, *BuildItemName(Data, Amount.Item)));
 			}
 		}
 		return FString::Join(Parts, TEXT(", "));
@@ -113,6 +114,7 @@ void UGamerBuildComponent::SelectBuildable(FName BuildableId)
 	{
 		Selected = BuildableId;
 		RotationSteps = 0;
+		bAreaStarted = false;
 		HidePreview();
 	}
 }
@@ -139,6 +141,16 @@ FGamerPlacement UGamerBuildComponent::ComputePlacement(FName BuildableId, const 
 	{
 		Result.bValid = false;
 		Result.Problem = TEXT("Zu weit weg");
+	}
+	// Cooking places only near a tavern of the right level (buildables.json "requires").
+	if (Result.bValid)
+	{
+		const FString Missing = AGamerTavern::CheckRequirement(GetWorld(), *Def, Result.Transform.GetLocation());
+		if (!Missing.IsEmpty())
+		{
+			Result.bValid = false;
+			Result.Problem = Missing;
+		}
 	}
 	return Result;
 }
@@ -177,6 +189,22 @@ void UGamerBuildComponent::UpdatePreview()
 	const FVector AimPoint = bHit ? Hit.ImpactPoint : End;
 	const float ViewYaw = Character->GetControlRotation().Yaw;
 	Placement = ComputePlacement(Selected, AimPoint, bHit, ViewYaw, bHit ? FVector(Hit.ImpactNormal) : FVector::UpVector);
+	// Drawn field: after the first click the preview is the rectangle from the corner to the aim.
+	const UGamerDataSubsystem* AreaData = UGamerDataSubsystem::Get(this);
+	const FGamerBuildableDef* AreaDef = AreaData ? AreaData->FindBuildable(Selected) : nullptr;
+	if (AreaDef && AreaDef->IsAreaPiece() && bAreaStarted)
+	{
+		Placement.Transform = AreaTransform(*AreaDef, AreaCorner, AreaYaw, Placement.Transform.GetLocation());
+		if (FVector::Dist(GetOwner()->GetActorLocation(), Placement.Transform.GetLocation()) > BuildReach)
+		{
+			Placement.bValid = false;
+			Placement.Problem = TEXT("Zu weit weg");
+		}
+	}
+	else if (AreaDef && AreaDef->IsAreaPiece())
+	{
+		Placement.Transform.SetScale3D(AGamerBuilding::ClampScale(*AreaDef, FVector(AreaDef->Farm.MinSizeCm / 100.f, AreaDef->Farm.MinSizeCm / 100.f, 1.f)));
+	}
 
 	if (!Preview.IsValid() || Preview->GetBuildableId() != Selected)
 	{
@@ -227,17 +255,73 @@ bool UGamerBuildComponent::TryPlace()
 	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
 	const FGamerBuildableDef* Def = Data ? Data->FindBuildable(Selected) : nullptr;
 	const UGamerInventoryComponent* Inventory = GetInventory();
+	// Drawn field: the first click sets the corner, the second places the rectangle.
+	if (Def && Def->IsAreaPiece() && !bAreaStarted)
+	{
+		bAreaStarted = true;
+		AreaCorner = Placement.Transform.GetLocation();
+		AreaYaw = Placement.Transform.Rotator().Yaw;
+		Message(FString::Printf(TEXT("Ecke gesetzt – Feld aufziehen und nochmal klicken (%g–%g m je Seite)."), Def->Farm.MinSizeCm / 100.f,
+			Def->Farm.MaxSizeCm / 100.f));
+		return false;
+	}
 	if (Def && Inventory && AGamerGameState::Get(this).BuildFlow != EGamerBuildFlow::MaterialOnBuild)
 	{
-		const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, Def->Cost);
+		const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, AGamerBuilding::CostFor(*Def, Placement.Transform.GetScale3D()));
 		if (Lacking.Num() > 0)
 		{
-			Message(TEXT("Es fehlt: ") + AmountsText(Data, Lacking));
+			Message(TEXT("Es fehlt: ") + BuildAmountsText(Data, Lacking));
 			return false;
 		}
 	}
 	ServerPlace(Selected, Placement.Transform);
+	bAreaStarted = false;
 	return true;
+}
+
+FTransform UGamerBuildComponent::AreaTransform(const FGamerBuildableDef& Def, const FVector& Corner, float Yaw, const FVector& Aim)
+{
+	const FRotator Rotation(0.f, Yaw, 0.f);
+	const FVector Local = Rotation.UnrotateVector(Aim - Corner);
+	const float Min = Def.Farm.MinSizeCm, Max = Def.Farm.MaxSizeCm;
+	const float SizeX = FMath::Clamp(FMath::Abs(Local.X), Min, Max);
+	const float SizeY = FMath::Clamp(FMath::Abs(Local.Y), Min, Max);
+	const FVector Half(SizeX * 0.5f * (Local.X < 0.f ? -1.f : 1.f), SizeY * 0.5f * (Local.Y < 0.f ? -1.f : 1.f), 0.f);
+	FVector Center = Corner + Rotation.RotateVector(Half);
+	Center.Z = FMath::Min(Corner.Z, Aim.Z); // on the lower corner: the bed sinks into the slope instead of floating
+	return FTransform(Rotation, Center, FVector(SizeX / 100.f, SizeY / 100.f, 1.f));
+}
+
+void UGamerBuildComponent::AfterPlaced(bool bKeepSelected)
+{
+	const FName Placed = Selected;
+	if (!bKeepSelected)
+	{
+		SelectBuildable(NAME_None);
+	}
+	UE_LOG(LogGamer, Log, TEXT("Build after place: %s %s, still affordable %d"), *Placed.ToString(),
+		bKeepSelected ? TEXT("kept in hand (multi)") : TEXT("put down, hand empty"), CountAffordable(Placed));
+}
+
+int32 UGamerBuildComponent::CountAffordable(FName BuildableId) const
+{
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	const FGamerBuildableDef* Def = Data && !BuildableId.IsNone() ? Data->FindBuildable(BuildableId) : nullptr;
+	const UGamerInventoryComponent* Inventory = GetInventory();
+	if (!Def || !Inventory)
+	{
+		return 0;
+	}
+	int32 Result = INDEX_NONE;
+	for (const FGamerItemAmount& Cost : Def->Cost)
+	{
+		if (Cost.Count > 0)
+		{
+			const int32 Times = Inventory->CountOf(Cost.Item) / Cost.Count;
+			Result = Result == INDEX_NONE ? Times : FMath::Min(Result, Times);
+		}
+	}
+	return Result;
 }
 
 // --- Server ---------------------------------------------------------------------------------
@@ -256,13 +340,19 @@ void UGamerBuildComponent::ServerPlace_Implementation(FName BuildableId, FTransf
 	{
 		return Message(TEXT("Nimm den Hammer in die Hand."));
 	}
-	Transform.SetScale3D(FVector::OneVector);
+	// Only drawn fields keep a scale (their size), clamped to the allowed range.
+	Transform.SetScale3D(AGamerBuilding::ClampScale(*Def, Transform.GetScale3D()));
+	const TArray<FGamerItemAmount> Cost = AGamerBuilding::CostFor(*Def, Transform.GetScale3D());
 	if (FVector::Dist(Owner->GetActorLocation(), Transform.GetLocation()) > BuildReach + 100.f)
 	{
 		return Message(TEXT("Zu weit weg."));
 	}
 	const FGamerWorldOptions& Options = AGamerGameState::Get(this);
-	const FString Problem = GamerBuildSnap::CheckTransform(GetWorld(), *Def, Transform, Options.Placement);
+	FString Problem = GamerBuildSnap::CheckTransform(GetWorld(), *Def, Transform, Options.Placement);
+	if (Problem.IsEmpty())
+	{
+		Problem = AGamerTavern::CheckRequirement(GetWorld(), *Def, Transform.GetLocation());
+	}
 	if (!Problem.IsEmpty())
 	{
 		return Message(Problem + TEXT("."));
@@ -271,21 +361,21 @@ void UGamerBuildComponent::ServerPlace_Implementation(FName BuildableId, FTransf
 	const bool bPayNow = Options.BuildFlow != EGamerBuildFlow::MaterialOnBuild;
 	if (bPayNow)
 	{
-		const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, Def->Cost);
-		if (Lacking.Num() > 0 || !Inventory->RemoveItems(Def->Cost))
+		const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, Cost);
+		if (Lacking.Num() > 0 || !Inventory->RemoveItems(Cost))
 		{
-			return Message(TEXT("Es fehlt: ") + AmountsText(Data, Lacking));
+			return Message(TEXT("Es fehlt: ") + BuildAmountsText(Data, Lacking));
 		}
 	}
 
 	const float StartProgress = Options.BuildFlow == EGamerBuildFlow::Instant ? 1.f : 0.f;
-	AGamerBuilding* Building = GetWorld()->SpawnActorDeferred<AGamerBuilding>(AGamerBuilding::StaticClass(), Transform,
+	AGamerBuilding* Building = GetWorld()->SpawnActorDeferred<AGamerBuilding>(AGamerBuilding::ClassFor(this, BuildableId), Transform,
 		nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if (!Building)
 	{
 		if (bPayNow)
 		{
-			for (const FGamerItemAmount& Amount : Def->Cost)
+			for (const FGamerItemAmount& Amount : Cost)
 			{
 				Inventory->AddItem(Amount.Item, Amount.Count);
 			}
@@ -295,7 +385,7 @@ void UGamerBuildComponent::ServerPlace_Implementation(FName BuildableId, FTransf
 	Building->InitBuilding(BuildableId, StartProgress);
 	if (bPayNow)
 	{
-		Building->SetSpent(Def->Cost);
+		Building->SetSpent(Cost);
 	}
 	Building->FinishSpawning(Transform);
 
@@ -332,6 +422,10 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 	{
 		return Message(TEXT("Zu weit weg."));
 	}
+	if (Def->RequiredTool.IsRequired())
+	{
+		Inventory->SelectBestToolInHotbar(Def->RequiredTool.Type, Def->RequiredTool.MinTier);
+	}
 	if (!HasToolFor(*Def))
 	{
 		return Message(TEXT("Nimm den Hammer in die Hand."));
@@ -349,7 +443,7 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 		const int32 Strike = FMath::Min(Strikes, Building->GetStrikesDone() + 1);
 		TArray<FGamerItemAmount> Spent = Building->GetSpent();
 		TArray<FGamerItemAmount> Take;
-		for (const FGamerItemAmount& Cost : Def->Cost)
+		for (const FGamerItemAmount& Cost : AGamerBuilding::CostFor(*Def, Building->GetActorScale3D()))
 		{
 			const int32 Due = FMath::CeilToInt(static_cast<float>(Cost.Count) * Strike / Strikes);
 			FGamerItemAmount* Already = Spent.FindByPredicate([&Cost](const FGamerItemAmount& A) { return A.Item == Cost.Item; });
@@ -362,7 +456,7 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 		const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, Take);
 		if (Lacking.Num() > 0 || !Inventory->RemoveItems(Take))
 		{
-			return Message(TEXT("Zum Weiterbauen fehlt: ") + AmountsText(Data, Lacking));
+			return Message(TEXT("Zum Weiterbauen fehlt: ") + BuildAmountsText(Data, Lacking));
 		}
 		for (const FGamerItemAmount& Amount : Take)
 		{
@@ -391,6 +485,47 @@ void UGamerBuildComponent::ServerHammer_Implementation(AGamerBuilding* Building)
 		UE_LOG(LogGamer, Log, TEXT("Build finished: player=%d id=%s inventory: %s"), PlayerIdOf(Owner), *Def->Id.ToString(), *Inventory->Describe());
 		Message(FString::Printf(TEXT("Fertig: %s"), *Def->Name));
 	}
+}
+
+void UGamerBuildComponent::ServerUpgrade_Implementation(AGamerBuilding* Building)
+{
+	const FGamerBuildableDef* Def = Building ? Building->GetDef() : nullptr;
+	UGamerInventoryComponent* Inventory = GetInventory();
+	AActor* Owner = GetOwner();
+	if (!Def || !Inventory || !Owner || Building->IsPreview() || !Building->IsFinished())
+	{
+		return;
+	}
+	const FGamerUpgradeDef* Stage = Building->GetNextUpgrade();
+	if (!Stage)
+	{
+		return Message(FString::Printf(TEXT("%s ist schon voll ausgebaut."), *Def->Name));
+	}
+	if (FVector::Dist(Owner->GetActorLocation(), Building->GetActorLocation()) > WorkReach)
+	{
+		return Message(TEXT("Zu weit weg."));
+	}
+	if (Def->RequiredTool.IsRequired())
+	{
+		Inventory->SelectBestToolInHotbar(Def->RequiredTool.Type, Def->RequiredTool.MinTier);
+	}
+	if (!HasToolFor(*Def))
+	{
+		return Message(TEXT("Zum Ausbauen den Hammer in die Schnellleiste nehmen."));
+	}
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	const TArray<FGamerItemAmount> Lacking = Missing(*Inventory, Stage->Cost);
+	if (Lacking.Num() > 0 || !Inventory->RemoveItems(Stage->Cost))
+	{
+		return Message(TEXT("Zum Ausbauen fehlt: ") + BuildAmountsText(Data, Lacking));
+	}
+	TArray<FGamerItemAmount> Spent = Building->GetSpent();
+	Spent.Append(Stage->Cost);
+	Building->SetSpent(Spent); // tearing down gives the upgrade material back too
+	Building->Upgrade();
+	UE_LOG(LogGamer, Log, TEXT("Upgrade: player=%d id=%s level %d workers %d inventory: %s"), PlayerIdOf(Owner), *Def->Id.ToString(),
+		Building->GetLevel(), Building->GetWorkers(), *Inventory->Describe());
+	Message(FString::Printf(TEXT("%s ausgebaut: Stufe %d, %d Arbeitsplätze."), *Def->Name, Building->GetLevel(), Building->GetWorkers()));
 }
 
 void UGamerBuildComponent::ServerDemolish_Implementation(AGamerBuilding* Building)
@@ -438,11 +573,11 @@ void UGamerBuildComponent::ServerDemolish_Implementation(AGamerBuilding* Buildin
 	}
 	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
 	UE_LOG(LogGamer, Log, TEXT("Demolished: player=%d id=%s finished=%d refund [%s] inventory: %s"), PlayerIdOf(Owner),
-		*Def->Id.ToString(), Building->IsFinished() ? 1 : 0, *AmountsText(Data, Given), *Inventory->Describe());
+		*Def->Id.ToString(), Building->IsFinished() ? 1 : 0, *BuildAmountsText(Data, Given), *Inventory->Describe());
 	FString Text = FString::Printf(TEXT("Abgerissen: %s"), *Def->Name);
 	if (Given.Num() > 0)
 	{
-		Text += TEXT(" (+") + AmountsText(Data, Given) + TEXT(")");
+		Text += TEXT(" (+") + BuildAmountsText(Data, Given) + TEXT(")");
 	}
 	if (Lost > 0)
 	{

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GamerDataTypes.h"
+#include "GamerSaveable.h"
 #include "GamerVillager.generated.h"
 
 class AGamerBuilding;
@@ -29,9 +30,14 @@ class UTextRenderComponent;
  * Placeholder look: cylinder in the job colour, name and activity above the head.
  */
 UCLASS(Config = Game)
-class GAMER_API AGamerVillager : public ACharacter
+class GAMER_API AGamerVillager : public ACharacter, public IGamerSaveable
 {
 	GENERATED_BODY()
+
+public:
+	// IGamerSaveable (save system, implemented in GamerSaveImpl.cpp)
+	virtual void WriteSaveState(FGamerSaveRecord& Out) const override;
+	virtual void ReadSaveState(const FGamerSaveRecord& In) override;
 
 public:
 	AGamerVillager();
@@ -47,6 +53,8 @@ public:
 	const FString& GetActivity() const { return Activity; }
 	float GetHunger() const { return Hunger; }
 	float GetSleep() const { return Sleep; }
+	/** Mood 0..1 (decision 2026-11-14: a derived value, not a fourth need). Follows hunger, sleep and shelter, plus a bonus from tavern meals. */
+	float GetMood() const { return Mood; }
 	bool HasShelter() const { return bShelter; }
 	AGamerBuilding* GetBed() const { return Bed; }
 	FName GetHeldTool() const { return HeldTool; }
@@ -55,7 +63,8 @@ public:
 
 	void InitVillager(const FString& InName, AGamerBuilding* InBed);
 	/** The player's choice in the village management (any job id from jobs.json). */
-	void SetJob(FName InJobId);
+	/** Server: assign a job. Refused (false, OutWhyNot) when all its work places are taken (decision 2026-11-14). */
+	bool SetJob(FName InJobId, FString* OutWhyNot = nullptr);
 	void SetShelter(bool bInShelter);
 
 	/** One-line state for logs and tests. */
@@ -86,6 +95,9 @@ protected:
 
 	UPROPERTY(Replicated)
 	float Sleep = 1.f;
+
+	UPROPERTY(Replicated)
+	float Mood = 0.5f;
 
 	UPROPERTY(Replicated)
 	bool bShelter = false;
@@ -123,8 +135,16 @@ private:
 		Harvest,
 		FetchIngredients,
 		Craft,
+		/** Farmer: take seeds, water, fertilizer or spoiled food from the storage for a farm building. */
+		FetchFarmInput,
+		/** Farmer: work at a field, composter or rain catcher (FarmAction). */
+		FarmWork,
 		FetchMaterial,
 		Build,
+		/** Innkeeper: take dishes and drinks from the storage (ServeItem) ... */
+		ServeFetch,
+		/** ... and put them into the tavern stock. */
+		Serve,
 		Wait
 	};
 
@@ -157,7 +177,28 @@ private:
 	int32 CarryCount() const;
 	void ApplyLook();
 
+	/** Cook: the place a recipe is made at - the job's own station, or a cooking place of the recipe near it (tavern). */
+	AActor* CraftStationFor(const struct FGamerRecipeDef& Recipe, const FGamerJobDef& Job, AActor* JobStation) const;
+	/** Nearest finished tavern whose stock holds something from the hunger list. */
+	class AGamerTavern* FindTavernWithFood() const;
+	/** Innkeeper (EGamerJobKind::Serve): bring dishes and drinks from the storage into the tavern. */
+	bool PlanServe(const FGamerJobDef& Job, AActor* Station, AActor* Storage, FString& OutWhyNot);
+	/** Meal in the tavern: mood gain. The mood value itself comes from the Gameplay session; until then only logged. */
+	void OnTavernMeal(float MoodGain);
+	/** Server: a one-off mood bonus (tavern meal, later festivals ...); fades over a few game days. */
+	void AddMood(float Delta);
+
+	/** Farmer job (EGamerJobKind::Farm): pick the next field work around the farmstead. */
+	bool PlanFarm(const FGamerJobDef& Job, const FVector& Center, AActor* Storage, FString& OutWhyNot);
+	void RunFarmWork(float DeltaSeconds);
+
 	ETask Task = ETask::None;
+	/** Farmer: what to do at FarmTarget and what is carried for it (not part of Carry, it is used up there). */
+	uint8 FarmAction = 0;
+	TWeakObjectPtr<class AGamerFarmBuilding> FarmTarget;
+	FName FarmItem;
+	int32 FarmCount = 0;
+	int32 FarmWanted = 0;
 	TWeakObjectPtr<AActor> Target;
 	FVector Goal = FVector::ZeroVector;
 	float TaskTimer = 0.f;
@@ -165,6 +206,14 @@ private:
 	float ThinkTimer = 0.f;
 	FName TaskRecipe;
 	TWeakObjectPtr<AGamerBuilding> BuildPlan;
+	/** Innkeeper: what is carried to which tavern (not part of Carry). */
+	TWeakObjectPtr<AActor> ServeTavern;
+	FName ServeItem;
+	int32 ServeCount = 0;
+	int32 ServeWanted = 0;
+	float ServeFreshness = 1.f;
+	/** Sum of mood from tavern meals not yet handed to the mood need (see OnTavernMeal). */
+	float PendingMoodGain = 0.f;
 	TArray<FGamerItemAmount> Carry;
 	bool bDeliverNow = false;
 	float ShelterTimer = 0.f;

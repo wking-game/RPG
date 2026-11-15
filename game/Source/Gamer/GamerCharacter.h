@@ -9,6 +9,7 @@ class AGamerResourceNode;
 class UGamerBuildComponent;
 class UCameraComponent;
 class UGamerInventoryComponent;
+class UGamerScanComponent;
 class UGamerWorkComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -36,6 +37,26 @@ public:
 	virtual void NotifyControllerChanged() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void OnRep_PlayerState() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** Sprinting (held key, no stamina: architecture rule 5). Local player sets it at once, the server confirms. */
+	void SetSprinting(bool bOn);
+	bool IsSprinting() const { return bSprinting; }
+
+	/** Pile of things close together (hand-pickable resources and ground items): candidates around the aimed thing, and the chosen one. */
+	const TArray<TWeakObjectPtr<AActor>>& GetPile() const { return Pile; }
+	int32 GetPilePick() const { return PilePick; }
+	/** Key "switch in pile": the next candidate becomes the target of the interact key. */
+	void CycleFocus();
+
+	/** Mouse wheel: next (+1) or previous (-1) hotbar slot, wrapping around. */
+	void CycleHotbar(int32 Direction);
+
+	/**
+	 * Local player: the action of the strike key, as a real click does it (also used by tests).
+	 * Takes the matching tool from the hotbar into the hand first (best axe at a tree, pickaxe at a rock, hammer at a plan).
+	 */
+	void PerformStrike();
 
 	/** Test helper: walk straight forward for the given time. Only acts on the locally controlled character. */
 	void StartTestWalk(float Seconds);
@@ -43,6 +64,8 @@ public:
 	UGamerInventoryComponent* GetInventory() const { return Inventory; }
 	UGamerWorkComponent* GetWork() const { return Work; }
 	UGamerBuildComponent* GetBuild() const { return Build; }
+	UGamerScanComponent* GetScan() const { return Scan; }
+	class UGamerBuffComponent* GetBuffs() const { return Buffs; }
 
 	/** Camera position and direction through the crosshair (for aiming at resources and building spots). */
 	void GetAimView(FVector& OutLocation, FVector& OutDirection) const;
@@ -53,10 +76,17 @@ public:
 
 	/** Local player only: the resource node in front of the camera and within reach (for the HUD hint). */
 	AGamerResourceNode* GetFocusNode() const { return FocusNode.Get(); }
+	class AGamerGroundItem* GetFocusGroundItem() const { return FocusGroundItem.Get(); }
 
 	/** Local player only: the crafting menu (recipes by hand plus those of stations nearby). */
 	bool IsCraftMenuOpen() const { return bCraftMenuOpen; }
 	const TArray<FName>& GetHandRecipes() const { return HandRecipes; }
+
+	/** Station window: E at a finished station opens the crafting menu with only that station's recipes (null = normal menu). */
+	AGamerBuilding* GetStationWindow() const { return StationWindow.Get(); }
+	void OpenStationWindow(AGamerBuilding* Station);
+	bool HasStationRecipes(const AGamerBuilding* Station) const;
+	void CloseCraftMenu();
 
 	/** Local player only: world time of the last swing (for the HUD). */
 	double GetLastStrikeTime() const { return LastStrikeTime; }
@@ -80,6 +110,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<UGamerBuildComponent> Build;
 
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerScanComponent> Scan;
+
+	/** Meal buffs (Taverne-Session, decision 2026-11-14). */
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<class UGamerBuffComponent> Buffs;
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> CameraBoom;
 
@@ -102,6 +139,10 @@ protected:
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float JumpVelocity = 700.f;
 
+	/** Running speed while the sprint key is held (no stamina). */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float SprintSpeed = 750.f;
+
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float GravityScale = 2.f;
 
@@ -122,6 +163,45 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Interact();
 	void Strike();
+	void DoScan();
+	void InteractPressed();
+	void InteractReleased();
+	/** What the pick-up-all key combination acts on: the aimed thing of the pile. */
+	AActor* GetPickAnchor() const;
+	bool bInteractDown = false;
+	bool bHoldFired = false;
+	double InteractDownTime = 0.0;
+	void SprintStart() { SetSprinting(true); }
+	void SprintStop() { SetSprinting(false); }
+	void HotbarNext() { CycleHotbar(1); }
+	void HotbarPrev() { CycleHotbar(-1); }
+	void ApplyMoveSpeed();
+	/** Selects the best hotbar tool of that type if it is not already in hand. True if one is (now) in hand. */
+	bool TakeToolInHand(FName ToolType, int32 MinTier);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetSprinting(bool bOn);
+
+	UFUNCTION()
+	void OnRep_Sprinting();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Sprinting)
+	bool bSprinting = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> FocusNextAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> ScanAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> SprintAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> HotbarNextAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> HotbarPrevAction;
 	void OpenBuildMenu();
 	void RotatePiece();
 	void Demolish();
@@ -130,6 +210,8 @@ private:
 	/** Number keys: pick a recipe while the crafting menu is open, otherwise select a hotbar slot. */
 	void NumberKey(const FInputActionValue& Value);
 	void UpdateFocus();
+	void UpdateFocusRaw();
+	void BuildPile();
 	void RefreshHandRecipes();
 
 	UPROPERTY(Transient)
@@ -157,10 +239,15 @@ private:
 	TObjectPtr<UInputAction> VillageMenuAction;
 
 	TWeakObjectPtr<AGamerResourceNode> FocusNode;
+	TWeakObjectPtr<class AGamerGroundItem> FocusGroundItem;
 	TWeakObjectPtr<AGamerBuilding> FocusBuilding;
 	double LastStrikeTime = -1000.0;
 	bool bCraftMenuOpen = false;
 	TArray<FName> HandRecipes;
+	TWeakObjectPtr<AGamerBuilding> StationWindow;
+	TArray<TWeakObjectPtr<AActor>> Pile;
+	TWeakObjectPtr<AActor> PileLeader;
+	int32 PilePick = 0;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputMappingContext> MappingContext;

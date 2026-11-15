@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "GamerSaveable.h"
 #include "GamerGameState.generated.h"
 
 /** How a placed building piece comes into being (world option). */
@@ -54,6 +55,18 @@ struct FGamerWorldOptions
 	UPROPERTY()
 	EGamerDemolish Demolish = EGamerDemolish::FullRefund;
 
+	/** Real minutes per season (spring, summer, autumn, winter). Decision 2026-11-13: 60 (one year = 4 hours). ?SeasonMinutes=60 */
+	UPROPERTY()
+	float SeasonMinutes = 60.f;
+
+	/**
+	 * Player inventory (decision 2026-11-15, chosen when creating a world): false = it stays in this world (saved with
+	 * the world), true = it travels with the character into every world (kept in the player's character file).
+	 * ?Inventory=world|character
+	 */
+	UPROPERTY()
+	bool bCarryInventory = false;
+
 	/** Reads the options from a map URL option string; unknown values keep the default and are logged. */
 	static FGamerWorldOptions FromUrlOptions(const FString& Options);
 
@@ -67,14 +80,40 @@ struct FGamerWorldOptions
 	FString ToUrlOptions() const;
 };
 
-/** Replicated game state: world options for everyone (clients need them for the build preview). */
+/**
+ * Replicated game state: world options for everyone (clients need them for the build preview) and the season.
+ *
+ * Season (decision 2026-11-13): a phase 0..4, cyclic: 0 = start of spring, 1 = summer, 2 = autumn, 3 = winter.
+ * The server owns it (anchor phase + anchor time); every machine computes the same phase from the synced
+ * server time, so nothing is sent while it simply runs. Machines with rendering push it into the material
+ * parameter collection MPC_GamerWorld (scalar "SeasonPhase"), which the vegetation materials read.
+ */
 UCLASS()
-class GAMER_API AGamerGameState : public AGameStateBase
+class GAMER_API AGamerGameState : public AGameStateBase, public IGamerSaveable
 {
 	GENERATED_BODY()
 
 public:
+	// IGamerSaveable (save system, implemented in GamerSaveImpl.cpp)
+	virtual FString GetSaveKey() const override { return TEXT("game_state"); }
+	virtual void WriteSaveState(FGamerSaveRecord& Out) const override;
+	virtual void ReadSaveState(const FGamerSaveRecord& In) override;
+
+public:
+	AGamerGameState();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	/** Current season phase 0..4 (same value on server and clients). */
+	float GetSeasonPhase() const;
+
+	/** Server: jump to a season phase (tests, later save games); the season keeps running from there. */
+	void SetSeasonPhase(float Phase);
+
+	/** German text for a phase: "Sommer, Mitte". */
+	static FString DescribeSeason(float Phase);
 
 	/** Server: set once when the world starts. */
 	void SetWorldOptions(const FGamerWorldOptions& InOptions);
@@ -86,4 +125,25 @@ public:
 protected:
 	UPROPERTY(Replicated)
 	FGamerWorldOptions WorldOptions;
+
+	/** Phase of a new world: late spring, so the first hour shows spring turning into summer. */
+	UPROPERTY(EditDefaultsOnly, Category = "Season")
+	float StartSeasonPhase = 0.6f;
+
+	/** Collection read by the vegetation materials (scalar SeasonPhase). */
+	UPROPERTY(EditDefaultsOnly, Category = "Season")
+	TSoftObjectPtr<class UMaterialParameterCollection> WorldParameters;
+
+	/** Season phase at SeasonAnchorTime (server world seconds). */
+	UPROPERTY(Replicated)
+	float SeasonAnchorPhase = 0.6f;
+
+	UPROPERTY(Replicated)
+	double SeasonAnchorTime = 0.0;
+
+private:
+	void PushSeasonToMaterials();
+
+	bool bWarnedMissingParameters = false;
+	float LoggedSeasonQuarter = -1.f;
 };

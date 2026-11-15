@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GamerDataTypes.h"
+#include "GamerSaveable.h"
 #include "GamerBuilding.generated.h"
 
 class UStaticMeshComponent;
@@ -25,15 +26,39 @@ enum class EGamerBuildingLook : uint8
  * Work stations without a model yet get a placeholder made of engine shapes.
  */
 UCLASS()
-class GAMER_API AGamerBuilding : public AActor
+class GAMER_API AGamerBuilding : public AActor, public IGamerSaveable
 {
 	GENERATED_BODY()
+
+public:
+	// IGamerSaveable (save system, implemented in GamerSaveImpl.cpp)
+	virtual void WriteSaveState(FGamerSaveRecord& Out) const override;
+	virtual void ReadSaveState(const FGamerSaveRecord& In) override;
 
 public:
 	AGamerBuilding();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
+
+	/** Drawn fields: how many units a field of this scale has (area / unit_m2, at least 1). Other pieces: 1. */
+	static int32 UnitsFor(const FGamerBuildableDef& Def, const FVector& Scale);
+	/** Cost of a piece at this scale (drawn fields pay per unit). */
+	static TArray<FGamerItemAmount> CostFor(const FGamerBuildableDef& Def, const FVector& Scale);
+	/** Drawn fields: clamps a requested scale (1 = 100 cm per side) to the allowed size. Other pieces: 1. */
+	static FVector ClampScale(const FGamerBuildableDef& Def, const FVector& Scale);
+
+	/** Upgrade level (1 = as built). Decision 2026-11-14: work buildings can be upgraded for more work places. */
+	int32 GetLevel() const { return Level; }
+	/** Work places at the current level (0 = no limit). */
+	int32 GetWorkers() const;
+	/** Next upgrade stage, or null at the top level. */
+	const FGamerUpgradeDef* GetNextUpgrade() const;
+	/** Server: one level up (cost already paid by the caller). */
+	void Upgrade();
+
+	/** Actor class for a placed piece: farm buildings (fields, composter, rain catcher) have their own. */
+	static UClass* ClassFor(const UObject* WorldContext, FName BuildableId);
 
 	/** Server (before FinishSpawning): which piece, and how far it is built (1 = finished). */
 	void InitBuilding(FName InBuildableId, float InProgress);
@@ -71,6 +96,9 @@ protected:
 
 	UPROPERTY(Replicated)
 	TArray<FGamerItemAmount> Spent;
+
+	UPROPERTY(Replicated)
+	int32 Level = 1;
 
 	UFUNCTION()
 	void OnRep_State();

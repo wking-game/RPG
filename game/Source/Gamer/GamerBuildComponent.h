@@ -43,6 +43,15 @@ public:
 	/** Asks the server to place the chosen piece at the preview. Returns false (with a message) if not possible. */
 	bool TryPlace();
 
+	/**
+	 * After a placing click: the piece leaves the hand (preview gone, hammer stays in hand), unless bKeepSelected
+	 * (the "build several" key is held). Decision 2026-11-14.
+	 */
+	void AfterPlaced(bool bKeepSelected);
+
+	/** How many of the piece the player's inventory still pays for (INDEX_NONE = no cost, unlimited). */
+	int32 CountAffordable(FName BuildableId) const;
+
 	/** Same placement logic as the preview, for an explicit aim point (tests). */
 	FGamerPlacement ComputePlacement(FName BuildableId, const FVector& AimPoint, bool bAimHit, float ViewYaw,
 		const FVector& AimNormal = FVector::UpVector) const;
@@ -60,6 +69,15 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerDemolish(AGamerBuilding* Building);
+
+	/** Upgrade a finished work building one level (pays the stage cost; needs the piece's tool in hand). */
+	UFUNCTION(Server, Reliable)
+	void ServerUpgrade(AGamerBuilding* Building);
+
+	/** Drawn fields: true after the first click (the corner); the preview then stretches to the aim. */
+	bool IsDrawingArea() const { return bAreaStarted; }
+	/** Drawn fields: the rectangle from Corner to Aim (rotation Yaw), clamped to the allowed size; scale = metres. */
+	static FTransform AreaTransform(const FGamerBuildableDef& Def, const FVector& Corner, float Yaw, const FVector& Aim);
 
 protected:
 	/** How far from the player pieces may be placed (cm). */
@@ -80,6 +98,10 @@ private:
 
 	FName Selected;
 	int32 RotationSteps = 0;
+	/** Drawn fields: first corner and direction after the first click. */
+	bool bAreaStarted = false;
+	FVector AreaCorner = FVector::ZeroVector;
+	float AreaYaw = 0.f;
 	FGamerPlacement Placement;
 	TWeakObjectPtr<AGamerBuilding> Preview;
 	double LastHammerTime = -1000.0;

@@ -52,13 +52,16 @@ bool FGamerDataValidatorFindsErrorsTest::RunTest(const FString& Parameters)
 		{ "id": "item_b", "name": "B", "category": "resource", "tier": 9, "max_stack": 10, "wieght_kg": 1 },
 		{ "id": "Item-C", "name": "C", "category": "resource", "tier": 1, "max_stack": 10, "weight_kg": 1 },
 		{ "id": "tool_saw_t1", "name": "Saw", "category": "tool", "tier": 1, "max_stack": 1, "weight_kg": 1,
-		  "tool": { "type": "saw", "durability": 10, "work_speed": 1.0 } }
+		  "tool": { "type": "saw", "durability": 10, "work_speed": 1.0 } },
+		{ "id": "item_fruit", "name": "Fruit", "category": "food", "tier": 1, "max_stack": 10, "weight_kg": 1, "spoil_days": 2, "spoils_into": "item_rot" }
 	] })"), *FPaths::Combine(Dir, TEXT("items.json")));
 
 	FFileHelper::SaveStringToFile(TEXT(R"({ "schema": 1, "rows": [
 		{ "id": "res_x", "name": "X", "work_seconds": 1, "drops": [ { "item": "item_missing", "min": 1, "max": 2 } ] },
 		{ "id": "res_y", "name": "Y", "work_seconds": 1, "drops": [ { "item": "item_a", "min": 5, "max": 2 } ],
-		  "required_tool": { "type": "axe", "min_tier": 1 } }
+		  "required_tool": { "type": "axe", "min_tier": 1 } },
+		{ "id": "res_tree_f", "name": "F", "work_seconds": 1, "drops": [ { "item": "item_fruit", "min": 1, "max": 2 } ],
+		  "season": { "bloom": 0.5, "unripe": 0.3, "ripe": 1.0, "fall": 1.5, "bare": 2.0 } }
 	] })"), *FPaths::Combine(Dir, TEXT("resource_nodes.json")));
 
 	FFileHelper::SaveStringToFile(TEXT(R"({ "schema": 1, "rows": [
@@ -67,7 +70,9 @@ bool FGamerDataValidatorFindsErrorsTest::RunTest(const FString& Parameters)
 	] })"), *FPaths::Combine(Dir, TEXT("recipes.json")));
 
 	FFileHelper::SaveStringToFile(TEXT(R"({ "schema": 1, "rows": [
-		{ "id": "building_w", "name": "W", "category": "structure", "cost": [ { "item": "item_a", "count": 1 } ], "build_seconds": 1 }
+		{ "id": "building_w", "name": "W", "category": "structure", "cost": [ { "item": "item_a", "count": 1 } ], "build_seconds": 1 },
+		{ "id": "building_bed_f", "name": "Bed", "category": "farm", "cost": [ { "item": "item_a", "count": 1 } ], "build_seconds": 1,
+		  "farm": { "kind": "greenhouse" } }
 	] })"), *FPaths::Combine(Dir, TEXT("buildables.json")));
 
 	FGamerDataSet Data;
@@ -91,6 +96,10 @@ bool FGamerDataValidatorFindsErrorsTest::RunTest(const FString& Parameters)
 	ExpectError(TEXT("\"count\" muss eine ganze Zahl ab 1"), TEXT("count 0"));
 	ExpectError(TEXT("Pflichtfeld \"snap\""), TEXT("structure without snap"));
 	ExpectError(TEXT("(tool_saw_t1): nicht erreichbar ab Spielstart"), TEXT("item that can never be obtained"));
+	ExpectError(TEXT("spoils_into: Gegenstand \"item_rot\" gibt es nicht"), TEXT("spoils into unknown item"));
+	ExpectError(TEXT("bloom < unripe < ripe"), TEXT("season phases out of order"));
+	ExpectError(TEXT("drop_height_cm fehlt"), TEXT("falling fruit without drop height"));
+	ExpectError(TEXT("kind \"greenhouse\" unbekannt"), TEXT("unknown farm kind"));
 
 	for (const FString& Error : Report.Errors)
 	{

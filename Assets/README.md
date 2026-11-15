@@ -42,3 +42,7 @@ E:\Blender\blender.exe --background --factory-startup --python tools/blender/bui
 | `SM_Item_Log` | `Items/SM_Item_Log.fbx` | 70 | 300 |
 
 Alle Texturen und Meshes sind prozedural von einem Skript erzeugt, das Claude Code geschrieben hat (Eintrag in `design/asset_log.md`).
+
+## Icons
+
+`UI/Icons/T_Icon_<id>.png` (256², transparent) werden aus den Modellen oben gerendert: `tools/blender/render_icons.py` mit `tools/blender/icon_map.json`, Liste in `manifest_icons.json`. Nicht von Hand ändern.

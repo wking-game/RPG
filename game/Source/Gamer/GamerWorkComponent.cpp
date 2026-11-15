@@ -5,6 +5,10 @@
 #include "GamerInventoryComponent.h"
 #include "GamerResourceNode.h"
 #include "GamerBuilding.h"
+#include "GamerCharacter.h"
+#include "GamerFarmBuilding.h"
+#include "GamerGroundItem.h"
+#include "GamerGameState.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
@@ -167,6 +171,8 @@ void UGamerWorkComponent::ServerStrike_Implementation(AGamerResourceNode* Node)
 	}
 	const FName ToolType = Def->RequiredTool.Type;
 	const int32 MinTier = Def->RequiredTool.MinTier;
+	// Automatic tool choice: the best matching tool from the hotbar goes into the hand.
+	Inventory->SelectBestToolInHotbar(ToolType, MinTier);
 	if (!Inventory->IsHoldingTool(ToolType, MinTier))
 	{
 		const int32 HotbarIndex = Inventory->FindToolInHotbar(ToolType, MinTier);
@@ -203,25 +209,67 @@ void UGamerWorkComponent::GiveDrops(AGamerResourceNode* Node, const FGamerResour
 		return;
 	}
 	TArray<FString> Gained;
-	for (const FGamerDrop& Drop : Def.Drops)
+	// The node decides what one harvest gives (fruit trees: the next handful of ripe fruit).
+	for (const FGamerItemAmount& Drop : Node->Harvest())
 	{
-		const int32 Count = FMath::RandRange(Drop.Min, Drop.Max);
-		if (Count <= 0)
-		{
-			continue;
-		}
-		const int32 Lost = Inventory->AddItem(Drop.Item, Count);
+		const int32 Lost = Inventory->AddItem(Drop.Item, Drop.Count, Drop.Freshness);
 		const FGamerItemDef* Item = Data->FindItem(Drop.Item);
-		Gained.Add(FString::Printf(TEXT("+%d %s"), Count - Lost, Item ? *Item->Name : *Drop.Item.ToString()));
+		Gained.Add(FString::Printf(TEXT("+%d %s"), Drop.Count - Lost, Item ? *Item->Name : *Drop.Item.ToString()));
 		if (Lost > 0)
 		{
 			Gained.Add(FString::Printf(TEXT("(%d passten nicht mehr ins Inventar)"), Lost));
 		}
 	}
-	Node->Deplete();
 	UE_LOG(LogGamer, Log, TEXT("Harvest done: player=%d node=%s gained [%s] inventory: %s"),
 		PlayerIdOf(GetOwner()), *Def.Id.ToString(), *FString::Join(Gained, TEXT(" ")), *Inventory->Describe());
 	ClientMessage(FString::Join(Gained, TEXT("  ")));
+}
+
+void UGamerWorkComponent::ServerPickUp_Implementation(AGamerGroundItem* Item)
+{
+	UGamerInventoryComponent* Inventory = GetInventory();
+	if (!Item || !Inventory || IsBusy())
+	{
+		return;
+	}
+	if (!IsInReach(Item))
+	{
+		return Fail(TEXT("Zu weit weg."));
+	}
+	if (Inventory->SpaceFor(Item->GetItem()) < Item->GetCount())
+	{
+		return Fail(TEXT("Kein Platz im Inventar."));
+	}
+	const FString Name = Item->GetDisplayName();
+	FName Id;
+	int32 Count = 0;
+	float Freshness = 1.f;
+	if (!Item->TakeAll(Id, Count, Freshness))
+	{
+		return;
+	}
+	Inventory->AddItem(Id, Count, Freshness);
+	UE_LOG(LogGamer, Log, TEXT("Pick up: player=%d %s x%d at %d %% - inventory: %s"), PlayerIdOf(GetOwner()), *Id.ToString(), Count,
+		FMath::RoundToInt(Freshness * 100.f), *Inventory->Describe());
+	ClientMessage(TEXT("Aufgehoben: ") + Name);
+}
+
+void UGamerWorkComponent::ServerUseFarm_Implementation(AGamerFarmBuilding* Building)
+{
+	AGamerCharacter* User = Cast<AGamerCharacter>(GetOwner());
+	if (!Building || !User || IsBusy())
+	{
+		return;
+	}
+	if (FVector::Dist(Building->GetActorLocation(), User->GetActorLocation()) > StationReach)
+	{
+		return Fail(TEXT("Zu weit weg."));
+	}
+	const FString Result = Building->Use(User);
+	if (!Result.IsEmpty())
+	{
+		ClientMessage(Result);
+	}
 }
 
 void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
@@ -270,6 +318,98 @@ void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
 }
 
 void UGamerWorkComponent::FinishWork()
+{
+	FinishWorkInner();
+	StartNextQueued();
+}
+
+void UGamerWorkComponent::StartNextQueued()
+{
+	while (HarvestQueue.Num() > 0 && !IsBusy())
+	{
+		AGamerResourceNode* Node = HarvestQueue[0].Get();
+		HarvestQueue.RemoveAt(0);
+		const FGamerResourceNodeDef* Def = Node ? Node->GetDef() : nullptr;
+		if (!Def || Node->IsDepleted() || Def->RequiredTool.IsRequired() || !IsInReach(Node)
+			|| (Node->Worker.IsValid() && Node->Worker.Get() != GetOwner()))
+		{
+			continue; // gone, taken by someone else or out of reach: skip silently
+		}
+		TargetNode = Node;
+		Node->Worker = GetOwner();
+		StartWork(EGamerWorkKind::Harvest, Def->Name, Def->WorkSeconds);
+	}
+}
+
+void UGamerWorkComponent::ServerPickUpAll_Implementation(AActor* Anchor, bool bSameType)
+{
+	UGamerInventoryComponent* Inventory = GetInventory();
+	const AActor* Owner = GetOwner();
+	if (!Inventory || !Owner || IsBusy())
+	{
+		return;
+	}
+	const AGamerGroundItem* AnchorItem = Cast<AGamerGroundItem>(Anchor);
+	const AGamerResourceNode* AnchorNode = Cast<AGamerResourceNode>(Anchor);
+	if (bSameType && !AnchorItem && !AnchorNode)
+	{
+		return Fail(TEXT("Nichts anvisiert, dessen Art aufgenommen werden könnte."));
+	}
+	const FVector Center = Owner->GetActorLocation();
+	int32 Taken = 0, Left = 0, Queued = 0;
+	TArray<AGamerGroundItem*> Items;
+	for (TActorIterator<AGamerGroundItem> It(GetWorld()); It; ++It)
+	{
+		if (FVector::Dist2D(It->GetActorLocation(), Center) <= PickAllRadius && IsInReach(*It)
+			&& (!bSameType || (AnchorItem && It->GetItem() == AnchorItem->GetItem())))
+		{
+			Items.Add(*It);
+		}
+	}
+	for (AGamerGroundItem* Item : Items)
+	{
+		if (Inventory->SpaceFor(Item->GetItem()) < Item->GetCount())
+		{
+			++Left;
+			continue;
+		}
+		FName Id;
+		int32 Count = 0;
+		float Freshness = 1.f;
+		if (Item->TakeAll(Id, Count, Freshness))
+		{
+			Inventory->AddItem(Id, Count, Freshness);
+			++Taken;
+		}
+	}
+	HarvestQueue.Reset();
+	for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
+	{
+		const FGamerResourceNodeDef* Def = It->GetDef();
+		if (Def && !It->IsDepleted() && !Def->RequiredTool.IsRequired() && FVector::Dist2D(It->GetActorLocation(), Center) <= PickAllRadius
+			&& IsInReach(*It) && (!bSameType || (AnchorNode && It->GetNodeId() == AnchorNode->GetNodeId()))
+			&& !(AnchorItem && bSameType))
+		{
+			HarvestQueue.Add(*It);
+			++Queued;
+		}
+	}
+	UE_LOG(LogGamer, Log, TEXT("Pick up all (%s): player=%d took %d ground items, %d did not fit, %d plants queued - inventory: %s"),
+		bSameType ? TEXT("same type") : TEXT("everything"), PlayerIdOf(GetOwner()), Taken, Left, Queued, *Inventory->Describe());
+	FString Text = Taken > 0 ? FString::Printf(TEXT("%d aufgehoben"), Taken) : FString();
+	if (Queued > 0)
+	{
+		Text += (Text.IsEmpty() ? TEXT("") : TEXT(", ")) + FString::Printf(TEXT("%d Pflanzen werden nacheinander gesammelt"), Queued);
+	}
+	if (Left > 0)
+	{
+		Text += (Text.IsEmpty() ? TEXT("") : TEXT(" – ")) + FString::Printf(TEXT("%d passen nicht mehr ins Inventar und bleiben liegen"), Left);
+	}
+	ClientMessage(Text.IsEmpty() ? TEXT("Hier gibt es nichts aufzunehmen.") : Text);
+	StartNextQueued();
+}
+
+void UGamerWorkComponent::FinishWorkInner()
 {
 	const EGamerWorkKind Kind = Work.Kind;
 	Work = FGamerWorkState();
@@ -355,6 +495,16 @@ void UGamerWorkComponent::ServerDebugGiveItem_Implementation(FName Item, int32 C
 		const int32 Lost = Inventory->AddItem(Item, FMath::Clamp(Count, 1, 999));
 		UE_LOG(LogGamer, Log, TEXT("Debug give: player=%d %s x%d (%d did not fit) inventory: %s"), PlayerIdOf(GetOwner()),
 			*Item.ToString(), Count, Lost, *Inventory->Describe());
+	}
+#endif
+}
+
+void UGamerWorkComponent::ServerDebugSetSeason_Implementation(float Phase)
+{
+#if !UE_BUILD_SHIPPING
+	if (AGamerGameState* State = GetWorld() ? GetWorld()->GetGameState<AGamerGameState>() : nullptr)
+	{
+		State->SetSeasonPhase(Phase);
 	}
 #endif
 }

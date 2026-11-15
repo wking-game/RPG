@@ -1,0 +1,2689 @@
+{
+  "generator": "tools/blender/process_nature.py (+ tools/blender/build_trees.py)",
+  "units": "1 unit = 1 cm, Z up",
+  "normal_maps": "DirectX (Unreal)",
+  "orm": "R=AO, G=Roughness, B=Metallic",
+  "textures": [
+    {
+      "name": "T_BarkBirch_BC",
+      "file": "Nature/Textures/T_BarkBirch_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_BarkBirch_N",
+      "file": "Nature/Textures/T_BarkBirch_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_BarkBirch_ORM",
+      "file": "Nature/Textures/T_BarkBirch_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_BarkBrown_BC",
+      "file": "Nature/Textures/T_BarkBrown_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_BarkBrown_N",
+      "file": "Nature/Textures/T_BarkBrown_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_BarkBrown_ORM",
+      "file": "Nature/Textures/T_BarkBrown_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_BarkPine_BC",
+      "file": "Nature/Textures/T_BarkPine_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_BarkPine_N",
+      "file": "Nature/Textures/T_BarkPine_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_BarkPine_ORM",
+      "file": "Nature/Textures/T_BarkPine_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DeadStump_BC",
+      "file": "Nature/Textures/T_DeadStump_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_DeadStump_N",
+      "file": "Nature/Textures/T_DeadStump_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DeadStump_ORM",
+      "file": "Nature/Textures/T_DeadStump_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DeadTrunk_BC",
+      "file": "Nature/Textures/T_DeadTrunk_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_DeadTrunk_N",
+      "file": "Nature/Textures/T_DeadTrunk_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DeadTrunk_ORM",
+      "file": "Nature/Textures/T_DeadTrunk_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DryBranches_BC",
+      "file": "Nature/Textures/T_DryBranches_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_DryBranches_N",
+      "file": "Nature/Textures/T_DryBranches_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_DryBranches_ORM",
+      "file": "Nature/Textures/T_DryBranches_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_EndGrain_BC",
+      "file": "Nature/Textures/T_EndGrain_BC.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_EndGrain_N",
+      "file": "Nature/Textures/T_EndGrain_N.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_EndGrain_ORM",
+      "file": "Nature/Textures/T_EndGrain_ORM.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Fern02_BC",
+      "file": "Nature/Textures/T_Fern02_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Fern02_N",
+      "file": "Nature/Textures/T_Fern02_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Fern02_ORM",
+      "file": "Nature/Textures/T_Fern02_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Fruit_BC",
+      "file": "Nature/Textures/T_Fruit_BC.png",
+      "size": [
+        640,
+        640
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Fruit_N",
+      "file": "Nature/Textures/T_Fruit_N.png",
+      "size": [
+        640,
+        640
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Fruit_ORM",
+      "file": "Nature/Textures/T_Fruit_ORM.png",
+      "size": [
+        640,
+        640
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Grass_BC",
+      "file": "Nature/Textures/T_Grass_BC.png",
+      "size": [
+        512,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Grass_N",
+      "file": "Nature/Textures/T_Grass_N.png",
+      "size": [
+        512,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Grass_ORM",
+      "file": "Nature/Textures/T_Grass_ORM.png",
+      "size": [
+        512,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundDirt_BC",
+      "file": "Nature/Ground/T_GroundDirt_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_GroundDirt_N",
+      "file": "Nature/Ground/T_GroundDirt_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundDirt_ORM",
+      "file": "Nature/Ground/T_GroundDirt_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundForest_BC",
+      "file": "Nature/Ground/T_GroundForest_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_GroundForest_N",
+      "file": "Nature/Ground/T_GroundForest_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundForest_ORM",
+      "file": "Nature/Ground/T_GroundForest_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundMoss_BC",
+      "file": "Nature/Ground/T_GroundMoss_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_GroundMoss_N",
+      "file": "Nature/Ground/T_GroundMoss_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundMoss_ORM",
+      "file": "Nature/Ground/T_GroundMoss_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundNeedleSand_BC",
+      "file": "Nature/Ground/T_GroundNeedleSand_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_GroundNeedleSand_N",
+      "file": "Nature/Ground/T_GroundNeedleSand_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundNeedleSand_ORM",
+      "file": "Nature/Ground/T_GroundNeedleSand_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundSand_BC",
+      "file": "Nature/Ground/T_GroundSand_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_GroundSand_N",
+      "file": "Nature/Ground/T_GroundSand_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_GroundSand_ORM",
+      "file": "Nature/Ground/T_GroundSand_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesApple_BC",
+      "file": "Nature/Textures/T_LeavesApple_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesApple_N",
+      "file": "Nature/Textures/T_LeavesApple_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesApple_ORM",
+      "file": "Nature/Textures/T_LeavesApple_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesBirch_BC",
+      "file": "Nature/Textures/T_LeavesBirch_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesBirch_N",
+      "file": "Nature/Textures/T_LeavesBirch_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesBirch_ORM",
+      "file": "Nature/Textures/T_LeavesBirch_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesHazel_BC",
+      "file": "Nature/Textures/T_LeavesHazel_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesHazel_N",
+      "file": "Nature/Textures/T_LeavesHazel_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesHazel_ORM",
+      "file": "Nature/Textures/T_LeavesHazel_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesPear_BC",
+      "file": "Nature/Textures/T_LeavesPear_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesPear_N",
+      "file": "Nature/Textures/T_LeavesPear_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesPear_ORM",
+      "file": "Nature/Textures/T_LeavesPear_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesRaspberry_BC",
+      "file": "Nature/Textures/T_LeavesRaspberry_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesRaspberry_N",
+      "file": "Nature/Textures/T_LeavesRaspberry_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesRaspberry_ORM",
+      "file": "Nature/Textures/T_LeavesRaspberry_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesShrub02_BC",
+      "file": "Nature/Textures/T_LeavesShrub02_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesShrub02_N",
+      "file": "Nature/Textures/T_LeavesShrub02_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesShrub02_ORM",
+      "file": "Nature/Textures/T_LeavesShrub02_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesShrub04_BC",
+      "file": "Nature/Textures/T_LeavesShrub04_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesShrub04_N",
+      "file": "Nature/Textures/T_LeavesShrub04_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesShrub04_ORM",
+      "file": "Nature/Textures/T_LeavesShrub04_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesSmall_BC",
+      "file": "Nature/Textures/T_LeavesSmall_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_LeavesSmall_N",
+      "file": "Nature/Textures/T_LeavesSmall_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_LeavesSmall_ORM",
+      "file": "Nature/Textures/T_LeavesSmall_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_NeedlesPine_BC",
+      "file": "Nature/Textures/T_NeedlesPine_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_NeedlesPine_N",
+      "file": "Nature/Textures/T_NeedlesPine_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_NeedlesPine_ORM",
+      "file": "Nature/Textures/T_NeedlesPine_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Nettle_BC",
+      "file": "Nature/Textures/T_Nettle_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Nettle_N",
+      "file": "Nature/Textures/T_Nettle_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Nettle_ORM",
+      "file": "Nature/Textures/T_Nettle_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_RockMoss_BC",
+      "file": "Nature/Textures/T_RockMoss_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_RockMoss_N",
+      "file": "Nature/Textures/T_RockMoss_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_RockMoss_ORM",
+      "file": "Nature/Textures/T_RockMoss_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Sandstone_BC",
+      "file": "Nature/Textures/T_Sandstone_BC.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": true
+    },
+    {
+      "name": "T_Sandstone_N",
+      "file": "Nature/Textures/T_Sandstone_N.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    },
+    {
+      "name": "T_Sandstone_ORM",
+      "file": "Nature/Textures/T_Sandstone_ORM.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "srgb": false
+    }
+  ],
+  "materials": [
+    {
+      "name": "M_Nature_BarkBirch",
+      "BaseColor": "T_BarkBirch_BC",
+      "Normal": "T_BarkBirch_N",
+      "ORM": "T_BarkBirch_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_BarkBrown",
+      "BaseColor": "T_BarkBrown_BC",
+      "Normal": "T_BarkBrown_N",
+      "ORM": "T_BarkBrown_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_BarkPine",
+      "BaseColor": "T_BarkPine_BC",
+      "Normal": "T_BarkPine_N",
+      "ORM": "T_BarkPine_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_DeadStump",
+      "BaseColor": "T_DeadStump_BC",
+      "Normal": "T_DeadStump_N",
+      "ORM": "T_DeadStump_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_DeadTrunk",
+      "BaseColor": "T_DeadTrunk_BC",
+      "Normal": "T_DeadTrunk_N",
+      "ORM": "T_DeadTrunk_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_DryBranches",
+      "BaseColor": "T_DryBranches_BC",
+      "Normal": "T_DryBranches_N",
+      "ORM": "T_DryBranches_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_EndGrain",
+      "BaseColor": "T_EndGrain_BC",
+      "Normal": "T_EndGrain_N",
+      "ORM": "T_EndGrain_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_Fern02",
+      "BaseColor": "T_Fern02_BC",
+      "Normal": "T_Fern02_N",
+      "ORM": "T_Fern02_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_Fruit",
+      "BaseColor": "T_Fruit_BC",
+      "Normal": "T_Fruit_N",
+      "ORM": "T_Fruit_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_Grass",
+      "BaseColor": "T_Grass_BC",
+      "Normal": "T_Grass_N",
+      "ORM": "T_Grass_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesApple",
+      "BaseColor": "T_LeavesApple_BC",
+      "Normal": "T_LeavesApple_N",
+      "ORM": "T_LeavesApple_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesBirch",
+      "BaseColor": "T_LeavesBirch_BC",
+      "Normal": "T_LeavesBirch_N",
+      "ORM": "T_LeavesBirch_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesHazel",
+      "BaseColor": "T_LeavesHazel_BC",
+      "Normal": "T_LeavesHazel_N",
+      "ORM": "T_LeavesHazel_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesPear",
+      "BaseColor": "T_LeavesPear_BC",
+      "Normal": "T_LeavesPear_N",
+      "ORM": "T_LeavesPear_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesRaspberry",
+      "BaseColor": "T_LeavesRaspberry_BC",
+      "Normal": "T_LeavesRaspberry_N",
+      "ORM": "T_LeavesRaspberry_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesShrub02",
+      "BaseColor": "T_LeavesShrub02_BC",
+      "Normal": "T_LeavesShrub02_N",
+      "ORM": "T_LeavesShrub02_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesShrub04",
+      "BaseColor": "T_LeavesShrub04_BC",
+      "Normal": "T_LeavesShrub04_N",
+      "ORM": "T_LeavesShrub04_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_LeavesSmall",
+      "BaseColor": "T_LeavesSmall_BC",
+      "Normal": "T_LeavesSmall_N",
+      "ORM": "T_LeavesSmall_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_NeedlesPine",
+      "BaseColor": "T_NeedlesPine_BC",
+      "Normal": "T_NeedlesPine_N",
+      "ORM": "T_NeedlesPine_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_Nettle",
+      "BaseColor": "T_Nettle_BC",
+      "Normal": "T_Nettle_N",
+      "ORM": "T_Nettle_ORM",
+      "masked": true
+    },
+    {
+      "name": "M_Nature_RockMoss",
+      "BaseColor": "T_RockMoss_BC",
+      "Normal": "T_RockMoss_N",
+      "ORM": "T_RockMoss_ORM",
+      "masked": false
+    },
+    {
+      "name": "M_Nature_Sandstone",
+      "BaseColor": "T_Sandstone_BC",
+      "Normal": "T_Sandstone_N",
+      "ORM": "T_Sandstone_ORM",
+      "masked": false
+    }
+  ],
+  "meshes": [
+    {
+      "id": "branches",
+      "unreal_name": "SM_Branches",
+      "file": "Nature/Plants/SM_Branches.fbx",
+      "group": "Nature/Plants",
+      "tris": 6000,
+      "tris_target": 6000,
+      "bbox_min_cm": [
+        -20.4,
+        -38.9,
+        0.1
+      ],
+      "bbox_max_cm": [
+        85.6,
+        90.9,
+        34.1
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_DryBranches"
+      ],
+      "source": "CC0 polyhaven/dry_branches_medium_01/dry_branches_medium_01.gltf"
+    },
+    {
+      "id": "bush_berry",
+      "unreal_name": "SM_BushBerry_Full",
+      "file": "Nature/Plants/SM_BushBerry_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 6676,
+      "tris_target": 12000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -106.4,
+        -78.3,
+        -4.3
+      ],
+      "bbox_max_cm": [
+        92.5,
+        92.9,
+        148.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (raspberry, age 1.00, seed 51, full)"
+    },
+    {
+      "id": "bush_berry_picked",
+      "unreal_name": "SM_BushBerry_Picked",
+      "file": "Nature/Plants/SM_BushBerry_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 2716,
+      "tris_target": 12000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -106.4,
+        -78.3,
+        -4.3
+      ],
+      "bbox_max_cm": [
+        92.5,
+        92.9,
+        148.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry"
+      ],
+      "source": "tools/blender/build_trees.py (raspberry, age 1.00, seed 51, picked)"
+    },
+    {
+      "id": "bush_blackberry",
+      "unreal_name": "SM_BushBlackberry_Full",
+      "file": "Nature/Plants/SM_BushBlackberry_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 8380,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -239.7,
+        -257.0,
+        -5.1
+      ],
+      "bbox_max_cm": [
+        187.0,
+        134.2,
+        148.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (blackberry, age 1.00, seed 71, full)"
+    },
+    {
+      "id": "bush_blackberry_picked",
+      "unreal_name": "SM_BushBlackberry_Picked",
+      "file": "Nature/Plants/SM_BushBlackberry_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 3436,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -239.7,
+        -257.0,
+        -5.1
+      ],
+      "bbox_max_cm": [
+        187.0,
+        134.2,
+        148.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry"
+      ],
+      "source": "tools/blender/build_trees.py (blackberry, age 1.00, seed 71, picked)"
+    },
+    {
+      "id": "bush_blueberry",
+      "unreal_name": "SM_BushBlueberry_Full",
+      "file": "Nature/Plants/SM_BushBlueberry_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 6588,
+      "tris_target": 9000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -55.1,
+        -60.3,
+        -6.7
+      ],
+      "bbox_max_cm": [
+        68.6,
+        49.9,
+        53.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesSmall",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (blueberry, age 1.00, seed 72, full)"
+    },
+    {
+      "id": "bush_blueberry_picked",
+      "unreal_name": "SM_BushBlueberry_Picked",
+      "file": "Nature/Plants/SM_BushBlueberry_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 3204,
+      "tris_target": 9000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -55.1,
+        -60.3,
+        -6.7
+      ],
+      "bbox_max_cm": [
+        68.6,
+        49.9,
+        53.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesSmall"
+      ],
+      "source": "tools/blender/build_trees.py (blueberry, age 1.00, seed 72, picked)"
+    },
+    {
+      "id": "bush_elder",
+      "unreal_name": "SM_BushElder_Full",
+      "file": "Nature/Plants/SM_BushElder_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 14552,
+      "tris_target": 16000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -210.6,
+        -320.4,
+        -5.2
+      ],
+      "bbox_max_cm": [
+        207.1,
+        314.3,
+        426.2
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (elder, age 1.00, seed 76, full)"
+    },
+    {
+      "id": "bush_elder_picked",
+      "unreal_name": "SM_BushElder_Picked",
+      "file": "Nature/Plants/SM_BushElder_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 7016,
+      "tris_target": 16000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -210.6,
+        -320.4,
+        -5.2
+      ],
+      "bbox_max_cm": [
+        207.1,
+        314.3,
+        426.2
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry"
+      ],
+      "source": "tools/blender/build_trees.py (elder, age 1.00, seed 76, picked)"
+    },
+    {
+      "id": "bush_hazel",
+      "unreal_name": "SM_BushHazel_Full",
+      "file": "Nature/Plants/SM_BushHazel_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 13634,
+      "tris_target": 15000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -214.5,
+        -239.9,
+        -5.3
+      ],
+      "bbox_max_cm": [
+        239.0,
+        197.3,
+        407.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesHazel",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (hazel, age 1.00, seed 41, full)"
+    },
+    {
+      "id": "bush_hazel_picked",
+      "unreal_name": "SM_BushHazel_Picked",
+      "file": "Nature/Plants/SM_BushHazel_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 9234,
+      "tris_target": 15000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -214.5,
+        -239.9,
+        -5.3
+      ],
+      "bbox_max_cm": [
+        239.0,
+        197.3,
+        407.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesHazel"
+      ],
+      "source": "tools/blender/build_trees.py (hazel, age 1.00, seed 41, picked)"
+    },
+    {
+      "id": "bush_rose",
+      "unreal_name": "SM_BushRose_Full",
+      "file": "Nature/Plants/SM_BushRose_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 7464,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -170.9,
+        -123.9,
+        -4.6
+      ],
+      "bbox_max_cm": [
+        154.0,
+        225.1,
+        235.8
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (rose, age 1.00, seed 74, full)"
+    },
+    {
+      "id": "bush_rose_picked",
+      "unreal_name": "SM_BushRose_Picked",
+      "file": "Nature/Plants/SM_BushRose_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 5328,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -170.9,
+        -123.9,
+        -4.6
+      ],
+      "bbox_max_cm": [
+        154.0,
+        225.1,
+        235.8
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry"
+      ],
+      "source": "tools/blender/build_trees.py (rose, age 1.00, seed 74, picked)"
+    },
+    {
+      "id": "bush_sloe",
+      "unreal_name": "SM_BushSloe_Full",
+      "file": "Nature/Plants/SM_BushSloe_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 14522,
+      "tris_target": 16000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -121.9,
+        -176.9,
+        -4.8
+      ],
+      "bbox_max_cm": [
+        208.9,
+        169.5,
+        255.6
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesSmall",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (sloe, age 1.00, seed 75, full)"
+    },
+    {
+      "id": "bush_sloe_picked",
+      "unreal_name": "SM_BushSloe_Picked",
+      "file": "Nature/Plants/SM_BushSloe_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 10250,
+      "tris_target": 16000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -121.9,
+        -176.9,
+        -4.8
+      ],
+      "bbox_max_cm": [
+        208.9,
+        169.5,
+        255.6
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesSmall"
+      ],
+      "source": "tools/blender/build_trees.py (sloe, age 1.00, seed 75, picked)"
+    },
+    {
+      "id": "crop_carrot_1",
+      "unreal_name": "SM_Crop_Carrot_1",
+      "file": "Nature/Crops/SM_Crop_Carrot_1.fbx",
+      "group": "Nature/Crops",
+      "tris": 228,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -7.8,
+        -7.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        7.8,
+        7.8,
+        11.7
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_carrot, age 0.30, seed 82, crop)"
+    },
+    {
+      "id": "crop_carrot_2",
+      "unreal_name": "SM_Crop_Carrot_2",
+      "file": "Nature/Crops/SM_Crop_Carrot_2.fbx",
+      "group": "Nature/Crops",
+      "tris": 504,
+      "tris_target": 3000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -8.8,
+        -15.1,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        10.5,
+        12.8,
+        20.4
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_carrot, age 0.65, seed 82, crop)"
+    },
+    {
+      "id": "crop_carrot_3",
+      "unreal_name": "SM_Crop_Carrot_3",
+      "file": "Nature/Crops/SM_Crop_Carrot_3.fbx",
+      "group": "Nature/Crops",
+      "tris": 504,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -13.5,
+        -22.6,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        16.1,
+        19.1,
+        30.6
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_carrot, age 1.00, seed 82, crop)"
+    },
+    {
+      "id": "crop_flax_1",
+      "unreal_name": "SM_Crop_Flax_1",
+      "file": "Nature/Crops/SM_Crop_Flax_1.fbx",
+      "group": "Nature/Crops",
+      "tris": 160,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -12.4,
+        -7.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        7.9,
+        11.9,
+        23.7
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_flax, age 0.30, seed 84, crop)"
+    },
+    {
+      "id": "crop_flax_2",
+      "unreal_name": "SM_Crop_Flax_2",
+      "file": "Nature/Crops/SM_Crop_Flax_2.fbx",
+      "group": "Nature/Crops",
+      "tris": 694,
+      "tris_target": 3500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -14.4,
+        -13.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        11.1,
+        9.5,
+        50.7
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_flax, age 0.65, seed 84, crop)"
+    },
+    {
+      "id": "crop_flax_3",
+      "unreal_name": "SM_Crop_Flax_3",
+      "file": "Nature/Crops/SM_Crop_Flax_3.fbx",
+      "group": "Nature/Crops",
+      "tris": 466,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -9.5,
+        -10.3,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        10.8,
+        9.9,
+        78.3
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_flax, age 1.00, seed 84, crop)"
+    },
+    {
+      "id": "crop_onion_1",
+      "unreal_name": "SM_Crop_Onion_1",
+      "file": "Nature/Crops/SM_Crop_Onion_1.fbx",
+      "group": "Nature/Crops",
+      "tris": 84,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -7.8,
+        -7.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        7.8,
+        7.8,
+        12.1
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_onion, age 0.30, seed 81, crop)"
+    },
+    {
+      "id": "crop_onion_2",
+      "unreal_name": "SM_Crop_Onion_2",
+      "file": "Nature/Crops/SM_Crop_Onion_2.fbx",
+      "group": "Nature/Crops",
+      "tris": 188,
+      "tris_target": 2500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -7.8,
+        -8.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        7.8,
+        8.4,
+        25.3
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_onion, age 0.65, seed 81, crop)"
+    },
+    {
+      "id": "crop_onion_3",
+      "unreal_name": "SM_Crop_Onion_3",
+      "file": "Nature/Crops/SM_Crop_Onion_3.fbx",
+      "group": "Nature/Crops",
+      "tris": 188,
+      "tris_target": 3000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -24.7,
+        -34.1,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        16.7,
+        32.6,
+        19.2
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_onion, age 1.00, seed 81, crop)"
+    },
+    {
+      "id": "crop_potato_1",
+      "unreal_name": "SM_Crop_Potato_1",
+      "file": "Nature/Crops/SM_Crop_Potato_1.fbx",
+      "group": "Nature/Crops",
+      "tris": 192,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -7.9,
+        -7.8,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        7.8,
+        7.8,
+        14.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_potato, age 0.30, seed 83, crop)"
+    },
+    {
+      "id": "crop_potato_2",
+      "unreal_name": "SM_Crop_Potato_2",
+      "file": "Nature/Crops/SM_Crop_Potato_2.fbx",
+      "group": "Nature/Crops",
+      "tris": 408,
+      "tris_target": 3500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -14.0,
+        -10.6,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        16.6,
+        12.3,
+        32.5
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_potato, age 0.65, seed 83, crop)"
+    },
+    {
+      "id": "crop_potato_3",
+      "unreal_name": "SM_Crop_Potato_3",
+      "file": "Nature/Crops/SM_Crop_Potato_3.fbx",
+      "group": "Nature/Crops",
+      "tris": 516,
+      "tris_target": 4500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -34.8,
+        -28.0,
+        -6.6
+      ],
+      "bbox_max_cm": [
+        38.7,
+        29.6,
+        43.8
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (crop_potato, age 1.00, seed 83, crop)"
+    },
+    {
+      "id": "dead_stump",
+      "unreal_name": "SM_DeadStump",
+      "file": "Nature/Trees/SM_DeadStump.fbx",
+      "group": "Nature/Trees",
+      "tris": 6000,
+      "tris_target": 6000,
+      "bbox_min_cm": [
+        -90.1,
+        -56.6,
+        0.0
+      ],
+      "bbox_max_cm": [
+        59.2,
+        110.1,
+        60.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_DeadStump"
+      ],
+      "source": "CC0 polyhaven/tree_stump_01/tree_stump_01.gltf",
+      "collision": "ucx"
+    },
+    {
+      "id": "dead_trunk",
+      "unreal_name": "SM_DeadTrunk",
+      "file": "Nature/Trees/SM_DeadTrunk.fbx",
+      "group": "Nature/Trees",
+      "tris": 8000,
+      "tris_target": 8000,
+      "bbox_min_cm": [
+        -142.8,
+        -12.7,
+        0.1
+      ],
+      "bbox_max_cm": [
+        157.1,
+        14.5,
+        28.5
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_DeadTrunk"
+      ],
+      "source": "CC0 polyhaven/dead_tree_trunk/dead_tree_trunk.gltf",
+      "collision": "ucx"
+    },
+    {
+      "id": "fern_large",
+      "unreal_name": "SM_Fern_Large",
+      "file": "Nature/Plants/SM_Fern_Large.fbx",
+      "group": "Nature/Plants",
+      "tris": 2384,
+      "tris_target": 4000,
+      "bbox_min_cm": [
+        -67.5,
+        -75.7,
+        0.0
+      ],
+      "bbox_max_cm": [
+        94.5,
+        70.6,
+        70.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fern02"
+      ],
+      "source": "CC0 polyhaven/fern_02/fern_02.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "fern_medium",
+      "unreal_name": "SM_Fern_Medium",
+      "file": "Nature/Plants/SM_Fern_Medium.fbx",
+      "group": "Nature/Plants",
+      "tris": 2248,
+      "tris_target": 4000,
+      "bbox_min_cm": [
+        -66.3,
+        -57.3,
+        0.0
+      ],
+      "bbox_max_cm": [
+        64.0,
+        56.7,
+        52.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fern02"
+      ],
+      "source": "CC0 polyhaven/fern_02/fern_02.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "fern_small",
+      "unreal_name": "SM_Fern_Small",
+      "file": "Nature/Plants/SM_Fern_Small.fbx",
+      "group": "Nature/Plants",
+      "tris": 1600,
+      "tris_target": 3000,
+      "bbox_min_cm": [
+        -54.0,
+        -51.4,
+        0.0
+      ],
+      "bbox_max_cm": [
+        41.0,
+        40.4,
+        38.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fern02"
+      ],
+      "source": "CC0 polyhaven/fern_02/fern_02.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "grass_clump_medium",
+      "unreal_name": "SM_GrassClump_Medium",
+      "file": "Nature/Grass/SM_GrassClump_Medium.fbx",
+      "group": "Nature/Grass",
+      "tris": 316,
+      "tris_target": 400,
+      "collision": "none",
+      "bbox_min_cm": [
+        -28.5,
+        -31.0,
+        -1.1
+      ],
+      "bbox_max_cm": [
+        27.4,
+        28.9,
+        46.3
+      ],
+      "pivot": "Mitte des Bueschels am Boden, Z = 0 (Halmansatz 1 cm darunter)",
+      "materials": [
+        "M_Nature_Grass"
+      ],
+      "source": "tools/blender/build_grass.py (ambientCG Foliage006, CC0; seed 23)"
+    },
+    {
+      "id": "grass_clump_short",
+      "unreal_name": "SM_GrassClump_Short",
+      "file": "Nature/Grass/SM_GrassClump_Short.fbx",
+      "group": "Nature/Grass",
+      "tris": 328,
+      "tris_target": 400,
+      "collision": "none",
+      "bbox_min_cm": [
+        -18.7,
+        -15.5,
+        -1.1
+      ],
+      "bbox_max_cm": [
+        18.3,
+        18.7,
+        22.2
+      ],
+      "pivot": "Mitte des Bueschels am Boden, Z = 0 (Halmansatz 1 cm darunter)",
+      "materials": [
+        "M_Nature_Grass"
+      ],
+      "source": "tools/blender/build_grass.py (ambientCG Foliage006, CC0; seed 11)"
+    },
+    {
+      "id": "grass_clump_sparse",
+      "unreal_name": "SM_GrassClump_Sparse",
+      "file": "Nature/Grass/SM_GrassClump_Sparse.fbx",
+      "group": "Nature/Grass",
+      "tris": 108,
+      "tris_target": 400,
+      "collision": "none",
+      "bbox_min_cm": [
+        -17.7,
+        -21.9,
+        -1.1
+      ],
+      "bbox_max_cm": [
+        14.7,
+        22.1,
+        32.4
+      ],
+      "pivot": "Mitte des Bueschels am Boden, Z = 0 (Halmansatz 1 cm darunter)",
+      "materials": [
+        "M_Nature_Grass"
+      ],
+      "source": "tools/blender/build_grass.py (ambientCG Foliage006, CC0; seed 41)"
+    },
+    {
+      "id": "grass_clump_tall",
+      "unreal_name": "SM_GrassClump_Tall",
+      "file": "Nature/Grass/SM_GrassClump_Tall.fbx",
+      "group": "Nature/Grass",
+      "tris": 360,
+      "tris_target": 400,
+      "collision": "none",
+      "bbox_min_cm": [
+        -43.1,
+        -47.4,
+        -1.1
+      ],
+      "bbox_max_cm": [
+        43.9,
+        54.1,
+        89.3
+      ],
+      "pivot": "Mitte des Bueschels am Boden, Z = 0 (Halmansatz 1 cm darunter)",
+      "materials": [
+        "M_Nature_Grass"
+      ],
+      "source": "tools/blender/build_grass.py (ambientCG Foliage006, CC0; seed 37)"
+    },
+    {
+      "id": "item_apple",
+      "unreal_name": "SM_Item_Apple",
+      "file": "Items/SM_Item_Apple.fbx",
+      "group": "Items",
+      "tris": 128,
+      "tris_target": 400,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -3.8,
+        -3.6,
+        0.0
+      ],
+      "bbox_max_cm": [
+        3.8,
+        3.6,
+        8.2
+      ],
+      "pivot": "Unterseite, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (item_apple, age 1.00, seed 91, item)"
+    },
+    {
+      "id": "item_apple_bruised",
+      "unreal_name": "SM_Item_AppleBruised",
+      "file": "Items/SM_Item_AppleBruised.fbx",
+      "group": "Items",
+      "tris": 128,
+      "tris_target": 400,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -3.8,
+        -3.6,
+        0.0
+      ],
+      "bbox_max_cm": [
+        3.8,
+        3.6,
+        8.2
+      ],
+      "pivot": "Unterseite, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (item_apple_bruised, age 1.00, seed 92, item)"
+    },
+    {
+      "id": "item_pear",
+      "unreal_name": "SM_Item_Pear",
+      "file": "Items/SM_Item_Pear.fbx",
+      "group": "Items",
+      "tris": 152,
+      "tris_target": 400,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -3.4,
+        -3.4,
+        0.0
+      ],
+      "bbox_max_cm": [
+        7.0,
+        3.4,
+        6.8
+      ],
+      "pivot": "Unterseite, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (item_pear, age 1.00, seed 93, item)"
+    },
+    {
+      "id": "item_pear_bruised",
+      "unreal_name": "SM_Item_PearBruised",
+      "file": "Items/SM_Item_PearBruised.fbx",
+      "group": "Items",
+      "tris": 152,
+      "tris_target": 400,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -3.4,
+        -3.4,
+        0.0
+      ],
+      "bbox_max_cm": [
+        7.0,
+        3.4,
+        6.8
+      ],
+      "pivot": "Unterseite, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (item_pear_bruised, age 1.00, seed 94, item)"
+    },
+    {
+      "id": "nettle",
+      "unreal_name": "SM_Nettle",
+      "file": "Nature/Plants/SM_Nettle.fbx",
+      "group": "Nature/Plants",
+      "tris": 12880,
+      "tris_target": 14000,
+      "bbox_min_cm": [
+        -38.9,
+        -26.9,
+        0.0
+      ],
+      "bbox_max_cm": [
+        19.3,
+        18.9,
+        80.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Nettle"
+      ],
+      "source": "CC0 polyhaven/nettle_plant/nettle_plant.gltf"
+    },
+    {
+      "id": "nettle_cut",
+      "unreal_name": "SM_NettleCut",
+      "file": "Nature/Plants/SM_NettleCut.fbx",
+      "group": "Nature/Plants",
+      "tris": 4680,
+      "tris_target": 5000,
+      "bbox_min_cm": [
+        -14.8,
+        -16.7,
+        0.0
+      ],
+      "bbox_max_cm": [
+        20.1,
+        21.8,
+        20.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Nettle"
+      ],
+      "source": "CC0 polyhaven/nettle_plant/nettle_plant.gltf"
+    },
+    {
+      "id": "plant_strawberry",
+      "unreal_name": "SM_PlantStrawberry_Full",
+      "file": "Nature/Plants/SM_PlantStrawberry_Full.fbx",
+      "group": "Nature/Plants",
+      "tris": 1112,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -40.9,
+        -37.6,
+        -5.0
+      ],
+      "bbox_max_cm": [
+        38.8,
+        48.0,
+        28.5
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (strawberry, age 1.00, seed 73, full)"
+    },
+    {
+      "id": "plant_strawberry_picked",
+      "unreal_name": "SM_PlantStrawberry_Picked",
+      "file": "Nature/Plants/SM_PlantStrawberry_Picked.fbx",
+      "group": "Nature/Plants",
+      "tris": 632,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -40.9,
+        -37.6,
+        -5.0
+      ],
+      "bbox_max_cm": [
+        38.8,
+        48.0,
+        28.5
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesRaspberry"
+      ],
+      "source": "tools/blender/build_trees.py (strawberry, age 1.00, seed 73, picked)"
+    },
+    {
+      "id": "rock_large",
+      "unreal_name": "SM_RockLarge",
+      "file": "Nature/Rocks/SM_RockLarge.fbx",
+      "group": "Nature/Rocks",
+      "tris": 7999,
+      "tris_target": 8000,
+      "bbox_min_cm": [
+        -69.4,
+        -117.1,
+        0.0
+      ],
+      "bbox_max_cm": [
+        111.0,
+        49.5,
+        150.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_RockMoss"
+      ],
+      "source": "CC0 polyhaven/rock_moss_set_01/rock_moss_set_01.gltf"
+    },
+    {
+      "id": "rock_medium",
+      "unreal_name": "SM_RockMedium",
+      "file": "Nature/Rocks/SM_RockMedium.fbx",
+      "group": "Nature/Rocks",
+      "tris": 5999,
+      "tris_target": 6000,
+      "bbox_min_cm": [
+        -83.6,
+        -107.5,
+        0.0
+      ],
+      "bbox_max_cm": [
+        68.0,
+        89.1,
+        90.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_RockMoss"
+      ],
+      "source": "CC0 polyhaven/rock_moss_set_01/rock_moss_set_01.gltf"
+    },
+    {
+      "id": "rock_rubble",
+      "unreal_name": "SM_RockRubble",
+      "file": "Nature/Rocks/SM_RockRubble.fbx",
+      "group": "Nature/Rocks",
+      "tris": 2999,
+      "tris_target": 3000,
+      "bbox_min_cm": [
+        -55.4,
+        -48.7,
+        -0.1
+      ],
+      "bbox_max_cm": [
+        61.4,
+        56.7,
+        25.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_RockMoss"
+      ],
+      "source": "CC0 polyhaven/rock_moss_set_01/rock_moss_set_01.gltf"
+    },
+    {
+      "id": "rock_small",
+      "unreal_name": "SM_RockSmall",
+      "file": "Nature/Rocks/SM_RockSmall.fbx",
+      "group": "Nature/Rocks",
+      "tris": 5000,
+      "tris_target": 5000,
+      "bbox_min_cm": [
+        -58.1,
+        -46.7,
+        0.0
+      ],
+      "bbox_max_cm": [
+        47.3,
+        57.3,
+        55.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_RockMoss"
+      ],
+      "source": "CC0 polyhaven/rock_moss_set_01/rock_moss_set_01.gltf"
+    },
+    {
+      "id": "sandstone_cliff",
+      "unreal_name": "SM_SandstoneCliff",
+      "file": "Nature/Deco/SM_SandstoneCliff.fbx",
+      "group": "Nature/Deco",
+      "tris": 12000,
+      "tris_target": 12000,
+      "bbox_min_cm": [
+        -342.7,
+        -14.1,
+        -0.3
+      ],
+      "bbox_max_cm": [
+        150.7,
+        372.8,
+        450.3
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_Sandstone"
+      ],
+      "source": "CC0 polyhaven/rock_face_02/rock_face_02.gltf",
+      "collision": "ucx"
+    },
+    {
+      "id": "shrub_sprig",
+      "unreal_name": "SM_ShrubSprig",
+      "file": "Nature/Plants/SM_ShrubSprig.fbx",
+      "group": "Nature/Plants",
+      "tris": 5000,
+      "tris_target": 5000,
+      "bbox_min_cm": [
+        -35.4,
+        -9.8,
+        0.1
+      ],
+      "bbox_max_cm": [
+        44.4,
+        10.2,
+        30.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_LeavesShrub04"
+      ],
+      "source": "CC0 polyhaven/shrub_04/shrub_04.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "shrub_willow",
+      "unreal_name": "SM_ShrubWillow",
+      "file": "Nature/Plants/SM_ShrubWillow.fbx",
+      "group": "Nature/Plants",
+      "tris": 6000,
+      "tris_target": 6000,
+      "bbox_min_cm": [
+        -37.5,
+        -49.9,
+        0.0
+      ],
+      "bbox_max_cm": [
+        48.0,
+        56.9,
+        110.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_LeavesShrub02"
+      ],
+      "source": "CC0 polyhaven/shrub_02/shrub_02.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "shrub_willow_low",
+      "unreal_name": "SM_ShrubWillow_Low",
+      "file": "Nature/Plants/SM_ShrubWillow_Low.fbx",
+      "group": "Nature/Plants",
+      "tris": 6000,
+      "tris_target": 6000,
+      "bbox_min_cm": [
+        -41.3,
+        -67.3,
+        0.0
+      ],
+      "bbox_max_cm": [
+        59.5,
+        63.1,
+        75.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_LeavesShrub02"
+      ],
+      "source": "CC0 polyhaven/shrub_02/shrub_02.gltf",
+      "collision": "none"
+    },
+    {
+      "id": "stones_loose",
+      "unreal_name": "SM_StonesLoose",
+      "file": "Nature/Rocks/SM_StonesLoose.fbx",
+      "group": "Nature/Rocks",
+      "tris": 2999,
+      "tris_target": 3000,
+      "bbox_min_cm": [
+        -16.7,
+        -28.9,
+        -0.1
+      ],
+      "bbox_max_cm": [
+        33.7,
+        18.5,
+        18.0
+      ],
+      "pivot": "Fusspunkt (Mitte der untersten 4 %), Boden bei Z = 0",
+      "materials": [
+        "M_Nature_RockMoss"
+      ],
+      "source": "CC0 polyhaven/rock_moss_set_01/rock_moss_set_01.gltf"
+    },
+    {
+      "id": "tree_apple",
+      "unreal_name": "SM_TreeApple_Full",
+      "file": "Nature/Trees/SM_TreeApple_Full.fbx",
+      "group": "Nature/Trees",
+      "tris": 22544,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -279.5,
+        -267.6,
+        -15.9
+      ],
+      "bbox_max_cm": [
+        244.1,
+        223.8,
+        559.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 1.00, seed 31, full)"
+    },
+    {
+      "id": "tree_apple_bloom",
+      "unreal_name": "SM_TreeApple_Bloom",
+      "file": "Nature/Trees/SM_TreeApple_Bloom.fbx",
+      "group": "Nature/Trees",
+      "tris": 22000,
+      "tris_target": 32000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -279.5,
+        -267.6,
+        -15.9
+      ],
+      "bbox_max_cm": [
+        244.1,
+        223.8,
+        559.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 1.00, seed 31, bloom)"
+    },
+    {
+      "id": "tree_apple_picked",
+      "unreal_name": "SM_TreeApple_Picked",
+      "file": "Nature/Trees/SM_TreeApple_Picked.fbx",
+      "group": "Nature/Trees",
+      "tris": 16064,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -279.5,
+        -267.6,
+        -15.9
+      ],
+      "bbox_max_cm": [
+        244.1,
+        223.8,
+        559.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 1.00, seed 31, picked)"
+    },
+    {
+      "id": "tree_apple_sapling",
+      "unreal_name": "SM_TreeApple_Sapling",
+      "file": "Nature/Trees/SM_TreeApple_Sapling.fbx",
+      "group": "Nature/Trees",
+      "tris": 414,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -63.5,
+        -50.1,
+        -15.1
+      ],
+      "bbox_max_cm": [
+        44.8,
+        50.0,
+        94.5
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 0.16, seed 33, picked)"
+    },
+    {
+      "id": "tree_apple_unripe",
+      "unreal_name": "SM_TreeApple_Unripe",
+      "file": "Nature/Trees/SM_TreeApple_Unripe.fbx",
+      "group": "Nature/Trees",
+      "tris": 23216,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -279.5,
+        -267.6,
+        -15.9
+      ],
+      "bbox_max_cm": [
+        244.1,
+        223.8,
+        559.9
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 1.00, seed 31, unripe)"
+    },
+    {
+      "id": "tree_apple_young",
+      "unreal_name": "SM_TreeApple_Young",
+      "file": "Nature/Trees/SM_TreeApple_Young.fbx",
+      "group": "Nature/Trees",
+      "tris": 2832,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -94.2,
+        -119.4,
+        -15.3
+      ],
+      "bbox_max_cm": [
+        144.8,
+        161.1,
+        250.7
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesApple"
+      ],
+      "source": "tools/blender/build_trees.py (apple, age 0.45, seed 32, picked)"
+    },
+    {
+      "id": "tree_birch",
+      "unreal_name": "SM_TreeBirch",
+      "file": "Nature/Trees/SM_TreeBirch.fbx",
+      "group": "Nature/Trees",
+      "tris": 15732,
+      "tris_target": 35000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -256.9,
+        -151.6,
+        -16.5
+      ],
+      "bbox_max_cm": [
+        323.5,
+        294.2,
+        1508.4
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBirch",
+        "M_Nature_LeavesBirch"
+      ],
+      "source": "tools/blender/build_trees.py (birch, age 1.00, seed 21, plain)"
+    },
+    {
+      "id": "tree_birch_sapling",
+      "unreal_name": "SM_TreeBirch_Sapling",
+      "file": "Nature/Trees/SM_TreeBirch_Sapling.fbx",
+      "group": "Nature/Trees",
+      "tris": 648,
+      "tris_target": 5000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -31.0,
+        -32.8,
+        -15.1
+      ],
+      "bbox_max_cm": [
+        40.9,
+        32.8,
+        147.4
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBirch",
+        "M_Nature_LeavesBirch"
+      ],
+      "source": "tools/blender/build_trees.py (birch, age 0.16, seed 23, plain)"
+    },
+    {
+      "id": "tree_birch_stump",
+      "unreal_name": "SM_TreeBirch_Stump",
+      "file": "Nature/Trees/SM_TreeBirch_Stump.fbx",
+      "group": "Nature/Trees",
+      "tris": 90,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -33.4,
+        -16.0,
+        -16.5
+      ],
+      "bbox_max_cm": [
+        9.4,
+        26.9,
+        41.1
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBirch",
+        "M_Nature_EndGrain"
+      ],
+      "source": "tools/blender/build_trees.py (birch, age 1.00, seed 21, stump)"
+    },
+    {
+      "id": "tree_birch_young",
+      "unreal_name": "SM_TreeBirch_Young",
+      "file": "Nature/Trees/SM_TreeBirch_Young.fbx",
+      "group": "Nature/Trees",
+      "tris": 2906,
+      "tris_target": 18000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -96.7,
+        -110.3,
+        -15.3
+      ],
+      "bbox_max_cm": [
+        120.0,
+        108.5,
+        551.6
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBirch",
+        "M_Nature_LeavesBirch"
+      ],
+      "source": "tools/blender/build_trees.py (birch, age 0.45, seed 22, plain)"
+    },
+    {
+      "id": "tree_pear",
+      "unreal_name": "SM_TreePear_Full",
+      "file": "Nature/Trees/SM_TreePear_Full.fbx",
+      "group": "Nature/Trees",
+      "tris": 26596,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -204.8,
+        -202.3,
+        -16.4
+      ],
+      "bbox_max_cm": [
+        203.8,
+        231.7,
+        719.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 1.00, seed 61, full)"
+    },
+    {
+      "id": "tree_pear_bloom",
+      "unreal_name": "SM_TreePear_Bloom",
+      "file": "Nature/Trees/SM_TreePear_Bloom.fbx",
+      "group": "Nature/Trees",
+      "tris": 21144,
+      "tris_target": 32000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -204.8,
+        -202.3,
+        -16.4
+      ],
+      "bbox_max_cm": [
+        203.8,
+        231.7,
+        719.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 1.00, seed 61, bloom)"
+    },
+    {
+      "id": "tree_pear_picked",
+      "unreal_name": "SM_TreePear_Picked",
+      "file": "Nature/Trees/SM_TreePear_Picked.fbx",
+      "group": "Nature/Trees",
+      "tris": 16264,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -204.8,
+        -202.3,
+        -16.4
+      ],
+      "bbox_max_cm": [
+        203.8,
+        231.7,
+        719.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 1.00, seed 61, picked)"
+    },
+    {
+      "id": "tree_pear_sapling",
+      "unreal_name": "SM_TreePear_Sapling",
+      "file": "Nature/Trees/SM_TreePear_Sapling.fbx",
+      "group": "Nature/Trees",
+      "tris": 488,
+      "tris_target": 4000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -58.3,
+        -64.4,
+        -15.1
+      ],
+      "bbox_max_cm": [
+        53.3,
+        66.6,
+        131.2
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 0.16, seed 63, picked)"
+    },
+    {
+      "id": "tree_pear_unripe",
+      "unreal_name": "SM_TreePear_Unripe",
+      "file": "Nature/Trees/SM_TreePear_Unripe.fbx",
+      "group": "Nature/Trees",
+      "tris": 26344,
+      "tris_target": 30000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -204.8,
+        -202.3,
+        -16.4
+      ],
+      "bbox_max_cm": [
+        203.8,
+        231.7,
+        719.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear",
+        "M_Nature_Fruit"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 1.00, seed 61, unripe)"
+    },
+    {
+      "id": "tree_pear_young",
+      "unreal_name": "SM_TreePear_Young",
+      "file": "Nature/Trees/SM_TreePear_Young.fbx",
+      "group": "Nature/Trees",
+      "tris": 2492,
+      "tris_target": 14000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -100.6,
+        -98.2,
+        -15.4
+      ],
+      "bbox_max_cm": [
+        102.9,
+        103.8,
+        319.8
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkBrown",
+        "M_Nature_LeavesPear"
+      ],
+      "source": "tools/blender/build_trees.py (pear, age 0.45, seed 62, picked)"
+    },
+    {
+      "id": "tree_pine",
+      "unreal_name": "SM_TreePine",
+      "file": "Nature/Trees/SM_TreePine.fbx",
+      "group": "Nature/Trees",
+      "tris": 20302,
+      "tris_target": 35000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -377.1,
+        -378.0,
+        -16.2
+      ],
+      "bbox_max_cm": [
+        314.5,
+        406.7,
+        2041.5
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkPine",
+        "M_Nature_NeedlesPine"
+      ],
+      "source": "tools/blender/build_trees.py (pine, age 1.00, seed 11, plain)"
+    },
+    {
+      "id": "tree_pine_sapling",
+      "unreal_name": "SM_TreePine_Sapling",
+      "file": "Nature/Trees/SM_TreePine_Sapling.fbx",
+      "group": "Nature/Trees",
+      "tris": 912,
+      "tris_target": 5000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -64.8,
+        -74.9,
+        -15.1
+      ],
+      "bbox_max_cm": [
+        75.1,
+        76.2,
+        179.4
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkPine",
+        "M_Nature_NeedlesPine"
+      ],
+      "source": "tools/blender/build_trees.py (pine, age 0.16, seed 13, plain)"
+    },
+    {
+      "id": "tree_pine_stump",
+      "unreal_name": "SM_TreePine_Stump",
+      "file": "Nature/Trees/SM_TreePine_Stump.fbx",
+      "group": "Nature/Trees",
+      "tris": 108,
+      "tris_target": 1500,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -33.0,
+        -35.1,
+        -16.2
+      ],
+      "bbox_max_cm": [
+        31.8,
+        29.8,
+        41.0
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkPine",
+        "M_Nature_EndGrain"
+      ],
+      "source": "tools/blender/build_trees.py (pine, age 1.00, seed 11, stump)"
+    },
+    {
+      "id": "tree_pine_young",
+      "unreal_name": "SM_TreePine_Young",
+      "file": "Nature/Trees/SM_TreePine_Young.fbx",
+      "group": "Nature/Trees",
+      "tris": 10098,
+      "tris_target": 18000,
+      "collision": "ucx",
+      "bbox_min_cm": [
+        -252.8,
+        -205.8,
+        -15.3
+      ],
+      "bbox_max_cm": [
+        242.0,
+        263.9,
+        686.7
+      ],
+      "pivot": "Stammfuss, Boden bei Z = 0",
+      "materials": [
+        "M_Nature_BarkPine",
+        "M_Nature_NeedlesPine"
+      ],
+      "source": "tools/blender/build_trees.py (pine, age 0.45, seed 12, plain)"
+    }
+  ]
+}

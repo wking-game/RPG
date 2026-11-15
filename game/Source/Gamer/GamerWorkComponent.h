@@ -5,6 +5,8 @@
 #include "GamerWorkComponent.generated.h"
 
 class AGamerResourceNode;
+class AGamerGroundItem;
+class AGamerFarmBuilding;
 class UGamerInventoryComponent;
 struct FGamerResourceNodeDef;
 
@@ -67,6 +69,22 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerCraft(FName RecipeId);
 
+	/** Pick up an item lying on the ground (fallen fruit) with the interact key. */
+	UFUNCTION(Server, Reliable)
+	void ServerPickUp(AGamerGroundItem* Item);
+
+	/**
+	 * Pick up several things at once (decision 2026-11-15): everything hand-pickable within PickAllRadius of the player,
+	 * or only things of the same type as Anchor (bSameType). Ground items are taken at once, what no longer fits stays
+	 * lying; plants and the like are harvested one after another (each with its work bar).
+	 */
+	UFUNCTION(Server, Reliable)
+	void ServerPickUpAll(AActor* Anchor, bool bSameType);
+
+	/** Interact with a field, composter or rain catcher: the building does the next useful thing. */
+	UFUNCTION(Server, Reliable)
+	void ServerUseFarm(AGamerFarmBuilding* Building);
+
 	/** Development builds only: move the player next to a node or building (automated tests). Ignored in Shipping. */
 	UFUNCTION(Server, Reliable)
 	void ServerDebugTeleportNear(AActor* Target);
@@ -78,6 +96,10 @@ public:
 	/** Development builds only: put items into the inventory (automated tests). Ignored in Shipping. */
 	UFUNCTION(Server, Reliable)
 	void ServerDebugGiveItem(FName Item, int32 Count);
+
+	/** Development builds only: jump to a season phase 0..4 (automated tests, screenshots). Ignored in Shipping. */
+	UFUNCTION(Server, Reliable)
+	void ServerDebugSetSeason(float Phase);
 
 	/** Finished station (work bench, camp fire ...) of that buildable id within reach of the player, or null. */
 	class AGamerBuilding* FindStationNearby(FName StationId) const;
@@ -117,12 +139,19 @@ protected:
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Work")
 	float StationReach = 500.f;
 
+	/** Radius around the player for "pick up all" (cm). */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Work")
+	float PickAllRadius = 300.f;
+
 	UPROPERTY(Replicated)
 	FGamerWorkState Work;
 
 private:
 	void StartWork(EGamerWorkKind Kind, const FString& Label, float Duration);
 	void FinishWork();
+	void FinishWorkInner();
+	void StartNextQueued();
+	TArray<TWeakObjectPtr<AGamerResourceNode>> HarvestQueue;
 	void GiveDrops(AGamerResourceNode* Node, const FGamerResourceNodeDef& Def);
 	void Fail(const FString& Message);
 	bool IsInReach(const AActor* Target) const;

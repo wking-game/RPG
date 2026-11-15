@@ -4,7 +4,10 @@
     { "id": "job_gatherer", "name": "Sammler", "kind": "harvest", "radius": 2500, "fallback": true },
     { "id": "job_woodcutter", "name": "Holzfäller", "kind": "harvest", "station": "building_woodcutter", "tool": "axe", "radius": 3000 },
     { "id": "job_stonecutter", "name": "Steinmetz", "kind": "harvest", "station": "building_stonecutter", "tool": "pickaxe", "radius": 3000 },
-    { "id": "job_cook", "name": "Koch", "kind": "craft", "station": "building_campfire", "recipes": [ "recipe_meal" ], "stock_target": 10 },
+    { "id": "job_cook", "name": "Koch", "kind": "craft", "station": "building_tavern", "radius": 1500, "stock_target": 6,
+      "recipes": ["recipe_meal", "recipe_stew", "recipe_dish_mushroom_skewer", "recipe_dish_baked_apples", "recipe_dish_elder_soup", "recipe_drink_rosehip_tea", "recipe_dish_onion_mushroom_pan", "recipe_dish_nut_flatbread", "recipe_dish_sloe_mash", "recipe_dish_forest_berry_mash", "recipe_dish_barley_porridge", "recipe_dish_barley_flatbread", "recipe_dish_oat_porridge", "recipe_dish_baked_potatoes", "recipe_dish_baked_pears", "recipe_drink_beer", "recipe_drink_mead", "recipe_drink_spiced_sloe_mead", "recipe_dish_honey_cake"] },
+    { "id": "job_innkeeper", "name": "Wirt", "kind": "serve", "station": "building_tavern", "radius": 1500, "stock_target": 16 },
+    { "id": "job_farmer", "name": "Bauer", "kind": "farm", "station": "building_farmstead", "radius": 3000 },
     { "id": "job_builder", "name": "Baumeister", "kind": "build", "tool": "hammer", "radius": 3000 }
   ]
 }

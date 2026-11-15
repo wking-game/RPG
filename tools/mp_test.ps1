@@ -32,7 +32,8 @@ param(
     [int]$ExpectedJoins = -1,
 
     # Game map (Entry is the start menu since 2026-11-13: no pawn there, test scripts would not run).
-    [string]$Map = '/Engine/Maps/Templates/Template_Default',
+    # World = own copy of Template_Default with PCG vegetation (tools/build_world.ps1).
+    [string]$Map = '/Game/Gamer/Maps/World',
     [int]$Port = 7777,
 
     # Seconds to wait for the server to listen and for all clients to join.
@@ -112,6 +113,8 @@ try {
         $clientLogs += $cLog
         $rhi = if ($Render) { '-windowed -resx=960 -resy=540' } else { '-nullrhi -nosound' }
         $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } else { $ClientArgs }
+        # Stable player id per client slot (save system: re-joining players get their inventory back).
+        if ($extra -notmatch 'GamerPlayerId=') { $extra = "$extra -GamerPlayerId=mp_client$i" }
         $cArgs = "`"$Project`" 127.0.0.1:$Port -game $rhi -unattended -nosplash -nopause -abslog=`"$cLog`" $extra"
         Write-Host ">> Client ${i}: $cArgs" -ForegroundColor Cyan
         # With -Render the window must be visible (a minimized game window does not draw).

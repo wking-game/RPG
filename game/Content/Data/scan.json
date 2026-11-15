@@ -1,0 +1,15 @@
+{
+  "schema": "scan_1",
+  "_comment": "Umgebungs-Scan (Entscheidung 2026-11-15, Werte = Vorschlag des Game Directors). Radius in Metern, Zeiten in Sekunden. origin_bonus ist noch ohne Wirkung (Herkünfte folgen mit dem Charaktereditor).",
+  "radius_m": 40,
+  "duration_s": 8,
+  "cooldown_s": 12,
+  "origin_bonus": { "hunter": { "radius_m": 60, "shows": ["animals"] } },
+  "categories": [
+    { "id": "food",   "name": "Nahrung",      "color": [0.95, 0.45, 0.35], "symbol": "N" },
+    { "id": "wood",   "name": "Holz",         "color": [0.80, 0.60, 0.30], "symbol": "H" },
+    { "id": "stone",  "name": "Stein",        "color": [0.70, 0.75, 0.85], "symbol": "S" },
+    { "id": "plants", "name": "Pflanzen",     "color": [0.45, 0.85, 0.40], "symbol": "P" },
+    { "id": "items",  "name": "Gegenstände",  "color": [0.95, 0.85, 0.30], "symbol": "G" }
+  ]
+}

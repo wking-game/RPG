@@ -51,7 +51,7 @@ Vorschlag: `data/README.md` bleibt als Wegweiser stehen und zeigt auf `game/Cont
 | `icon` | | Pfad zum Icon |
 | `world_mesh` | | Pfad zum Modell, wenn man den Gegenstand in der Welt sieht |
 | `tool` | nur Werkzeuge | `{ "type": "axe", "durability": 150, "work_speed": 1.0 }` |
-| `food` | ab Phase 2 | Buffs und Verderben (Format folgt mit dem Buff-System) |
+| `food` | nur Gerichte/Getränke | Mahlzeiten-Buffs: `{ "minutes": 10, "buffs": [ { "stat": "health", "value": 10 } ] }`. `stat`: `health`, `regen`, `carry`, `cold_resist`, `poison_resist`, `damage` (nur Boni, Regel 5). Nur bei `category` `food`. Siehe `docs/12_taverne_gerichte.md` |
 
 Beispiel:
 ```json
@@ -70,7 +70,7 @@ Werkzeuge bekommen die Stufe in der ID (`tool_axe_t1`, `tool_axe_t2` …), weil 
 | `work_seconds` | ✓ | Arbeitszeit bei Werkzeug-Tempo 1,0 |
 | `drops` | ✓ | Liste `{ "item": "item_log", "min": 2, "max": 3 }` |
 | `regrow_days` | | nach wie vielen Spieltagen es nachwächst; fehlt es, wächst nichts nach |
-| `meshes` | | `{ "full": …, "depleted": …, "remains": … }` (stehend / abgeerntet / Stumpf) |
+| `meshes` | | `{ "full": …, "depleted": …, "remains": … }` (stehend / abgeerntet / Stumpf). Umgesetzt (2026-11-13): `full` und `depleted` (bei Bäumen der Stumpf, bei Sträuchern dieselbe Form ohne Früchte); fehlt `depleted`, verschwindet das Vorkommen beim Ernten. Dazu `"growing": [ …, … ]`: Modelle fürs sichtbare Nachwachsen (z. B. Setzling, junger Baum); in der ersten Hälfte der Nachwachszeit steht `depleted`, in der zweiten Hälfte folgen die Stufen gleichmäßig, geerntet werden kann erst wieder voll. `remains` wird noch nicht genutzt. Ohne `meshes` zeigt das Spiel Platzhalter-Formen |
 
 ### 4.3 `recipes.json` – Herstellung
 | Feld | Pflicht | Bedeutung |
@@ -222,3 +222,22 @@ Bis 2026-11-13 brauchten die Werkzeug-Rezepte einen Baumstamm – den es aber nu
 3. Automationstest „Gamer.Data“ und `tools/test_data.ps1`.
 4. Zwei Einträge in `DefaultGame.ini` (Kerndatei, Rückfrage): Daten-Ordner einpacken, Asset-Ordner immer mitnehmen.
 5. Test: Server und 2 Spieler lesen dieselben Daten (Prüfsumme im Protokoll vergleichen).
+
+## Ergänzung 2026-11-14: Verderb, Obst-Zyklus, Feldbau, Ausbaustufen
+
+Details und Werte: `docs/10_nahrung_feldbau.md` (Abschnitt „Umsetzung“). Neue Felder:
+
+| Tabelle | Feld | Bedeutung |
+|---|---|---|
+| `items.json` | `spoil_days` | Haltbarkeit in Spieltagen, getragen (Lager ×4, Boden ×0,5, je Stufe über T1 +50 %). Fehlt = verdirbt nicht |
+| `items.json` | `spoils_into` | wird dazu, wenn verdorben (Standard `item_spoiled_food`) |
+| `items.json` | `plant` | Saatgut: `{ "grow_days", "harvest": [{item,min,max}], "meshes": [Keimling, jung, reif] }`, Ertrag je Feld-Einheit |
+| `resource_nodes.json` | `season` | Jahreszyklus: `bloom`, `unripe`, `ripe`, `fall` (optional), `bare` (Phasen 0–4, aufsteigend), `pick`, `drop_height_cm` [min,max], `bruise_cm` + `bruised_item`; genau ein Eintrag in `drops` = Früchte pro Jahr |
+| `resource_nodes.json` | `meshes.bloom`, `meshes.unripe` | Modelle für Blüte und unreife Früchte |
+| `buildables.json` | `category: "farm"` + `farm` | `kind`: `field` (`water_item`, `water_per_day`, `fertilizer_item`, `fertilizer_bonus`, `grow_from`, `grow_to`, `min_size_cm`, `max_size_cm`, `unit_m2`), `composter` (`inputs`, `per_output`, `output`, `days_per_output`, `capacity`), `water` (`output`, `per_day`, `capacity`) |
+| `buildables.json` | `workers`, `upgrades` | Arbeitsplätze auf Stufe 1; Ausbaustufen `[{ "cost": [...], "workers": N }]`, jede mit mehr Plätzen |
+| `jobs.json` | `kind: "farm"` | Feldarbeit rund um die Station (Hof) |
+| `buildables.json` | `requires` | `{ "building", "level", "radius_cm" }`: nur in der Nähe eines fertigen Gebäudes dieser Stufe baubar (Kochstellen bei der Taverne) |
+| `buildables.json` | `tavern` | `{ "stock", "mood_per_tier", "mood_drink" }`: Taverne mit Vorrat für Gerichte und Getränke, Stimmung beim Essen dort |
+| `jobs.json` | `kind: "serve"` | Wirt: bringt Gerichte und Getränke aus dem Lager in die Taverne (Station mit `tavern`) bis `stock_target` |
+| `jobs.json` | `kind: "craft"` + `radius` | Rezepte, deren `station` zur Station gehört (`requires`), kocht der Koch an der nächsten solchen Kochstelle im Umkreis |

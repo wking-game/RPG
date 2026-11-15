@@ -13,7 +13,13 @@
 #include "GamerSettlement.h"
 #include "GamerVillager.h"
 #include "GamerPlayerController.h"
+#include "GamerFarmBuilding.h"
+#include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerBuffComponent.h"
+#include "GamerIcons.h"
+#include "Engine/Texture2D.h"
+#include "GamerScanComponent.h"
 #include "GamerWorkComponent.h"
 #include "CanvasItem.h"
 #include "EngineUtils.h"
@@ -192,6 +198,77 @@ void AGamerHUD::DrawHUD()
 		DrawLineBlock(Lines, Margin, Margin);
 	}
 
+	// Outline around the aimed target (screen rectangle around its bounds) and the pile list (decision 2026-11-15).
+	{
+		const AActor* Target = Character->GetFocusNode() ? static_cast<const AActor*>(Character->GetFocusNode())
+			: Character->GetFocusGroundItem() ? static_cast<const AActor*>(Character->GetFocusGroundItem())
+			: static_cast<const AActor*>(Character->GetFocusBuilding());
+		APlayerController* OwnerPC = GetOwningPlayerController();
+		if (Target && OwnerPC)
+		{
+			const FBox Box = Target->GetComponentsBoundingBox(true);
+			float MinX = TNumericLimits<float>::Max(), MinY = MinX, MaxX = -MinX, MaxY = -MinX;
+			bool bAllInFront = Box.IsValid != 0;
+			for (int32 Corner = 0; Corner < 8 && bAllInFront; ++Corner)
+			{
+				const FVector Point(Corner & 1 ? Box.Max.X : Box.Min.X, Corner & 2 ? Box.Max.Y : Box.Min.Y, Corner & 4 ? Box.Max.Z : Box.Min.Z);
+				FVector2D Screen;
+				if (OwnerPC->ProjectWorldLocationToScreen(Point, Screen))
+				{
+					MinX = FMath::Min(MinX, static_cast<float>(Screen.X));
+					MaxX = FMath::Max(MaxX, static_cast<float>(Screen.X));
+					MinY = FMath::Min(MinY, static_cast<float>(Screen.Y));
+					MaxY = FMath::Max(MaxY, static_cast<float>(Screen.Y));
+				}
+				else
+				{
+					bAllInFront = false;
+				}
+			}
+			if (bAllInFront)
+			{
+				const float Pad = 4.f * Ui;
+				MinX -= Pad;
+				MinY -= Pad;
+				MaxX += Pad;
+				MaxY += Pad;
+				const float Line = FMath::Max(2.f, 2.f * Ui);
+				const FLinearColor OutlineColor = TextHint;
+				DrawRect(OutlineColor, MinX, MinY, MaxX - MinX, Line);
+				DrawRect(OutlineColor, MinX, MaxY - Line, MaxX - MinX, Line);
+				DrawRect(OutlineColor, MinX, MinY, Line, MaxY - MinY);
+				DrawRect(OutlineColor, MaxX - Line, MinY, Line, MaxY - MinY);
+			}
+		}
+		const TArray<TWeakObjectPtr<AActor>>& Pile = Character->GetPile();
+		if (Pile.Num() > 1)
+		{
+			// List to the right of the crosshair, so it does not cover the hints below.
+			const float ListX = Width * 0.5f + 140.f * Ui;
+			float ListY = Height * 0.5f - LineH * 1.5f;
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.55f), ListX - 6.f * Ui, ListY - 3.f * Ui, 300.f * Ui, LineH * 0.95f * (Pile.Num() + 2) + 8.f * Ui);
+			DrawShadowText(FString::Printf(TEXT("%s: im Haufen wechseln"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::FocusNext)), ListX, ListY, TextDim, Ui * 0.8f);
+			DrawShadowText(FString::Printf(TEXT("%s halten: alles in 3 m · %s+%s: alles dieser Art"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact),
+				*UGamerKeyBindings::ActionKeyName(GamerInputActions::PickSame), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact)),
+				ListX, ListY + LineH * 0.95f * (Pile.Num() + 1), TextDim, Ui * 0.75f);
+			for (int32 Index = 0; Index < Pile.Num(); ++Index)
+			{
+				ListY += LineH * 0.95f;
+				FString Name;
+				if (const AGamerGroundItem* Ground = Cast<AGamerGroundItem>(Pile[Index].Get()))
+				{
+					Name = Ground->GetDisplayName();
+				}
+				else if (const AGamerResourceNode* ResNode = Cast<AGamerResourceNode>(Pile[Index].Get()); ResNode && ResNode->GetDef())
+				{
+					Name = ResNode->GetDef()->Name;
+				}
+				DrawShadowText(FString::Printf(TEXT("%s%s"), Index == Character->GetPilePick() ? TEXT("> ") : TEXT("   "), *Name),
+					ListX, ListY, Index == Character->GetPilePick() ? TextWhite : TextDim, Ui * 0.85f);
+			}
+		}
+	}
+
 	// Hint under the crosshair. Trees and rocks: strike with the right tool in hand; the rest: E.
 	const float BarY = Height * 0.5f + LineH * 3.0f;
 	const float BarWidth = FMath::Min(Width * 0.4f, 180.f * Ui);
@@ -209,11 +286,17 @@ void AGamerHUD::DrawHUD()
 				const int32 MinTier = Def->RequiredTool.MinTier;
 				if (!Inventory->IsHoldingTool(ToolType, MinTier))
 				{
+					// The strike takes the best matching hotbar tool into the hand by itself (decision 2026-11-14).
 					const int32 HotbarIndex = Inventory->FindToolInHotbar(ToolType, MinTier);
-					const FString Missing = HotbarIndex != INDEX_NONE
-						? FString::Printf(TEXT("%s: %s in die Hand nehmen"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Hotbar(HotbarIndex + 1)), *ItemName(Data, Inventory->GetSlots()[HotbarIndex].Item))
-						: FString::Printf(TEXT("Braucht %s"), *ToolNameShort(ToolType));
-					DrawCentered(Missing, HintY + LineH * 1.1f, TextMissing, 0.9f);
+					if (HotbarIndex != INDEX_NONE)
+					{
+						DrawCentered(FString::Printf(TEXT("nimmt %s in die Hand"), *ItemName(Data, Inventory->GetSlots()[HotbarIndex].Item)),
+							HintY + LineH * 1.1f, TextDim, 0.9f);
+					}
+					else
+					{
+						DrawCentered(FString::Printf(TEXT("Braucht %s (nicht in der Schnellleiste)"), *ToolNameShort(ToolType)), HintY + LineH * 1.1f, TextMissing, 0.9f);
+					}
 				}
 				if (Node->GetWorkProgress() > 0.f && !Work->IsBusy())
 				{
@@ -223,9 +306,20 @@ void AGamerHUD::DrawHUD()
 			}
 			else
 			{
-				DrawCentered(FString::Printf(TEXT("%s: %s sammeln"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *Def->Name), HintY, TextHint);
+				DrawCentered(FString::Printf(TEXT("%s: %s sammeln"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *Node->GetDisplayName()), HintY, TextHint);
 			}
 		}
+	}
+	else if (const AGamerGroundItem* Ground = Character->GetFocusGroundItem())
+	{
+		DrawCentered(FString::Printf(TEXT("%s: %s aufheben"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *Ground->GetDisplayName()),
+			Height * 0.5f + LineH * 0.8f, TextHint);
+	}
+	else if (const AGamerFarmBuilding* Farm = Cast<AGamerFarmBuilding>(Character->GetFocusBuilding()); Farm && Farm->IsFinished())
+	{
+		const float HintY = Height * 0.5f + LineH * 0.8f;
+		DrawCentered(FString::Printf(TEXT("%s: %s"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *Farm->GetUseHint(Inventory)), HintY, TextHint);
+		DrawCentered(Farm->GetStatusText(), HintY + LineH * 1.1f, TextDim, 0.9f);
 	}
 	else if (const AGamerBuilding* FocusBuilding = Character->GetFocusBuilding())
 	{
@@ -251,6 +345,28 @@ void AGamerHUD::DrawHUD()
 			else if (FocusBuilding->GetBuildableId() == TEXT("building_storage"))
 			{
 				DrawCentered(FString::Printf(TEXT("%s: Lager öffnen"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact)), HintY, TextHint);
+			}
+			else if (const FGamerUpgradeDef* Next = FocusBuilding->GetNextUpgrade(); Next && !Cast<AGamerFarmBuilding>(FocusBuilding))
+			{
+				// Work building with upgrade stages: show the work places now and after the upgrade.
+				DrawCentered(FString::Printf(TEXT("%s – Stufe %d, %d Arbeitsplätze"), *Def->Name, FocusBuilding->GetLevel(), FocusBuilding->GetWorkers()),
+					HintY, TextDim, 0.9f);
+				TArray<FString> Parts;
+				for (const FGamerItemAmount& Cost : Next->Cost)
+				{
+					Parts.Add(FString::Printf(TEXT("%d %s"), Cost.Count, *ItemName(Data, Cost.Item)));
+				}
+				DrawCentered(FString::Printf(TEXT("%s: ausbauen auf %d Arbeitsplätze (%s)"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact),
+					Next->Workers, *FString::Join(Parts, TEXT(", "))), HintY + LineH * 1.1f, TextHint, 0.9f);
+			}
+			else if (FocusBuilding->GetWorkers() > 0)
+			{
+				DrawCentered(FString::Printf(TEXT("%s – Stufe %d, %d Arbeitsplätze"), *Def->Name, FocusBuilding->GetLevel(), FocusBuilding->GetWorkers()),
+					HintY, TextDim, 0.9f);
+			}
+			else if (FocusBuilding->IsFinished() && Character->HasStationRecipes(FocusBuilding))
+			{
+				DrawCentered(FString::Printf(TEXT("%s: %s benutzen (herstellen)"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *Def->Name), HintY, TextHint);
 			}
 			else
 			{
@@ -281,6 +397,40 @@ void AGamerHUD::DrawHUD()
 		DrawCentered(Work->GetLastMessage(), Height * 0.5f - LineH * 3.0f, TextWhite);
 	}
 
+	// "Satt" display, bottom left (decision 2026-11-14): food is a buff system. Satt = at least one meal active, empty = no buffs, no penalty.
+	if (const UGamerBuffComponent* Buffs = Character->GetBuffs())
+	{
+		const TArray<FGamerActiveMeal>& Meals = Buffs->GetActiveMeals();
+		const float Box = 18.f * Ui;
+		const float BarW2 = 56.f * Ui;
+		const float BaseY = Height - 110.f * Ui; // above the hotbar row
+		float RowY = BaseY;
+		float BestFraction = 0.f;
+		for (int32 Index = 0; Index < Meals.Num(); ++Index)
+		{
+			const FGamerItemDef* MealDef = Data->FindItem(Meals[Index].Item);
+			const float Remaining = Buffs->GetRemainingSeconds(Index);
+			const float Total = MealDef ? FMath::Max(1.f, MealDef->Food.Minutes * Buffs->GetMinuteSeconds()) : 1.f;
+			BestFraction = FMath::Max(BestFraction, FMath::Clamp(Remaining / Total, 0.f, 1.f));
+		}
+		// Meals (name + time left), one line each, above the bar.
+		for (int32 Index = Meals.Num() - 1; Index >= 0; --Index)
+		{
+			RowY -= LineH * 0.95f;
+			const int32 Seconds = FMath::CeilToInt(Buffs->GetRemainingSeconds(Index));
+			DrawShadowText(FString::Printf(TEXT("%s  %d:%02d"), *ItemName(Data, Meals[Index].Item), Seconds / 60, Seconds % 60), Margin + Box + 8.f * Ui, RowY, TextWhite, Ui * 0.8f);
+		}
+		const float BarRowY = BaseY;
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), Margin - 1.f, BarRowY - 1.f, Box + 2.f, Box + 2.f);
+		DrawRect(FLinearColor(0.60f, 0.85f, 0.35f), Margin, BarRowY, Box, Box);
+		DrawShadowText(TEXT("S"), Margin + Box * 0.25f, BarRowY + Box * 0.05f, FLinearColor(0.f, 0.f, 0.f, 1.f), Ui * 0.7f);
+		const float BarX2 = Margin + Box + 8.f * Ui;
+		DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), BarX2 - 2.f, BarRowY + Box * 0.25f - 2.f, BarW2 + 4.f, Box * 0.5f + 4.f);
+		DrawRect(FLinearColor(0.25f, 0.25f, 0.25f, 0.9f), BarX2, BarRowY + Box * 0.25f, BarW2, Box * 0.5f);
+		DrawRect(FLinearColor(0.60f, 0.85f, 0.35f), BarX2, BarRowY + Box * 0.25f, BarW2 * BestFraction, Box * 0.5f);
+		DrawShadowText(Meals.Num() > 0 ? TEXT("satt") : TEXT("nicht satt"), BarX2 + BarW2 + 8.f * Ui, BarRowY, Meals.Num() > 0 ? TextGood : TextDim, Ui * 0.8f);
+	}
+
 	// Hotbar, bottom centre: the first inventory slots, keys 1-8.
 	{
 		const TArray<FGamerInventorySlot>& Slots = Inventory->GetSlots();
@@ -306,7 +456,26 @@ void AGamerHUD::DrawHUD()
 			{
 				continue;
 			}
-			// Item name: shrink a little, then cut, so it fits the box. The full name is shown above the bar.
+			// Rendered icon if the item has one (the full name is shown above the bar); otherwise the name in the box.
+			if (UTexture2D* SlotIcon = GamerIcons::Find(Slot.Item))
+			{
+				const float IconPad = 4.f * Ui;
+				DrawTexture(SlotIcon, X + IconPad, Y + IconPad + 6.f * Ui, Box - 2.f * IconPad, Box - 2.f * IconPad - 6.f * Ui, 0.f, 0.f, 1.f, 1.f, FLinearColor::White, BLEND_Translucent);
+				if (Slot.Count > 1)
+				{
+					const FString CountText2 = FString::Printf(TEXT("%d"), Slot.Count);
+					DrawShadowText(CountText2, X + Box - 3.f * Ui - TextWidth(CountText2, Ui * 0.6f), Y + Box - LineHeight(Ui * 0.6f), TextWhite, Ui * 0.6f);
+				}
+				if (const FGamerItemDef* IconDef = Data->FindItem(Slot.Item); IconDef && IconDef->Spoils())
+				{
+					const float BarH2 = FMath::Max(3.f, 4.f * Ui);
+					const float BarW3 = Box - 6.f * Ui;
+					const float Fresh2 = FMath::Clamp(Slot.Freshness, 0.f, 1.f);
+					DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.8f), X + 3.f * Ui - 1.f, Y + Box - BarH2 - 2.f * Ui - 1.f, BarW3 + 2.f, BarH2 + 2.f);
+					DrawRect(Fresh2 <= 0.3f ? TextMissing : FLinearColor(0.45f, 0.85f, 0.40f), X + 3.f * Ui, Y + Box - BarH2 - 2.f * Ui, BarW3 * Fresh2, BarH2);
+				}
+				continue;
+			}
 			FString Name = ItemName(Data, Slot.Item);
 			float NameScale = Ui * 0.6f;
 			const float Room = Box - 6.f * Ui;
@@ -324,6 +493,15 @@ void AGamerHUD::DrawHUD()
 				const FString CountText = FString::Printf(TEXT("%d"), Slot.Count);
 				const float CountScale = Ui * 0.6f;
 				DrawShadowText(CountText, X + Box - 3.f * Ui - TextWidth(CountText, CountScale), Y + Box - LineHeight(CountScale), TextWhite, CountScale);
+			}
+			// Freshness bar of perishable food (green fresh, orange from 30 % downwards; decision 2026-11-14).
+			if (const FGamerItemDef* ItemDef = Data->FindItem(Slot.Item); ItemDef && ItemDef->Spoils())
+			{
+				const float BarH = FMath::Max(3.f, 4.f * Ui);
+				const float BarW = Box - 6.f * Ui;
+				const float Fresh = FMath::Clamp(Slot.Freshness, 0.f, 1.f);
+				DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.8f), X + 3.f * Ui - 1.f, Y + Box - BarH - 2.f * Ui - 1.f, BarW + 2.f, BarH + 2.f);
+				DrawRect(Fresh <= 0.3f ? TextMissing : FLinearColor(0.45f, 0.85f, 0.40f), X + 3.f * Ui, Y + Box - BarH - 2.f * Ui, BarW * Fresh, BarH);
 			}
 		}
 		if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef())
@@ -354,7 +532,8 @@ void AGamerHUD::DrawHUD()
 				const FGamerPlacement& Placement = BuildComp->GetPlacement();
 				if (Placement.bValid)
 				{
-					InfoLine(FString::Printf(TEXT("%s: platzieren · %s: drehen · %s: anderes Bauteil"), *StrikeKey,
+					InfoLine(FString::Printf(TEXT("%s: platzieren · %s halten: mehrere bauen · %s: drehen · %s: anderes Bauteil"), *StrikeKey,
+						*UGamerKeyBindings::ActionKeyName(GamerInputActions::BuildMulti),
 						*UGamerKeyBindings::ActionKeyName(GamerInputActions::Rotate), *UGamerKeyBindings::ActionKeyName(GamerInputActions::BuildMenu)), TextHint);
 				}
 				else
@@ -373,8 +552,13 @@ void AGamerHUD::DrawHUD()
 					Parts.Add(FString::Printf(TEXT("%s %d/%d"), *ItemName(Data, Cost.Item), Have, Cost.Count));
 				}
 				const bool bPayLater = Options.BuildFlow == EGamerBuildFlow::MaterialOnBuild;
-				InfoLine(FString::Printf(TEXT("Bauteil: %s · %s%s"), *Piece->Name, bPayLater ? TEXT("Material beim Bauen: ") : TEXT("Kosten: "),
-					*FString::Join(Parts, TEXT(", "))), bEnough || bPayLater ? TextWhite : TextMissing);
+				// How many more the current inventory pays for (decision 2026-11-14).
+				const int32 Affordable = BuildComp->CountAffordable(Piece->Id);
+				const FString AffordText = Affordable == INDEX_NONE ? FString(TEXT("ohne Kosten"))
+					: Affordable == 0 ? FString(TEXT("Material reicht für keins mehr"))
+					: FString::Printf(TEXT("Material reicht für %d"), Affordable);
+				InfoLine(FString::Printf(TEXT("Bauteil: %s · %s%s · %s"), *Piece->Name, bPayLater ? TEXT("Material beim Bauen: ") : TEXT("Kosten: "),
+					*FString::Join(Parts, TEXT(", ")), *AffordText), bEnough || bPayLater ? TextWhite : TextMissing);
 			}
 			else if (!FocusBuilding || FocusBuilding->IsFinished())
 			{
@@ -393,6 +577,8 @@ void AGamerHUD::DrawHUD()
 		struct FMenuRow
 		{
 			FString Title;
+			FName IconId;
+			FString IconName;
 			bool bCanCraft = false;
 			TArray<TPair<FString, bool>> Inputs; // text, enough in inventory
 		};
@@ -406,6 +592,8 @@ void AGamerHUD::DrawHUD()
 				continue;
 			}
 			FMenuRow& Row = Rows.AddDefaulted_GetRef();
+			Row.IconId = Recipe->Outputs[0].Item;
+			Row.IconName = ItemName(Data, Recipe->Outputs[0].Item);
 			Row.bCanCraft = Inventory->HasAll(Recipe->Inputs);
 			const FString NumberKey = Number <= 8 ? UGamerKeyBindings::ActionKeyName(GamerInputActions::Hotbar(Number)) : FString::FromInt(Number);
 			++Number;
@@ -419,7 +607,11 @@ void AGamerHUD::DrawHUD()
 			}
 		}
 
-		const FString Header = FString::Printf(TEXT("Herstellen   (%s schließt)"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::CraftMenu));
+		const AGamerBuilding* StationWin = Character->GetStationWindow();
+		const FString Header = StationWin && StationWin->GetDef()
+			? FString::Printf(TEXT("%s   (%s oder %s schließt)"), *StationWin->GetDef()->Name,
+				*UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *UGamerKeyBindings::ActionKeyName(GamerInputActions::CraftMenu))
+			: FString::Printf(TEXT("Herstellen   (%s schließt)"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::CraftMenu));
 		const float TitleSize = 1.0f;
 		const float InputSize = 0.85f;
 		const float Gap = 1.5f;      // in line heights of the input text, scaled below
@@ -428,8 +620,8 @@ void AGamerHUD::DrawHUD()
 			float W = TextWidth(Header, S * 1.05f);
 			for (const FMenuRow& Row : Rows)
 			{
-				W = FMath::Max(W, TextWidth(Row.Title, S * TitleSize));
-				float InputW = 18.f * S;
+				W = FMath::Max(W, 44.f * S + TextWidth(Row.Title, S * TitleSize));
+				float InputW = 62.f * S;
 				for (const TPair<FString, bool>& Input : Row.Inputs)
 				{
 					InputW += TextWidth(Input.Key, S * InputSize) + Gap * 8.f * S;
@@ -448,7 +640,9 @@ void AGamerHUD::DrawHUD()
 		const float Pad = 6.f * S;
 		const float TitleH = LineHeight(S * TitleSize);
 		const float InputH = LineHeight(S * InputSize);
-		const float MenuHeight = LineHeight(S * 1.05f) * 1.3f + Rows.Num() * (TitleH + InputH + 0.35f * TitleH);
+		const float TileSize = FMath::Max(TitleH + InputH, 36.f * S);
+		const float RowH = FMath::Max(TileSize, TitleH + InputH) + 0.35f * TitleH;
+		const float MenuHeight = LineHeight(S * 1.05f) * 1.3f + Rows.Num() * RowH;
 		const float X = Width - Margin - MenuWidth;
 		float Y = Margin;
 		DrawPanel(X - Pad, Y - Pad, MenuWidth + 2.f * Pad, MenuHeight + 2.f * Pad);
@@ -456,15 +650,17 @@ void AGamerHUD::DrawHUD()
 		Y += LineHeight(S * 1.05f) * 1.3f;
 		for (const FMenuRow& Row : Rows)
 		{
-			DrawShadowText(Row.Title, X, Y, Row.bCanCraft ? TextGood : TextWhite, S * TitleSize);
-			Y += TitleH;
-			float InputX = X + 18.f * S;
+			// Tile with the icon (or a named placeholder), then the dish/piece name and the ingredients next to it.
+			DrawIconTile(Row.IconId, Row.IconName, X, Y, TileSize);
+			const float TextX = X + TileSize + 8.f * S;
+			DrawShadowText(Row.Title, TextX, Y, Row.bCanCraft ? TextGood : TextWhite, S * TitleSize);
+			float InputX = TextX + 4.f * S;
 			for (const TPair<FString, bool>& Input : Row.Inputs)
 			{
-				DrawShadowText(Input.Key, InputX, Y, Input.Value ? TextGood : TextMissing, S * InputSize);
+				DrawShadowText(Input.Key, InputX, Y + TitleH, Input.Value ? TextGood : TextMissing, S * InputSize);
 				InputX += TextWidth(Input.Key, S * InputSize) + Gap * 8.f * S;
 			}
-			Y += InputH + 0.35f * TitleH;
+			Y += RowH;
 		}
 	}
 
@@ -476,10 +672,11 @@ void AGamerHUD::DrawHUD()
 			UGamerKeyBindings::ActionKeyName(GamerInputActions::MoveForward), UGamerKeyBindings::ActionKeyName(GamerInputActions::MoveLeft),
 			UGamerKeyBindings::ActionKeyName(GamerInputActions::MoveBack), UGamerKeyBindings::ActionKeyName(GamerInputActions::MoveRight) };
 		const bool bShortMove = !MoveKeys.ContainsByPredicate([](const FString& Key) { return Key.Len() > 1; });
-		const FString Move = FString::Printf(TEXT("%s laufen · Maus umsehen · %s springen · %s Vogelperspektive"),
-			*FString::Join(MoveKeys, bShortMove ? TEXT("") : TEXT("/")), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Jump),
+		const FString Move = FString::Printf(TEXT("%s laufen · %s sprinten · Maus umsehen · %s springen · %s Vogelperspektive"),
+			*FString::Join(MoveKeys, bShortMove ? TEXT("") : TEXT("/")), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Sprint),
+			*UGamerKeyBindings::ActionKeyName(GamerInputActions::Jump),
 			*UGamerKeyBindings::ActionKeyName(GamerInputActions::BirdView));
-		const FString Act = FString::Printf(TEXT("%s schlagen · %s sammeln · %s–%s Schnellleiste · %s Herstellen · %s Dorf · Esc Menü"),
+		const FString Act = FString::Printf(TEXT("%s schlagen · %s sammeln · %s–%s/Mausrad Schnellleiste · %s Herstellen · %s Dorf · Esc Menü"),
 			*UGamerKeyBindings::ActionKeyName(GamerInputActions::Strike), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact),
 			*UGamerKeyBindings::ActionKeyName(GamerInputActions::Hotbar(1)), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Hotbar(8)),
 			*UGamerKeyBindings::ActionKeyName(GamerInputActions::CraftMenu), *UGamerKeyBindings::ActionKeyName(GamerInputActions::VillageMenu));
@@ -541,6 +738,7 @@ void AGamerHUD::DrawMenu(const AGamerPlayerController& PC)
 		const FString Title = TEXT("Menü");
 		const TArray<TPair<FName, FString>> Buttons = {
 			{ TEXT("resume"), TEXT("Weiter") },
+			{ TEXT("save"), TEXT("Speichern") },
 			{ TEXT("controls"), TEXT("Steuerung") },
 			{ TEXT("graphics"), TEXT("Grafik") },
 			{ TEXT("leave"), TEXT("Hauptmenü") },
@@ -566,6 +764,8 @@ void AGamerHUD::DrawMenu(const AGamerPlayerController& PC)
 		DrawShadowText(Note, (Width - TextWidth(Note, S * 0.75f)) * 0.5f, Y + 6.f * S, TextDim, S * 0.75f);
 		const FString World = TEXT("Welt: ") + AGamerGameState::Get(this).Describe();
 		DrawShadowText(World, (Width - TextWidth(World, S * 0.7f)) * 0.5f, Y + 6.f * S + LineHeight(S * 0.75f) * 1.2f, TextDim, S * 0.7f);
+		const FString Own = DescribeOwnCharacter();
+		DrawShadowText(Own, (Width - TextWidth(Own, S * 0.7f)) * 0.5f, Y + 6.f * S + LineHeight(S * 0.75f) * 1.2f + LineHeight(S * 0.7f) * 1.1f, TextDim, S * 0.7f);
 		return;
 	}
 
@@ -587,6 +787,16 @@ void AGamerHUD::DrawMenu(const AGamerPlayerController& PC)
 	if (PC.GetMenuPage() == EGamerMenuPage::Graphics)
 	{
 		DrawGraphicsMenu(PC);
+		return;
+	}
+	if (PC.GetMenuPage() == EGamerMenuPage::Character || PC.GetMenuPage() == EGamerMenuPage::CharacterLook)
+	{
+		DrawCharacterMenu(PC);
+		return;
+	}
+	if (PC.GetMenuPage() == EGamerMenuPage::LoadWorld)
+	{
+		DrawLoadWorldMenu(PC);
 		return;
 	}
 	if (PC.GetMenuPage() == EGamerMenuPage::Start || PC.GetMenuPage() == EGamerMenuPage::CreateWorld || PC.GetMenuPage() == EGamerMenuPage::Join)
@@ -803,6 +1013,7 @@ void AGamerHUD::DrawStartMenu(const AGamerPlayerController& PC)
 	{
 		const TArray<TPair<FName, FString>> Buttons = {
 			{ TEXT("create"), TEXT("Welt erstellen") },
+			{ TEXT("loadpage"), TEXT("Welt laden") },
 			{ TEXT("joinpage"), TEXT("Beitreten") },
 			{ TEXT("controls"), TEXT("Steuerung") },
 			{ TEXT("graphics"), TEXT("Grafik") },
@@ -856,12 +1067,16 @@ void AGamerHUD::DrawStartMenu(const AGamerPlayerController& PC)
 				Options.Demolish == EGamerDemolish::FullRefund ? TEXT("Volles Material zurück") : Options.Demolish == EGamerDemolish::HalfRefund ? TEXT("Halbes Material zurück") : TEXT("Aus"),
 				Options.Demolish == EGamerDemolish::Disabled ? TEXT("Fertige Teile bleiben stehen. Unfertige Pläne geben immer alles zurück.")
 					: TEXT("Gilt für fertige Teile. Unfertige Pläne geben immer alles zurück.") },
+			{ TEXT("opt:inventory"), TEXT("Inventar"),
+				Options.bCarryInventory ? TEXT("Wandert mit dem Charakter") : TEXT("Bleibt in dieser Welt"),
+				Options.bCarryInventory ? TEXT("Was du trägst, nimmst du in jede Welt mit, die das auch erlaubt (gespeichert bei dir).")
+					: TEXT("Jede Welt merkt sich dein Inventar; in einer anderen Welt beginnst du mit eigener Ausrüstung.") },
 		};
 		float LabelW = 0.f, ValueW = 0.f, ExplainW = 0.f;
 		for (const FOptionRow& Row : Rows)
 		{
 			LabelW = FMath::Max(LabelW, TextWidth(Row.Label, S));
-			ValueW = FMath::Max(ValueW, TextWidth(TEXT("Material beim Bauen"), S));
+			ValueW = FMath::Max(ValueW, FMath::Max(TextWidth(TEXT("Material beim Bauen"), S), TextWidth(Row.Value, S)));
 			ExplainW = FMath::Max(ExplainW, TextWidth(Row.Explain, S * 0.7f));
 		}
 		ValueW += 40.f * S;
@@ -883,6 +1098,8 @@ void AGamerHUD::DrawStartMenu(const AGamerPlayerController& PC)
 		}
 		Y += 4.f * S;
 		Centered(TEXT("Du bist Gastgeber. Mitspieler treten über deine IP-Adresse bei (Port 7777)."), Y, TextDim, 0.7f);
+		Y += LineHeight(S * 0.7f) * 1.2f;
+		Centered(FString::Printf(TEXT("Wird gespeichert als „%s“ (später unter „Welt laden“)."), *AGamerPlayerController::MakeNewWorldName()), Y, TextDim, 0.7f);
 		Y += LineHeight(S * 0.7f) * 1.6f;
 		const FString StartText = TEXT("Welt starten");
 		const FString BackText = TEXT("Zurück");
@@ -938,6 +1155,32 @@ AActor* AGamerHUD::FindButtonTarget(FName ButtonId) const
 	return Target ? Target->Get() : nullptr;
 }
 
+void AGamerHUD::DrawIconTile(FName Id, const FString& Name, float X, float Y, float Size)
+{
+	DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.55f), X, Y, Size, Size);
+	if (UTexture2D* Icon = GamerIcons::Find(Id))
+	{
+		const float Pad = Size * 0.06f;
+		DrawTexture(Icon, X + Pad, Y + Pad, Size - 2.f * Pad, Size - 2.f * Pad, 0.f, 0.f, 1.f, 1.f, FLinearColor::White, BLEND_Translucent);
+		return;
+	}
+	// Placeholder: coloured frame (colour from the id, so the same thing always looks the same) and the first letters of its name.
+	const uint32 Hash = GetTypeHash(Id);
+	const FLinearColor Frame = FLinearColor::MakeFromHSV8(static_cast<uint8>(Hash % 256), 110, 200);
+	const float Line = FMath::Max(2.f, Size * 0.05f);
+	DrawRect(Frame, X, Y, Size, Line);
+	DrawRect(Frame, X, Y + Size - Line, Size, Line);
+	DrawRect(Frame, X, Y, Line, Size);
+	DrawRect(Frame, X + Size - Line, Y, Line, Size);
+	FString Letters = Name.Left(2);
+	if (Letters.Len() > 0)
+	{
+		Letters = Letters.Left(1).ToUpper() + Letters.Mid(1).ToLower();
+	}
+	const float TextScale = Size * 0.034f;
+	DrawShadowText(Letters, X + (Size - TextWidth(Letters, TextScale)) * 0.5f, Y + (Size - LineHeight(TextScale)) * 0.5f, TextWhite, TextScale);
+}
+
 void AGamerHUD::DrawBar(float X, float Y, float W, float H, float Value)
 {
 	// Need bar: green when fine, yellow when getting low, orange when it needs care (no red, see the colours above).
@@ -975,6 +1218,7 @@ void AGamerHUD::DrawVillageMenu(const AGamerPlayerController& PC)
 	float S = Ui;
 	auto Layout = [&](float Scale, float& NameW, float& JobW, float& ActW, float& BarW, float& ShelterW, float& RowH)
 	{
+		const float IconW = 20.f * Scale;
 		NameW = TextWidth(TEXT("Torvald"), Scale * 0.85f) + 16.f * Scale;
 		for (const AGamerVillager* Villager : Villagers)
 		{
@@ -985,7 +1229,7 @@ void AGamerHUD::DrawVillageMenu(const AGamerPlayerController& PC)
 		BarW = 60.f * Scale;
 		ShelterW = TextWidth(TEXT("Unterkunft"), Scale * 0.65f) + 8.f * Scale;
 		RowH = LineHeight(Scale * 0.85f) * 1.35f;
-		const float TotalW = FMath::Max3(NameW + JobW + ActW + 2.f * BarW + ShelterW + 60.f * Scale, TextWidth(Help, Scale * 0.65f), TextWidth(Info, Scale * 0.75f));
+		const float TotalW = FMath::Max3(NameW + JobW + ActW + 3.f * (BarW + IconW) + ShelterW + 80.f * Scale, TextWidth(Help, Scale * 0.65f), TextWidth(Info, Scale * 0.75f));
 		const int32 Rows = FMath::Max(1, Villagers.Num());
 		const float TotalH = LineHeight(Scale * 1.3f) * 1.3f + LineHeight(Scale * 0.75f) * 1.4f + LineHeight(Scale * 0.65f) * 1.6f
 			+ LineHeight(Scale * 0.65f) * 1.3f + Rows * (RowH + 3.f * Scale) + LineHeight(Scale) * 1.8f;
@@ -1009,15 +1253,18 @@ void AGamerHUD::DrawVillageMenu(const AGamerPlayerController& PC)
 	const float XName = Left;
 	const float XJob = XName + NameW;
 	const float XAct = XJob + JobW + 12.f * S;
+	const float IconW = 20.f * S;
 	const float XHunger = XAct + ActW + 12.f * S;
-	const float XSleep = XHunger + BarW + 12.f * S;
-	const float XShelter = XSleep + BarW + 12.f * S;
+	const float XSleep = XHunger + IconW + BarW + 12.f * S;
+	const float XMood = XSleep + IconW + BarW + 12.f * S;
+	const float XShelter = XMood + IconW + BarW + 12.f * S;
 	const float HeadScale = S * 0.65f;
 	DrawShadowText(TEXT("Name"), XName, Y, TextDim, HeadScale);
 	DrawShadowText(TEXT("Beruf"), XJob, Y, TextDim, HeadScale);
 	DrawShadowText(TEXT("Tätigkeit"), XAct, Y, TextDim, HeadScale);
 	DrawShadowText(TEXT("Hunger"), XHunger, Y, TextDim, HeadScale);
 	DrawShadowText(TEXT("Schlaf"), XSleep, Y, TextDim, HeadScale);
+	DrawShadowText(TEXT("Stimmung"), XMood, Y, TextDim, HeadScale);
 	DrawShadowText(TEXT("Unterkunft"), XShelter, Y, TextDim, HeadScale);
 	Y += LineHeight(HeadScale) * 1.3f;
 
@@ -1043,8 +1290,20 @@ void AGamerHUD::DrawVillageMenu(const AGamerPlayerController& PC)
 		}
 		DrawShadowText(Activity, XAct, Y + (RowH - SmallH) * 0.5f, TextDim, S * 0.65f);
 		const float BarH = RowH * 0.4f;
-		DrawBar(XHunger, Y + (RowH - BarH) * 0.5f, BarW, BarH, Villager->GetHunger());
-		DrawBar(XSleep, Y + (RowH - BarH) * 0.5f, BarW, BarH, Villager->GetSleep());
+		// Placeholder icons (coloured square with a letter) until the rendered item icons exist.
+		auto StatIcon = [&](float X, const FLinearColor& Color, const TCHAR* Symbol)
+		{
+			const float Box = RowH * 0.7f;
+			DrawRect(FLinearColor(0.f, 0.f, 0.f, 0.7f), X - 1.f, Y + (RowH - Box) * 0.5f - 1.f, Box + 2.f, Box + 2.f);
+			DrawRect(Color, X, Y + (RowH - Box) * 0.5f, Box, Box);
+			DrawShadowText(Symbol, X + Box * 0.22f, Y + (RowH - SmallH) * 0.5f, FLinearColor(0.f, 0.f, 0.f, 1.f), S * 0.6f);
+		};
+		StatIcon(XHunger, FLinearColor(0.95f, 0.55f, 0.25f), TEXT("H"));
+		DrawBar(XHunger + IconW, Y + (RowH - BarH) * 0.5f, BarW, BarH, Villager->GetHunger());
+		StatIcon(XSleep, FLinearColor(0.50f, 0.65f, 0.95f), TEXT("Z"));
+		DrawBar(XSleep + IconW, Y + (RowH - BarH) * 0.5f, BarW, BarH, Villager->GetSleep());
+		StatIcon(XMood, FLinearColor(0.95f, 0.85f, 0.30f), TEXT("S"));
+		DrawBar(XMood + IconW, Y + (RowH - BarH) * 0.5f, BarW, BarH, Villager->GetMood());
 		const FString Shelter = !Villager->GetBed() ? TEXT("kein Bett") : Villager->HasShelter() ? TEXT("ja") : TEXT("kein Dach");
 		DrawShadowText(Shelter, XShelter, Y + (RowH - SmallH) * 0.5f, Villager->HasShelter() ? TextGood : TextMissing, S * 0.65f);
 		Y += RowH + 3.f * S;

@@ -51,5 +51,6 @@ public:
 namespace GamerMaps
 {
 	inline const TCHAR* const StartMenu = TEXT("/Engine/Maps/Entry");
-	inline const TCHAR* const World = TEXT("/Engine/Maps/Templates/Template_Default");
+	// Eigene Kopie von Template_Default mit PCG-Gras (tools/unreal/build_world.py).
+	inline const TCHAR* const World = TEXT("/Game/Gamer/Maps/World");
 }

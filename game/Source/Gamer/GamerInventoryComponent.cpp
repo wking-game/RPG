@@ -2,7 +2,11 @@
 
 #include "Gamer.h"
 #include "GamerDataSubsystem.h"
+#include "GamerSpoilage.h"
+#include "GamerWorkComponent.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 UGamerInventoryComponent::UGamerInventoryComponent()
 {
@@ -16,6 +20,74 @@ void UGamerInventoryComponent::BeginPlay()
 	if (GetOwner() && GetOwner()->HasAuthority())
 	{
 		Slots.SetNum(FMath::Max(1, SlotCount));
+		GetWorld()->GetTimerManager().SetTimer(SpoilTimer, this, &UGamerInventoryComponent::TickSpoilage,
+			FMath::Max(0.2f, UGamerSpoilage::Get().TickSeconds), true);
+	}
+}
+
+void UGamerInventoryComponent::TickSpoilage()
+{
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (!Data)
+	{
+		return;
+	}
+	const float Seconds = UGamerSpoilage::Get().TickSeconds;
+	bool bChanged = false;
+	for (FGamerInventorySlot& Slot : Slots)
+	{
+		const FGamerItemDef* Def = Slot.IsEmpty() ? nullptr : Data->FindItem(Slot.Item);
+		if (!Def || !Def->Spoils())
+		{
+			continue;
+		}
+		const float Before = Slot.Freshness;
+		Slot.Freshness = FMath::Max(0.f, Slot.Freshness - UGamerSpoilage::Loss(*Def, Seconds, EGamerSpoilPlace::Carried));
+		bChanged |= Slot.Freshness != Before;
+		if (Slot.Freshness <= 0.f)
+		{
+			const FGamerItemDef* Into = Data->FindItem(Def->SpoilsInto);
+			UE_LOG(LogGamer, Log, TEXT("Spoiled in inventory of %s: %s x%d -> %s"), *GetNameSafe(GetOwner()), *Def->Id.ToString(), Slot.Count,
+				*Def->SpoilsInto.ToString());
+			ClientSpoilNotice(FString::Printf(TEXT("Verdorben: %s."), *Def->Name));
+			const int32 Count = Slot.Count;
+			Slot = FGamerInventorySlot();
+			if (Into)
+			{
+				Slot.Item = Into->Id;
+				Slot.Count = FMath::Min(Count, FMath::Max(1, Into->MaxStack));
+			}
+		}
+		else if (UGamerSpoilage::CrossedWarning(Before, Slot.Freshness))
+		{
+			UE_LOG(LogGamer, Log, TEXT("Spoil warning for %s: %s x%d at %d %%"), *GetNameSafe(GetOwner()), *Def->Id.ToString(), Slot.Count,
+				UGamerSpoilage::Percent(Slot.Freshness));
+			ClientSpoilNotice(FString::Printf(TEXT("Bald verdorben: %s (noch %d %%)."), *Def->Name, UGamerSpoilage::Percent(Slot.Freshness)));
+		}
+	}
+	if (bChanged)
+	{
+		OnInventoryChanged.Broadcast();
+	}
+}
+
+void UGamerInventoryComponent::ClientSpoilNotice_Implementation(const FString& Text)
+{
+	// Beginner tip once per player (decision 2026-11-14), remembered in the local user settings.
+	static const TCHAR* const Section = TEXT("/Script/Gamer.GamerTips");
+	bool bTipShown = false;
+	GConfig->GetBool(Section, TEXT("bSpoilTipShown"), bTipShown, GGameUserSettingsIni);
+	FString Message = Text;
+	if (!bTipShown)
+	{
+		Message += TEXT("  Tipp: Verderbliches trocken und geschützt lagern – im Lager hält es viel länger.");
+		GConfig->SetBool(Section, TEXT("bSpoilTipShown"), true, GGameUserSettingsIni);
+		GConfig->Flush(false, GGameUserSettingsIni);
+		UE_LOG(LogGamer, Log, TEXT("Spoil tip shown (once)"));
+	}
+	if (UGamerWorkComponent* Work = GetOwner() ? GetOwner()->FindComponentByClass<UGamerWorkComponent>() : nullptr)
+	{
+		Work->ShowMessage(Message);
 	}
 }
 
@@ -79,6 +151,16 @@ void UGamerInventoryComponent::ServerSelectSlot_Implementation(int32 Index)
 	}
 }
 
+bool UGamerInventoryComponent::SelectBestToolInHotbar(FName ToolType, int32 MinTier)
+{
+	const int32 Best = FindToolInHotbar(ToolType, MinTier);
+	if (Best != INDEX_NONE && Best != SelectedSlot)
+	{
+		SelectedSlot = Best;
+	}
+	return IsHoldingTool(ToolType, MinTier);
+}
+
 void UGamerInventoryComponent::OnRep_Slots()
 {
 	OnInventoryChanged.Broadcast();
@@ -96,8 +178,9 @@ int32 UGamerInventoryComponent::MaxStackOf(FName Item) const
 	return Def ? FMath::Max(1, Def->MaxStack) : 1;
 }
 
-int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count)
+int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count, float Freshness)
 {
+	Freshness = FMath::Clamp(Freshness, 0.f, 1.f);
 	if (!GetOwner() || !GetOwner()->HasAuthority() || Item.IsNone() || Count <= 0)
 	{
 		return Count;
@@ -117,6 +200,7 @@ int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count)
 		if (Remaining > 0 && Slot.Item == Item && Slot.Count < MaxStack)
 		{
 			const int32 Moved = FMath::Min(Remaining, MaxStack - Slot.Count);
+			Slot.Freshness = UGamerSpoilage::Merge(Slot.Count, Slot.Freshness, Moved, Freshness);
 			Slot.Count += Moved;
 			Remaining -= Moved;
 		}
@@ -125,7 +209,8 @@ int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count)
 	// Tools and food go to the hotbar first, building materials to the backpack first,
 	// so the hotbar keeps room for the things you hold in your hand.
 	const FGamerItemDef* Def = FindDef(Item);
-	const bool bPreferHotbar = Def->Category == EGamerItemCategory::Tool || Def->Category == EGamerItemCategory::Food;
+	const bool bPreferHotbar = Def->Category == EGamerItemCategory::Tool || Def->Category == EGamerItemCategory::Weapon
+		|| Def->Category == EGamerItemCategory::Food;
 	const int32 Hotbar = GetHotbarSize();
 	TArray<int32> Order;
 	for (int32 Index = bPreferHotbar ? 0 : Hotbar; Index < Slots.Num(); ++Index)
@@ -147,6 +232,7 @@ int32 UGamerInventoryComponent::AddItem(FName Item, int32 Count)
 			const int32 Moved = FMath::Min(Remaining, MaxStack);
 			Slot.Item = Item;
 			Slot.Count = Moved;
+			Slot.Freshness = Freshness;
 			Remaining -= Moved;
 		}
 	}
@@ -198,6 +284,21 @@ int32 UGamerInventoryComponent::CountOf(FName Item) const
 		}
 	}
 	return Total;
+}
+
+float UGamerInventoryComponent::FreshnessOf(FName Item) const
+{
+	int32 Total = 0;
+	float Sum = 0.f;
+	for (const FGamerInventorySlot& Slot : Slots)
+	{
+		if (Slot.Item == Item && Slot.Count > 0)
+		{
+			Total += Slot.Count;
+			Sum += Slot.Count * Slot.Freshness;
+		}
+	}
+	return Total > 0 ? Sum / Total : 1.f;
 }
 
 bool UGamerInventoryComponent::HasAll(const TArray<FGamerItemAmount>& Amounts) const
@@ -285,7 +386,9 @@ FString UGamerInventoryComponent::Describe() const
 	TArray<FString> Parts;
 	for (const TPair<FName, int32>& Pair : Totals)
 	{
-		Parts.Add(FString::Printf(TEXT("%s x%d"), *Pair.Key.ToString(), Pair.Value));
+		const float Fresh = FreshnessOf(Pair.Key);
+		Parts.Add(Fresh < 0.995f ? FString::Printf(TEXT("%s x%d (%d %%)"), *Pair.Key.ToString(), Pair.Value, UGamerSpoilage::Percent(Fresh))
+			: FString::Printf(TEXT("%s x%d"), *Pair.Key.ToString(), Pair.Value));
 	}
 	return FString::Join(Parts, TEXT(", "));
 }

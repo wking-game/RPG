@@ -1,0 +1,19 @@
+{
+  "_comment": "Item- oder Bauteil-ID -> Modell (FBX relativ zu Assets/). Nur Dinge mit echtem Modell; alles andere bekommt im Spiel eine benannte Platzhalter-Kachel. Neue Modelle hier eintragen und render_icons.py neu laufen lassen.",
+  "item_log": "Items/SM_Item_Log.fbx",
+  "item_stone": "Nature/Rocks/SM_StonesLoose.fbx",
+  "item_stick": "Nature/Plants/SM_Branches.fbx",
+  "item_fiber": "Nature/Plants/SM_NettleCut.fbx",
+  "item_apple": "Items/SM_Item_Apple.fbx",
+  "item_pear": "Items/SM_Item_Pear.fbx",
+  "building_foundation_wood": "Buildings/WoodKit/SM_Building_Foundation_Wood.fbx",
+  "building_floor_wood": "Buildings/WoodKit/SM_Building_Floor_Wood.fbx",
+  "building_wall_wood": "Buildings/WoodKit/SM_Building_Wall_Wood.fbx",
+  "building_wall_door_wood": "Buildings/WoodKit/SM_Building_Wall_Door_Wood.fbx",
+  "building_door_wood": "Buildings/WoodKit/SM_Building_Door_Wood.fbx",
+  "building_pillar_wood": "Buildings/WoodKit/SM_Building_Pillar_Wood.fbx",
+  "building_beam_wood": "Buildings/WoodKit/SM_Building_Beam_Wood.fbx",
+  "building_roof_wood": "Buildings/WoodKit/SM_Building_Roof_Wood.fbx",
+  "building_roof_ridge_wood": "Buildings/WoodKit/SM_Building_Roof_Ridge_Wood.fbx",
+  "building_roof_gable_wood": "Buildings/WoodKit/SM_Building_Roof_Gable_Wood.fbx"
+}

@@ -1,0 +1,526 @@
+{
+  "comment": "Nature assets built from CC0 photoscans (Poly Haven, downloaded with tools/cc0/fetch_cc0.py to D:/gamer/cc0_quellen). Read by tools/blender/process_nature.py. parts: objects of one source glTF; each part is set to height h (relative units), pivot at its foot, turned by rot degrees and moved to at [x, y]; keep: true leaves a part where it is. The assembled mesh is then scaled to size_cm (height, or the longest side with size_axis 'longest'). tris: triangle budget (reduced in Blender when clearly above). collision: 'ucx' builds convex hulls (UCX_) of the finished mesh (ucx_split: hulls along the longest horizontal axis; ucx_min_z: only vertices above this share of the height, projected down to the ground), 'none' = no collision. ground: tiling ground texture sets for M_Gamer_Ground (BC, N DirectX, ORM with height in A).",
+  "root": "D:/gamer/cc0_quellen",
+  "sources": {
+    "rock_moss": {
+      "gltf": "polyhaven/rock_moss_set_01/rock_moss_set_01.gltf",
+      "prefix": "polyhaven/rock_moss_set_01/textures/rock_moss_set_01",
+      "material": "M_Nature_RockMoss",
+      "tex": 1024
+    },
+    "rock_09": {
+      "gltf": "polyhaven/rock_09/rock_09.gltf",
+      "prefix": "polyhaven/rock_09/textures/rock_09",
+      "material": "M_Nature_Rock09",
+      "tex": 1024
+    },
+    "branches": {
+      "gltf": "polyhaven/dry_branches_medium_01/dry_branches_medium_01.gltf",
+      "prefix": "polyhaven/dry_branches_medium_01/textures/dry_branches_medium_01",
+      "material": "M_Nature_DryBranches",
+      "tex": 1024
+    },
+    "nettle": {
+      "gltf": "polyhaven/nettle_plant/nettle_plant.gltf",
+      "prefix": "polyhaven/nettle_plant/textures/nettle_plant",
+      "material": "M_Nature_Nettle",
+      "tex": 1024,
+      "masked": true
+    },
+    "dead_stump": {
+      "gltf": "polyhaven/tree_stump_01/tree_stump_01.gltf",
+      "prefix": "polyhaven/tree_stump_01/textures/tree_stump_01",
+      "material": "M_Nature_DeadStump",
+      "tex": 1024
+    },
+    "dead_trunk": {
+      "gltf": "polyhaven/dead_tree_trunk/dead_tree_trunk.gltf",
+      "prefix": "polyhaven/dead_tree_trunk/textures/dead_tree_trunk",
+      "material": "M_Nature_DeadTrunk",
+      "tex": 1024
+    },
+    "fern": {
+      "gltf": "polyhaven/fern_02/fern_02.gltf",
+      "prefix": "polyhaven/fern_02/textures/fern_02",
+      "material": "M_Nature_Fern02",
+      "tex": 1024,
+      "masked": true
+    },
+    "shrub_02": {
+      "gltf": "polyhaven/shrub_02/shrub_02.gltf",
+      "prefix": "polyhaven/shrub_02/textures/shrub_02",
+      "material": "M_Nature_LeavesShrub02",
+      "tex": 1024,
+      "masked": true
+    },
+    "shrub_04": {
+      "gltf": "polyhaven/shrub_04/shrub_04.gltf",
+      "prefix": "polyhaven/shrub_04/textures/shrub_04",
+      "material": "M_Nature_LeavesShrub04",
+      "tex": 1024,
+      "masked": true
+    },
+    "sandstone": {
+      "gltf": "polyhaven/rock_face_02/rock_face_02.gltf",
+      "prefix": "polyhaven/rock_face_02/textures/rock_face_02",
+      "material": "M_Nature_Sandstone",
+      "tex": 2048
+    }
+  },
+  "meshes": [
+    {
+      "id": "rock_small",
+      "name": "SM_RockSmall",
+      "group": "Nature/Rocks",
+      "source": "rock_moss",
+      "size_cm": 55,
+      "tris": 5000,
+      "parts": [
+        {
+          "object": "rock_moss_set_01_rock03",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "rock_medium",
+      "name": "SM_RockMedium",
+      "group": "Nature/Rocks",
+      "source": "rock_moss",
+      "size_cm": 90,
+      "tris": 6000,
+      "parts": [
+        {
+          "object": "rock_moss_set_01_rock06",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "rock_large",
+      "name": "SM_RockLarge",
+      "group": "Nature/Rocks",
+      "source": "rock_moss",
+      "size_cm": 150,
+      "tris": 8000,
+      "parts": [
+        {
+          "object": "rock_moss_set_01_rock04",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "stones_loose",
+      "name": "SM_StonesLoose",
+      "group": "Nature/Rocks",
+      "source": "rock_moss",
+      "size_cm": 18,
+      "tris": 3000,
+      "parts": [
+        {
+          "object": "rock_moss_set_01_rock01",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        },
+        {
+          "object": "rock_moss_set_01_rock03",
+          "h": 0.8,
+          "at": [
+            1.0,
+            0.5
+          ],
+          "rot": 70
+        },
+        {
+          "object": "rock_moss_set_01_rock05",
+          "h": 0.7,
+          "at": [
+            -0.8,
+            0.7
+          ],
+          "rot": 200
+        }
+      ]
+    },
+    {
+      "id": "rock_rubble",
+      "name": "SM_RockRubble",
+      "group": "Nature/Rocks",
+      "source": "rock_moss",
+      "size_cm": 25,
+      "tris": 3000,
+      "parts": [
+        {
+          "object": "rock_moss_set_01_rock02",
+          "h": 0.5,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        },
+        {
+          "object": "rock_moss_set_01_rock06",
+          "h": 0.4,
+          "at": [
+            0.9,
+            0.3
+          ],
+          "rot": 120
+        },
+        {
+          "object": "rock_moss_set_01_rock03",
+          "h": 0.35,
+          "at": [
+            -0.6,
+            0.7
+          ],
+          "rot": 40
+        },
+        {
+          "object": "rock_moss_set_01_rock05",
+          "h": 0.3,
+          "at": [
+            0.3,
+            -0.8
+          ],
+          "rot": 250
+        }
+      ]
+    },
+    {
+      "id": "branches",
+      "name": "SM_Branches",
+      "group": "Nature/Plants",
+      "source": "branches",
+      "size_cm": 130,
+      "size_axis": "longest",
+      "tris": 6000,
+      "parts": [
+        {
+          "object": "dry_branches_medium_01_a",
+          "keep": true
+        },
+        {
+          "object": "dry_branches_medium_01_b",
+          "keep": true
+        },
+        {
+          "object": "dry_branches_medium_01_c",
+          "keep": true
+        }
+      ]
+    },
+    {
+      "id": "nettle",
+      "name": "SM_Nettle",
+      "group": "Nature/Plants",
+      "source": "nettle",
+      "size_cm": 80,
+      "tris": 14000,
+      "parts": [
+        {
+          "object": "nettle_plant_tall_a_LOD0",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        },
+        {
+          "object": "nettle_plant_medium_a_LOD0",
+          "h": 0.65,
+          "at": [
+            0.3,
+            0.15
+          ],
+          "rot": 140
+        }
+      ]
+    },
+    {
+      "id": "nettle_cut",
+      "name": "SM_NettleCut",
+      "group": "Nature/Plants",
+      "source": "nettle",
+      "size_cm": 20,
+      "tris": 5000,
+      "parts": [
+        {
+          "object": "nettle_plant_small_a_LOD0",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        },
+        {
+          "object": "nettle_plant_small_b_LOD0",
+          "h": 0.7,
+          "at": [
+            0.6,
+            0.2
+          ],
+          "rot": 90
+        }
+      ]
+    },
+    {
+      "id": "dead_stump",
+      "name": "SM_DeadStump",
+      "group": "Nature/Trees",
+      "source": "dead_stump",
+      "size_cm": 60,
+      "tris": 6000,
+      "collision": "ucx",
+      "ucx_min_z": 0.25,
+      "parts": [
+        {
+          "object": "tree_stump_01",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "dead_trunk",
+      "name": "SM_DeadTrunk",
+      "group": "Nature/Trees",
+      "source": "dead_trunk",
+      "size_cm": 300,
+      "size_axis": "longest",
+      "tris": 8000,
+      "collision": "ucx",
+      "ucx_split": 3,
+      "parts": [
+        {
+          "object": "dead_tree_trunk",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "fern_large",
+      "name": "SM_Fern_Large",
+      "group": "Nature/Plants",
+      "source": "fern",
+      "size_cm": 70,
+      "tris": 4000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "fern_02_b",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "fern_medium",
+      "name": "SM_Fern_Medium",
+      "group": "Nature/Plants",
+      "source": "fern",
+      "size_cm": 52,
+      "tris": 4000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "fern_02_c",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "fern_small",
+      "name": "SM_Fern_Small",
+      "group": "Nature/Plants",
+      "source": "fern",
+      "size_cm": 38,
+      "tris": 3000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "fern_02_a",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        },
+        {
+          "object": "fern_02_d",
+          "h": 0.75,
+          "at": [
+            0.35,
+            0.2
+          ],
+          "rot": 120
+        }
+      ]
+    },
+    {
+      "id": "shrub_willow",
+      "name": "SM_ShrubWillow",
+      "group": "Nature/Plants",
+      "source": "shrub_02",
+      "size_cm": 110,
+      "tris": 6000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "shrub_02_a",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "shrub_willow_low",
+      "name": "SM_ShrubWillow_Low",
+      "group": "Nature/Plants",
+      "source": "shrub_02",
+      "size_cm": 75,
+      "tris": 6000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "shrub_02_c",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "shrub_sprig",
+      "name": "SM_ShrubSprig",
+      "group": "Nature/Plants",
+      "source": "shrub_04",
+      "size_cm": 30,
+      "tris": 5000,
+      "collision": "none",
+      "parts": [
+        {
+          "object": "shrub_04",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    },
+    {
+      "id": "sandstone_cliff",
+      "name": "SM_SandstoneCliff",
+      "group": "Nature/Deco",
+      "source": "sandstone",
+      "size_cm": 450,
+      "tris": 12000,
+      "collision": "ucx",
+      "ucx_split": 3,
+      "parts": [
+        {
+          "object": "rock_face_02",
+          "h": 1.0,
+          "at": [
+            0,
+            0
+          ],
+          "rot": 0
+        }
+      ]
+    }
+  ],
+  "ground": {
+    "folder": "Nature/Ground",
+    "tex": 2048,
+    "layers": [
+      {
+        "name": "GroundForest",
+        "color": "polyhaven/forrest_ground_03/forrest_ground_03_diff_2k.jpg",
+        "normal_dx": "polyhaven/forrest_ground_03/forrest_ground_03_nor_dx_2k.jpg",
+        "arm": "polyhaven/forrest_ground_03/forrest_ground_03_arm_2k.jpg",
+        "height": "polyhaven/forrest_ground_03/forrest_ground_03_disp_2k.jpg"
+      },
+      {
+        "name": "GroundNeedleSand",
+        "color": "polyhaven/forrest_sand_01/forrest_sand_01_diff_2k.jpg",
+        "normal_dx": "polyhaven/forrest_sand_01/forrest_sand_01_nor_dx_2k.jpg",
+        "arm": "polyhaven/forrest_sand_01/forrest_sand_01_arm_2k.jpg",
+        "height": "polyhaven/forrest_sand_01/forrest_sand_01_disp_2k.jpg"
+      },
+      {
+        "name": "GroundSand",
+        "color": "ambientcg/Ground033/Ground033_2K-JPG_Color.jpg",
+        "normal_dx": "ambientcg/Ground033/Ground033_2K-JPG_NormalDX.jpg",
+        "rough": "ambientcg/Ground033/Ground033_2K-JPG_Roughness.jpg",
+        "ao": "ambientcg/Ground033/Ground033_2K-JPG_AmbientOcclusion.jpg",
+        "height": "ambientcg/Ground033/Ground033_2K-JPG_Displacement.jpg"
+      },
+      {
+        "name": "GroundMoss",
+        "color": "polyhaven/forest_leaves_02/forest_leaves_02_diffuse_2k.jpg",
+        "normal_dx": "polyhaven/forest_leaves_02/forest_leaves_02_nor_dx_2k.jpg",
+        "arm": "polyhaven/forest_leaves_02/forest_leaves_02_arm_2k.jpg",
+        "height": "polyhaven/forest_leaves_02/forest_leaves_02_disp_2k.jpg"
+      },
+      {
+        "name": "GroundDirt",
+        "color": "polyhaven/dirt_floor/dirt_floor_diff_2k.jpg",
+        "normal_dx": "polyhaven/dirt_floor/dirt_floor_nor_dx_2k.jpg",
+        "arm": "polyhaven/dirt_floor/dirt_floor_arm_2k.jpg",
+        "height": "polyhaven/dirt_floor/dirt_floor_disp_2k.jpg"
+      }
+    ]
+  }
+}
