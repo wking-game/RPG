@@ -1,13 +1,13 @@
 # Probe: Prolog „Die Spur der Ersten“
 
 Stand 2026-11-15. **Probetext von Claude** (KI-generiert, Eintrag in `design/asset_log.md`). Zweck: Der Nutzer entscheidet daran, ob die Story Hauptfokus wird oder roter Faden bleibt (siehe `docs/14_saga_quests.md`, Abschnitt 10, Vorschlag C).
-Rahmen: keine Sprachausgabe, Text mit Gesten (bestätigt); erzählt wird über Funde, Orte und kurze Einträge. Länge im Spiel: etwa 45–60 Minuten, nebenbei zum Sammeln und ersten Bauen. Nichts davon ist Pflicht; man kann jederzeit liegen lassen.
+Rahmen: **seit 2026-11-15 wird alles vertont** (Deutsch und Englisch, zuerst KI-Stimmen); Logbuchseiten liest Asgerds Stimme, Saga-Zeilen ein Erzähler (Skalde), Gedanken die Stimme der Figur; erzählt wird über Funde, Orte und kurze Einträge. Länge im Spiel: etwa 45–60 Minuten, nebenbei zum Sammeln und ersten Bauen. Nichts davon ist Pflicht; man kann jederzeit liegen lassen.
 
 Lesehilfe: **Saga-Buch** = Eintrag im Buch nach einem Schritt. **Fund** = Text eines Fundstücks. **Hinweis** = kurzer Satz am Bildschirmrand. *Kursiv* = was der Spieler sieht oder hört (Regieanweisung, nicht im Spiel zu lesen).
 
 **Überarbeitung 2 (2026-11-15):** Nutzer: Hauptstory mit großen Folgen, Nebenstränge mäßig, „gerne noch immersiver“. Neu sind die Nebelbilder (Abschnitte 4–6), die Gedanken der Figur und die große Entscheidung am leeren Stein (Abschnitt 6).
 
-### Mittel für Immersion ohne Sprachausgabe
+### Mittel für Immersion
 - **Nebelbilder (Seidr-Visionen):** Wo starkes Seeglas liegt, zeigt das Lauschen manchmal für einige Sekunden eine Szene der Ersten. Halbdurchsichtige Gestalten aus Nebel in Gezeitenlicht spielen einen Moment nach, mit gedämpften Lauten der erfundenen Sprache, ohne Worte. Man kann um sie herumgehen. Das passt zur Stilvorgabe („Seidr zeigt sich als Nebel und Visionen“). Wiederverwendbar: ein gemeinsamer Effekt und vorhandene Bewohner-Animationen.
 - **Gedanken der Figur:** Hier und da eine einzelne kurze Zeile am unteren Rand, in der Ich-Form, abschaltbar. Nie mehr als ein Satz.
 - **Handschrift:** Logbuchseiten erscheinen als Pergament mit Handschrift, Flecken und Durchstreichungen. Ein lesbarer Drucktext liegt daneben (Lesbarkeit hat Vorrang, bestätigt).

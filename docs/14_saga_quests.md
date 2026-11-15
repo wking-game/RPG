@@ -102,7 +102,9 @@ Das Saga-Buch trägt das Zeichen auf dem Deckel: **offener Ring mit drei Kerben*
 ### 4.5 Gezeitenhall-Ereignis (+15)
 Vorschlag: An einem Steinkreis, dessen Lied vollständig ist, tritt **bei Springflut** (alle paar Spieltage, Nacht) ein Ereignis auf: Ringe auf dem Wasser, Nebel in Bögen, ein kurzer Puls. Wer dabei lauscht, bekommt einmalig je Kreis +15. Raben kündigen es einen Spieltag vorher an. Verpassen kostet nichts; es kommt wieder. **Braucht Tag/Nacht und Gezeiten**, also nicht im ersten Schritt.
 
-## 5. Koop und Solo
+## 5. Koop und Solo (überholt)
+
+> **Überholt am 2026-11-15:** Queststand pro Spieler, Folgen für die Welt addieren sich, Gespräche mit Entscheidungen (siehe Abschnitte 11 und 12 sowie `docs/01_entscheidungen.md`). Die Tabelle bleibt zum Nachlesen.
 
 | Frage | Regel (Vorschlag) |
 |---|---|
@@ -126,108 +128,240 @@ Vorschlag: An einem Steinkreis, dessen Lied vollständig ist, tritt **bei Spring
 
 Der **Skalde** (`npc_skald`, später ein Bewohner-Beruf an der Taverne) liest bei Festen Einträge aus der Siedlungs-Saga vor. Vorschlag für später: Das gibt Stimmung, keine neue Währung.
 
-## 7. Datenformat (Entwurf)
+## 7. Datenformat (Entwurf, angepasst an die Antworten vom 2026-11-15)
 
-Nach `docs/06_datenformat.md`: eine JSON-Datei pro Tabelle in `game/Content/Data/`, Aufbau `{ "schema", "rows" }`, IDs `snake_case`, nie wiederverwenden, Wegfallendes bekommt `"deprecated": true`. Neue Präfixe: `saga_` (Strang), `quest_` (Etappe), `song_` (Lied), `deed_` (Tat). Fragmente behalten `item_saga_fragment_*` aus der Asset-Liste.
+Nach `docs/06_datenformat.md`: eine JSON-Datei pro Tabelle in `game/Content/Data/`, Aufbau `{ "schema", "rows" }` (Einstellungsdateien wie `listen.json` als einzelnes Objekt), IDs `snake_case`, nie wiederverwenden, Wegfallendes bekommt `"deprecated": true`.
+Grundlage sind die bestätigten Punkte:
+- alles spawnt nach;
+- Bossbeute: beim ersten Sieg sicher, danach mit Chance je Stufe;
+- Gespräche mit Entscheidungen, große Folgen in der Hauptstory;
+- Folgen für die Welt addieren sich;
+- Questhilfe über Gespräche, im Menü abschaltbar;
+- alles vertont (Deutsch und Englisch).
 
-### 7.1 Bedingungen
-Dieselbe Schreibweise wie in `listen.json` (`art:wert`), damit es nur einen Prüfbaustein gibt:
+Voraussetzung dafür ist der Queststand pro Spieler. Er ist noch Vorschlag, wird aber von den anderen Antworten vorausgesetzt.
 
-| Bedingung | Bedeutung |
-|---|---|
-| `unlock:<id>` | Freischaltung gesetzt. **Jede abgeschlossene Etappe setzt `unlock:<quest_id>`** (daher `unlock:quest_village_seer`) |
-| `quest_active:<id>` | Etappe läuft |
-| `song:<song_id>` | Lied vollständig (ohne verborgene Strophe) |
-| `deed:<deed_id>` | Tat in der Welt geschehen |
-| `listen_level:<n>` | Spieler hat mindestens Gespür-Stufe n (inkl. Boni) |
-| `job:<job_id>` | ein Bewohner mit diesem Beruf lebt im Dorf |
-| `building:<id>` | Gebäude steht fertig in der Siedlung |
-| `season:<name>`, `night`, `fog`, `place:<ort>` | wie in `listen.json` |
-| `option:<name>` | Weltoption aktiv (z. B. `option:sagenwelt`) |
+### 7.0 Übersicht der Dateien
 
-### 7.2 `saga_lines.json` – Stränge
+| Datei | Inhalt | Präfix |
+|---|---|---|
+| `saga.json` | Einstellungen (ein Objekt): Radien, Nachspawn-Zeiten, Bossbeute-Chancen | – |
+| `saga_lines.json` | Stränge (Hauptstory, Nebenstränge) und ihre Wege | `saga_`, `path_` |
+| `quests.json` | Etappen mit Zielen, Belohnungen und Folgen | `quest_` |
+| `dialogues.json` | Gespräche: Knoten, Antworten, Entscheidungen, Hilfen | `dlg_`, `choice_` |
+| `lore.json` | Schriftstücke: Logbuchseiten, Lied-Strophen, Inschriften | `lore_` (Lied-Strophen behalten `item_saga_fragment_*`) |
+| `visions.json` | Nebelbilder (Seidr-Visionen beim Lauschen) | `vision_` |
+| `deeds.json` | Taten (Siedlungs-Chronik und persönliche Taten) | `deed_` |
+| `lines.json` | jede gesprochene oder angezeigte Zeile: Text und Ton je Sprache | `line_` |
+| `speakers.json` | Sprecher: Stimme je Sprache, KI oder Sprecher | `spk_` |
+| Gegner-Tabelle (Phase 3) | Nachspawnen und Bossbeute je Gegner | `enemy_`, `boss_` |
+
+Merksatz: **Jeder Text im Spiel ist eine `line_…`.** Quests, Gespräche, Logbuch und Saga-Buch verweisen nur auf Zeilen. Dadurch hängen Übersetzung, Untertitel und Vertonung an einer Stelle, und jede Zeile weiß, ob ihr Ton noch eine KI-Stimme ist.
+
+### 7.1 `saga.json` – Einstellungen
+```json
+{ "schema": "saga_1",
+  "share_radius_m": 50,
+  "quest_enemy_respawn_days": 1,
+  "boss_respawn_days": 3,
+  "boss_repeat_drop_chance": { "2": 0.5, "3": 0.4, "4": 0.3, "5": 0.2, "6": 0.1 },
+  "boss_pity_after": 4,
+  "thoughts_default_on": true,
+  "quest_help_default_on": true }
+```
+Alle Zahlen sind bestätigte Startwerte (2026-11-15). Die beiden `*_default_on` sind Vorschlag.
+
+### 7.2 Bedingungen
+Gleiche Schreibweise wie in `listen.json` (`art:wert`), ein Prüfbaustein für alles. Neu ist: **Jede Bedingung gilt entweder für den Spieler oder für die Welt.**
+
+| Bedingung | gilt für | Bedeutung |
+|---|---|---|
+| `quest_done:<id>` | Spieler | Etappe in seinem Queststand abgeschlossen |
+| `quest_active:<id>` | Spieler | Etappe läuft bei ihm |
+| `choice:<choice_id>=<option>` | Spieler | er hat so entschieden |
+| `path:<path_id>` | Spieler | er geht diesen Weg (z. B. `path_circle`, `path_farm`) |
+| `lore:<lore_id>` | Spieler | Schriftstück gefunden |
+| `song:<song>` | Spieler | alle nötigen Strophen eines Lieds gefunden |
+| `listen_level:<n>` | Spieler | Gespür-Stufe mindestens n (inkl. Boni) |
+| `setting:<name>` | Spieler | persönliche Menü-Einstellung (z. B. `setting:quest_help`) |
+| `unlock:<id>` | Welt | Freischaltung gesetzt. Etappen mit `"scope": "world"` setzen beim Abschluss `unlock:<quest_id>` (daher `unlock:quest_village_seer` in `listen.json`) |
+| `world_choice:<choice_id>=<option>` | Welt | **mindestens ein** Spieler hat so entschieden (Folgen addieren sich) |
+| `deed:<deed_id>` | Welt | Welt-Tat geschehen |
+| `job:<id>`, `building:<id>` | Welt | wie bisher |
+| `season:`, `night`, `fog`, `place:` | Welt/Ort | wie in `listen.json` |
+| `option:<name>` | Welt | Weltoption aktiv (z. B. `option:hordes`, `option:sagenwelt`) |
+
+### 7.3 `saga_lines.json` – Stränge und Wege
 ```json
 { "schema": 1, "rows": [
-  { "id": "saga_broken_ring", "name": "Der gebrochene Ring", "kind": "main",
-    "quests": ["quest_prologue_hum", "quest_prologue_circle", "quest_fjord_song", "…"],
-    "acts": [ { "notch": 1, "ends_with": "quest_marsh_boss" },
-              { "notch": 2, "ends_with": "quest_fjell_boss" },
-              { "notch": 3, "ends_with": "quest_storm_boss" } ] },
-  { "id": "saga_seer_voice", "name": "Die Stimme im Seeglas", "kind": "side",
-    "start": ["unlock:quest_prologue_circle"],
+  { "id": "saga_first_ones", "name_line": "line_saga_first_ones_title", "kind": "main",
+    "quests": ["quest_fo_beach", "quest_fo_farm", "quest_fo_hum", "quest_fo_pages", "quest_fo_graves"],
+    "paths": [
+      { "id": "path_circle", "requires": ["choice:choice_empty_stone=ring"],
+        "quests": ["quest_fo_circle_1", "quest_fo_circle_2", "quest_fo_circle_3"], "rejoin": "quest_fo_meeting" },
+      { "id": "path_farm", "requires": ["choice:choice_empty_stone=name"],
+        "quests": ["quest_fo_farm_1", "quest_fo_farm_2", "quest_fo_farm_3"], "rejoin": "quest_fo_meeting" }
+    ],
+    "after_rejoin": ["quest_fo_meeting"] },
+  { "id": "saga_seer_voice", "name_line": "line_saga_seer_title", "kind": "side",
+    "start": ["quest_done:quest_fo_graves"],
     "quests": ["quest_seer_meet", "quest_seer_glass", "quest_seer_circle", "quest_seer_hut", "quest_village_seer"] }
 ] }
 ```
-`kind`: `main`, `side`, `settlement`. Persönliche Taten sind kein Strang.
+- `kind`:
+  - `main`: große Folgen erlaubt;
+  - `side`: mäßige Folgen;
+  - `settlement`: nur Taten.
+- `paths` gibt es nur in der Hauptstory: getrennte Kapitel nach einer großen Entscheidung. `rejoin` ist die Etappe, an der sie wieder zusammenlaufen (bestätigt: 2–3 Kapitel getrennt).
 
-### 7.3 `quests.json` – Etappen
+### 7.4 `quests.json` – Etappen
 | Feld | Pflicht | Bedeutung |
 |---|:-:|---|
 | `id` | ✓ | `quest_…` |
 | `line` | ✓ | `saga_…` |
-| `name` | ✓ | Titel im Saga-Buch |
-| `start` | | Bedingungen; fehlt es, beginnt die Etappe, sobald die vorige im Strang fertig ist |
-| `hint` | ✓ | erzählender Satz im Saga-Buch; `hint_sagenwelt` optional |
-| `area` | | Gebiet auf der Karte: `{ "place": "poi_…", "radius_m": 80 }` |
-| `objectives` | ✓ | Liste der Ziele (unten), alle müssen erfüllt sein; `"order": "any"` oder `"sequence"` |
-| `rewards` | | `{ "unlock": [...], "items_to_storage": [...], "blueprints": [...], "deed": "deed_…" }` |
-| `saga_text` | ✓ | Eintrag im Saga-Buch nach Abschluss |
+| `name_line` | ✓ | Titel (Zeile) |
+| `scope` | ✓ | `player`: jeder erlebt die Etappe selbst (Standard). `world`: verändert die Welt und kommt nur einmal vor; wer sie später erreicht, bekommt sie als „davon gehört“ angerechnet |
+| `start` | | Bedingungen; fehlt es, beginnt die Etappe nach der vorigen im Strang |
+| `hint_line` | ✓ | erzählender Satz im Saga-Buch |
+| `area` | | Gebiet auf der Karte: `{ "place": "poi_…", "radius_m": 120 }` |
+| `area_help` | | kleineres Gebiet, das eine Gesprächshilfe freischaltet: `{ "radius_m": 30 }` (nur mit `setting:quest_help`) |
+| `objectives` | ✓ | Ziele (Tabelle unten), `"order": "any"` oder `"sequence"` |
+| `rewards` | | für den Spieler: `{ "items": [...], "deed": "deed_…", "lore": [...] }` |
+| `world_effects` | | für die Welt, addieren sich: `{ "unlock": [...], "spawn_npcs": [...], "villagers_join": [...], "blueprints": [...] }` |
+| `saga_line` | ✓ | Eintrag im Saga-Buch nach Abschluss |
+
+**Gemeinsame Gutschrift:** Ein erfülltes Ziel zählt für alle Spieler im Umkreis von `share_radius_m` (50 m), die dieselbe Etappe aktiv haben.
 
 Ziel-Typen (`objectives[].type`):
 
 | Typ | Felder | Erfüllt, wenn … |
 |---|---|---|
-| `go_to` | `place`, `radius_m` | ein Spieler dort ist |
-| `listen_find` | `target` (Tag oder `kind:`), `count` | ein Spieler die Ziele **beim Lauschen** aufgedeckt und aufgenommen hat |
-| `listen_at` | `place`, `when` (Bedingungen) | ein Spieler dort aktiv lauscht, während `when` gilt |
-| `collect` | `item`, `count`, `deliver_to` (`storage` / `npc_…`) | genug im Lager bzw. übergeben |
-| `fragments` | `song` | Lied vollständig |
-| `build` | `buildable` | Gebäude steht fertig |
-| `talk` | `npc` | ein Spieler hat mit der Person gesprochen |
-| `defeat` | `enemy` / `boss` | besiegt |
-| `assign_job` | `job` | ein Bewohner hat den Beruf |
+| `go_to` | `place`, `radius_m` | der Spieler dort ist |
+| `listen_find` | `target` (Tag oder `kind:`), `count` | er die Ziele beim Lauschen aufgedeckt und aufgenommen hat |
+| `listen_at` | `place`, `when`, `when_mode` | er dort aktiv lauscht, während `when` gilt |
+| `vision` | `vision` | er das Nebelbild gesehen hat |
+| `read` | `lore` | er das Schriftstück gefunden hat |
+| `collect` | `item`, `count`, `deliver_to` (`npc_…` / `storage`) | übergeben bzw. im Lager |
+| `talk` | `dialogue` | er das Gespräch bis zu einem Ende geführt hat |
+| `choose` | `choice` | er die Entscheidung getroffen hat (egal wie) |
+| `build` | `buildable` | Gebäude steht (Welt; zählt für jeden, der die Etappe aktiv hat) |
+| `defeat` | `enemy` / `boss` | besiegt (mit Gutschrift im Umkreis) |
+| `assign_job` | `job` | ein Bewohner hat den Beruf (Welt) |
 
-Beispiel (Etappe 3 der Seherin):
+Questgegner und Questgegenstände werden **pro Spieler gezeigt**: Hat ein Spieler sie schon, sieht er sie nicht mehr; wer sie noch braucht, sieht sein eigenes Exemplar. Questgegner spawnen nach `quest_enemy_respawn_days` nach.
+
+### 7.5 `dialogues.json` – Gespräche, Entscheidungen, Hilfen
 ```json
-{ "id": "quest_seer_circle", "line": "saga_seer_voice", "name": "Wo der Ring summt",
-  "hint": "„Der Kreis spricht nur, wenn die Welt still ist“, sagt die Seherin. Geh in der Nacht oder im Nebel zum Steinkreis am Moor und lausche.",
-  "area": { "place": "poi_stone_circle_moor", "radius_m": 60 },
-  "objectives": [
-    { "type": "listen_at", "place": "poi_stone_circle_moor", "when": ["night", "fog"], "when_mode": "any" }
+{ "schema": 1,
+  "choices": [
+    { "id": "choice_empty_stone", "weight": "major", "options": ["ring", "name"] },
+    { "id": "choice_graves_axe", "weight": "minor", "options": ["leave", "take"] },
+    { "id": "choice_seer_trust", "weight": "minor", "options": ["help", "refuse"] }
   ],
-  "rewards": { "deed": "deed_heard_circle_moor" },
-  "saga_text": "In einer Nebelnacht hörten sie den Kreis am Moor singen." }
-```
-
-### 7.4 `songs.json` – Lieder und Fragmente
-```json
-{ "schema": 1, "rows": [
-  { "id": "song_fjord", "name": "Lied der Fjordwiesen", "reveals": "poi_stone_circle_fjord",
-    "fragments": [
-      { "id": "item_saga_fragment_fjord_1", "found": "plain",  "text": "…" },
-      { "id": "item_saga_fragment_fjord_2", "found": "listen", "text": "…" },
-      { "id": "item_saga_fragment_fjord_3", "found": "listen", "text": "…" },
-      { "id": "item_saga_fragment_fjord_h", "found": "hidden", "text": "…", "bonus": { "blueprints": ["…"] } }
+  "rows": [
+  { "id": "dlg_seer_first", "npc": "npc_seeress", "start": ["quest_active:quest_seer_meet"],
+    "nodes": [
+      { "id": "n1", "line": "line_seer_first_01",
+        "options": [
+          { "line": "line_seer_first_ask_where", "next": "n_help", "requires": ["setting:quest_help"] },
+          { "line": "line_seer_first_help", "next": "n_yes", "choice": "choice_seer_trust=help" },
+          { "line": "line_seer_first_refuse", "next": "n_no", "choice": "choice_seer_trust=refuse" } ] },
+      { "id": "n_help", "line": "line_seer_first_where", "effects": { "quest_help": "quest_seer_glass" }, "next": "n1" },
+      { "id": "n_yes", "line": "line_seer_first_yes", "end": true },
+      { "id": "n_no", "line": "line_seer_first_no", "end": true }
     ] }
 ] }
 ```
-`found`: `plain` (sichtbar, Runenstein), `listen` (hallend, Tag `GamerMagic`, zählt als neuer Fund +2), `hidden` (Tag `GamerMagicHidden`, ab Stufe 4), `rare` (Tag `GamerMagicRare`, ab Stufe 5). Für `song:` zählen nur `plain` und `listen`.
+- **Entscheidung:** Eine Antwort mit `choice` speichert die Wahl im Queststand des Spielers. `weight` legt das Gewicht fest:
+  - `major`: nur in `main`-Strängen, große Folgen;
+  - `minor`: überall, mäßige Folgen.
 
-### 7.5 `deeds.json` – Taten
+  Entscheidungen ohne Gespräch, etwa am leeren Stein, laufen über denselben Block: Das Spiel bietet die Optionen als Handlung an.
+- **Hilfe:** Antworten mit `requires: ["setting:quest_help"]` erscheinen nur, wenn die Questhilfe im Menü an ist. Ihr Effekt `quest_help` schaltet für diesen Spieler `area_help` frei. Beim Ausschalten im Menü erklärt ein Hinweis, dass diese Fragen dann fehlen.
+- **Koop:** Jeder spricht für sich (eigener Queststand). Mitspieler in der Nähe hören die vertonten Zeilen mit, aber nur der Sprechende wählt.
+
+### 7.6 `lore.json` – Schriftstücke
 ```json
 { "schema": 1, "rows": [
-  { "id": "deed_first_winter", "scope": "world", "trigger": "season_survived:winter", "once": true,
-    "text": "Sie überstanden ihren ersten Winter in {settlement}." },
-  { "id": "deed_villager_fallen", "scope": "world", "trigger": "villager_died", "once": false,
-    "text": "{villager} fiel {cause}, im {year}. {season}." },
-  { "id": "deed_listen_level", "scope": "player", "trigger": "listen_level_reached", "once": false,
-    "text": "{player} erreichte das {level_name}." }
+  { "id": "lore_asgerd_01", "kind": "journal_page", "group": "journal_asgerd", "order": 1,
+    "found": "plain", "place": "poi_first_farm", "line": "line_lore_asgerd_01", "handwriting": "asgerd" },
+  { "id": "item_saga_fragment_fjord_2", "kind": "song_fragment", "group": "song_fjord", "order": 2,
+    "found": "listen", "line": "line_song_fjord_2" }
 ] }
 ```
-`scope`: `world` (Siedlungs-Saga) oder `player` (persönliche Taten). Platzhalter in `{}` füllt das Spiel.
+- `kind`: `journal_page`, `song_fragment`, `inscription`.
+- `found`:
+  - `plain`: sichtbar;
+  - `listen`: hallend, Tag `GamerMagic`, zählt als neuer Fund +2;
+  - `hidden`: ab Stufe 4;
+  - `rare`: ab Stufe 5.
+- Schriftstücke gehen beim Aufnehmen in das Saga-Buch des Spielers, nicht ins Inventar. Andere Questgegenstände sind normale Gegenstände aus `items.json` (Leinsamen, Seeglas, Hallbjörns Ring).
+- `handwriting` wählt die Schrift der Handschrift-Ansicht; daneben steht immer der lesbare Drucktext.
 
-### 7.6 Spielstand
-Im Weltspielstand (`world.json`, siehe Speichersystem in `docs/01_entscheidungen.md`) ein Block `saga`: Zustand jeder Etappe (`locked` / `active` / `done`) mit Ziel-Fortschritt, gesetzte Freischaltungen, gefundene Fragmente, Welt-Taten mit Zeitpunkt. Pro Spieler (über die Spieler-ID): persönliche Taten, Gespür-EP und die Liste „schon gezählter Funde“. Der Server prüft alle Ziele (Regel 1); Spieler schicken nur Anfragen (sprechen, aufnehmen, lauschen).
+### 7.7 `visions.json` – Nebelbilder
+```json
+{ "schema": 1, "rows": [
+  { "id": "vision_empty_stone", "place": "poi_graves_first", "radius_m": 6,
+    "when": [], "min_listen_level": 1, "duration_s": 14, "once_per_player": false,
+    "figures": [ { "anim": "vis_hallbjorn_leaves", "look": "ghost_male" },
+                 { "anim": "vis_asgerd_stays", "look": "ghost_female" } ],
+    "lines": ["line_vis_empty_stone_sfx"], "reveals": "item_ring_hallbjorn",
+    "thought": "line_thought_empty_stone" }
+] }
+```
+Nebelbilder lassen sich wiederholen (`once_per_player: false`). Die Folge (z. B. den Ring freilegen) gibt es pro Spieler einmal. Ob die Gestalten Worte sprechen oder nur Laute, ist offen (siehe `docs/01_entscheidungen.md`, „Vertonung“).
+
+### 7.8 `lines.json` und `speakers.json` – Text und Vertonung
+```json
+{ "schema": 1, "rows": [
+  { "id": "line_lore_asgerd_01", "speaker": "spk_asgerd",
+    "text": { "de": "Dritter Tag an Land. Wir sind siebzehn …", "en": "Third day ashore. We are seventeen …" },
+    "audio": { "de": "/Game/Audio/VO/de/lore_asgerd_01", "en": "/Game/Audio/VO/en/lore_asgerd_01" },
+    "voice_source": { "de": "ai", "en": "ai" },
+    "vars": [] }
+] }
+```
+```json
+{ "schema": 1, "rows": [
+  { "id": "spk_asgerd", "name": "Asgerd", "voice": { "de": "…", "en": "…" } },
+  { "id": "spk_narrator", "name": "Skalde (Erzähler)", "voice": { "de": "…", "en": "…" } },
+  { "id": "spk_player", "name": "Spielerfigur", "voice_by_choice": true }
+] }
+```
+- `voice_source` (`ai` / `actor`) zeigt je Sprache, welche Zeilen noch eine KI-Stimme haben. Daraus entstehen die Liste für die spätere Neuaufnahme mit Sprechern und die Angaben für Asset-Log und Steam.
+- Zeilen mit Platzhaltern (`{player}`, `{villager}`) werden nicht mit Namen vertont. Der Erzähler sagt dann „sie“ oder umschreibt. Das betrifft vor allem Taten und Gefallene. (Alternative: jeden Namen aus der Namensliste einzeln aufnehmen; teuer.)
+- Fehlt der Ton einer Sprache, zeigt das Spiel nur den Untertitel. Untertitel sind immer verfügbar (Lesbarkeit bestätigt).
+
+### 7.9 Gegner-Tabelle (Phase 3): Nachspawnen und Bossbeute
+```json
+{ "id": "boss_old_boar", "tier": 2, "respawn_days": 3,
+  "first_kill_drops": [ { "item": "item_trophy_boss_old_boar", "count": 1 }, { "item": "item_boar_tusk_old", "count": 2 } ],
+  "drops": [ { "item": "item_meat_raw", "min": 4, "max": 6 }, { "item": "item_hide", "min": 2, "max": 3 } ],
+  "repeat_boss_drops": [ { "item": "item_boar_tusk_old", "count": 1 } ] }
+```
+- **Erster Sieg pro Spieler:** `first_kill_drops` + `drops`.
+- **Jeder weitere Sieg:** `drops`, dazu `repeat_boss_drops` mit der Chance aus `saga.json` je Stufe. Nach `boss_pity_after` (4) Siegen ohne Bossmaterial gibt es beim nächsten sicher welches.
+- **Koop:** Jeder Beteiligte im Umkreis bekommt eigene Beute nach seinem eigenen Stand (erster oder wiederholter Sieg).
+
+### 7.10 Spielstand
+Im Weltspielstand (`world.json`) werden zwei Bereiche gespeichert:
+- **Welt:**
+  - gesetzte Freischaltungen;
+  - Welt-Entscheidungen (`world_choice`: welche Optionen mindestens einmal gewählt wurden);
+  - abgeschlossene Etappen mit `scope: world`;
+  - Welt-Taten mit Zeitpunkt;
+  - Zeitpunkte fürs Nachspawnen (Bosse, Questgegner).
+- **Pro Spieler** (Spieler-ID):
+  - Zustand jeder Etappe (`locked` / `active` / `done` / `heard` = „davon gehört“) mit Ziel-Fortschritt;
+  - Entscheidungen und Weg (`path_…`);
+  - gefundene Schriftstücke und gesehene Nebelbilder;
+  - freigeschaltete Gesprächshilfen;
+  - persönliche Taten;
+  - Gespür-EP und schon gezählte Funde;
+  - Bosse mit erstem Sieg und Pech-Zähler je Boss.
+
+Der Server prüft alle Ziele und Bedingungen (Regel 1). Spieler schicken nur Anfragen: sprechen, Antwort wählen, aufnehmen, lauschen.
+Der Queststand bleibt immer pro Welt, auch bei der Weltoption „Inventar wandert mit dem Charakter“ (bestätigt 2026-11-15).
 
 ## 8. Umfang und Reihenfolge (Vorschlag)
 
@@ -241,7 +375,9 @@ Im Weltspielstand (`world.json`, siehe Speichersystem in `docs/01_entscheidungen
 
 Ehrlich: Schritt 1–2 sind in einigen Arbeitstagen machbar, sobald es magische Objekte gibt. Die Hauptsaga ist an Kampf, Biome und Bosse gebunden und damit Phase 4. Jede Etappe braucht Text; der Text ist mehr Arbeit, als man denkt (Vorschlag: Claude schreibt Entwürfe, der Nutzer liest gegen).
 
-## 9. Offene Fragen
+## 9. Offene Fragen (überholt)
+
+> **Überholt am 2026-11-15:** beantwortet in Abschnitt 12 und `docs/01_entscheidungen.md`. Noch offen sind Frage 6 (Finale) und Frage 8 (Saga-Buch-Taste).
 
 | # | Frage | Vorschlag von Claude |
 |---|---|---|
@@ -398,3 +534,12 @@ Eingetragen in `docs/01_entscheidungen.md`. Kurzfassung:
 9. Gespräche mit Entscheidungen von Anfang an: **bestätigt** (gegen die Empfehlung). Offen: Wer entscheidet bei Entscheidungen, die die Welt verändern?
 
 Folgen für den Entwurf: Abschnitt 5 („Fortschritt gehört der Welt“) gilt nicht mehr, sobald Abschnitt 11 bestätigt ist. Abschnitt 3 (Hauptsaga A) ist nicht mehr die Hauptlinie, Steinkreise und Lieder bleiben als Orte. Datenformat (Abschnitt 7) braucht noch: `scope` je Etappe, `respawn_days`, `repeat_drop_chance`, `pity_after`, Gesprächsknoten mit Wahl und Folgen.
+
+### Nachtrag: weitere Antworten (2026-11-15)
+- Queststand pro Spieler: **bestätigt**. Abschnitt 11 gilt.
+- Queststand bleibt immer pro Welt, auch bei „Inventar wandert mit“.
+- Vertonung: Namen werden umschrieben; Spielerfigur mit 4 wählbaren Stimmen; Nebelbilder mit halb verwehten Sätzen; Lippen aus dem Ton (MetaHuman).
+- Finale: Der Spieler entscheidet (Ring schließen oder offen lassen), zwei Enden. Im Koop zeigt die Welt das zuerst gewählte Ende (Vorschlag, Ausnahme von „Folgen addieren sich“).
+- Saga-Buch-Taste: J.
+- Damit sind die offenen Fragen aus Abschnitt 9 alle beantwortet.
+
