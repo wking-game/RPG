@@ -102,6 +102,8 @@ Gerste und Hafer haben vorläufig die Flachs-Modelle im Feld und als Wildpflanze
   - **Kochen und Essen:** Eintopf an der Herdstelle gekocht. Eintopf, Honigkuchen und Met gegessen, die Buffs stimmen und kommen beim Client an. Die vierte Mahlzeit ersetzt die mit der kürzesten Restzeit. „Baumstamm“ wird als Mahlzeit abgelehnt. Nach Ablauf sind keine Buffs mehr aktiv.
   - **Taverne und Bewohner:** Die Arbeitsplätze steigen 1 → 2 → 3. Der Koch kocht am Lagerfeuer bei der Taverne. Der Wirt bringt Mahlzeiten, Eintopf und Bier in die Taverne, der Client sieht den Vorrat. Die Bewohner essen und trinken dort, der Stimmungswert wird geloggt.
 
+**Nachtest 2026-11-21** mit dem gemeinsamen Stand (nach Speichersystem, HUD-Anzeige und Stimmung): Build ok, Datentest `Gamer.Data.MealsAndTavern` grün. Dasselbe Testskript mit Host + 2 Clients und mit Server + 1 Spieler bestanden: Bauplatz-Regel, Kochen, Essen, Ersetzen der kürzesten Mahlzeit, Ablauf, Ausbau 1 → 3, Koch am Lagerfeuer, Wirt (7 Lieferungen), 6 Mahlzeiten in der Taverne. Die Stimmung wird jetzt über `AddMood` erhöht (im Test bis zu +0,15 Bonus je Bewohner). Die HUD-Anzeige selbst wurde ohne Grafik nicht angesehen.
+
 ## Grenzen, ehrlich
 
 - **Die meisten Buffs wirken noch nicht:** Es gibt noch keine Lebenspunkte, keinen Kampf, keine Traglast-Grenze und keine Kälte. Die Buffs werden gesetzt, übertragen und abgefragt (`GetBonus`); die Systeme müssen sie lesen, sobald es sie gibt.
