@@ -15,7 +15,31 @@ enum class EGamerItemCategory : uint8
 	Food,
 	Tool,
 	/** Weapons (ID weapon_..., block "weapon"); combat itself comes in phase 3. */
-	Weapon
+	Weapon,
+	/** Worn armor (ID armor_..., block "armor"): goes to an equipment slot, gives armor, poise resistance and resistances. */
+	Armor
+};
+
+/** items.json "armor": where it is worn and what it gives (docs/21 5.1, docs/25). */
+USTRUCT(BlueprintType)
+struct FGamerArmorProps
+{
+	GENERATED_BODY()
+
+	/** Equipment slot: helmet, shoulder, chest, hands, legs, feet, ring, cloak. */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FName Slot;
+
+	/** Armor value of the piece (counts toward the zones of its slot; rings and cloaks give none). */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	float Armor = 0.f;
+
+	/** Poise resistance of the piece (adds up over all worn pieces). */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	float PoiseResist = 0.f;
+
+	/** Resistances by kind (heat, cold, storm, poison), e.g. 0.04 = 4 %. Adds up over all worn pieces. */
+	TMap<FName, float> Resist;
 };
 
 /** items.json "weapon": what a weapon is. Durability works like tools (half damage when worn out). */
@@ -159,7 +183,11 @@ enum class EGamerBuffStat : uint8
 	/** Poison resistance (percent). */
 	PoisonResist,
 	/** Damage (percent). */
-	Damage
+	Damage,
+	/** Max stamina (points). */
+	StaminaMax,
+	/** Stamina regeneration (points per second). */
+	StaminaRegen
 };
 
 USTRUCT(BlueprintType)
@@ -186,6 +214,10 @@ struct FGamerFoodProps
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	TArray<FGamerBuffEffect> Buffs;
+
+	/** Raw food eaten on the way (berries, apples ...): weak and short, never pushes out a cooked meal. */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	bool bSnack = false;
 
 	bool IsMeal() const { return Minutes > 0.f && Buffs.Num() > 0; }
 };
@@ -226,6 +258,10 @@ struct FGamerItemDef
 	/** Only meaningful when Category == Weapon. */
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	FGamerWeaponProps Weapon;
+
+	/** Only meaningful when Category == Armor. */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	FGamerArmorProps Armor;
 
 	/** Game days until it spoils when carried (storage slower, on the ground faster). 0 = does not spoil. */
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
@@ -370,6 +406,10 @@ struct FGamerRecipeDef
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	float WorkSeconds = 0.f;
+
+	/** Player level needed to craft this (recipes.json "min_level", 0 = none). Read from the data; enforced once players have levels. */
+	UPROPERTY(BlueprintReadOnly, Category = "Data")
+	int32 MinLevel = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Data")
 	bool bDeprecated = false;

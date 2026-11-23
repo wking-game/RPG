@@ -129,6 +129,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Visual")
 	TObjectPtr<UInstancedStaticMeshComponent> Crops;
 
+	/** Field: the 1 m soil tile from the data, laid out over the drawn size (instead of stretching one mesh). */
+	UPROPERTY(VisibleAnywhere, Category = "Visual")
+	TObjectPtr<UInstancedStaticMeshComponent> SoilTiles;
+
 	UFUNCTION()
 	void OnRep_Farm();
 
@@ -137,6 +141,10 @@ private:
 	/** Tree kind: spawn the growing node in place of this piece and remove the piece. */
 	void PlantTree();
 	void UpdateCrops();
+	/** Field, machines that render: soil tiles once the field is finished (the stretched mesh keeps the collision). */
+	void UpdateSoil();
+	FTimerHandle SoilTimer;
+	bool bSoilShown = false;
 	float ToGameDays(float Seconds) const;
 	/** Gives Count of Item to the user; what does not fit is dropped next to the building. Returns the given count. */
 	int32 Give(AGamerCharacter* User, FName Item, int32 Count) const;

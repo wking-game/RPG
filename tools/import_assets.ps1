@@ -21,10 +21,10 @@ $EditorCmd = Join-Path $UeRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
 $Script   = Join-Path $RepoRoot 'tools\unreal\import_assets.py'
 $LogFile  = Join-Path $RepoRoot ("game\Saved\Logs\import_assets_{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 
-if (Get-Process UnrealEditor -ErrorAction SilentlyContinue) {
-    throw 'Unreal Editor (or a game started from it) is running. Close it first.'
-}
-
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'import_assets.ps1'
+try {
 Write-Host ">> Importing assets from $RepoRoot\Assets ..." -ForegroundColor Cyan
 $start = Get-Date
 & $EditorCmd "`"$Project`"" -run=pythonscript "-script=`"$Script`"" -unattended -nosplash -nullrhi "-abslog=`"$LogFile`"" | Out-Null
@@ -36,3 +36,5 @@ Write-Host ("<< exit {0} after {1:N0} s. Log: {2}" -f $code, ((Get-Date) - $star
 if ($code -ne 0 -or -not (Select-String -Path $LogFile -Pattern 'GAMER_IMPORT: done, 0 error' -Quiet)) {
     throw 'Import failed, see log.'
 }
+}
+finally { Exit-UnrealLock $unrealLock }

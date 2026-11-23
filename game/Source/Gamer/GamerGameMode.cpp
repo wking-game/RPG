@@ -51,7 +51,14 @@ void AGamerGameMode::ApplyWorldOptions(bool bFromInitGame)
 	{
 		return;
 	}
-	State->SetWorldOptions(FGamerWorldOptions::FromUrlOptions(OptionsString));
+	FGamerWorldOptions Options = FGamerWorldOptions::FromUrlOptions(OptionsString);
+	// Difficulty presets: the server's own data wins over the URL (decision 2026-11-16; "custom" keeps the URL values).
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	if (Data && GamerData::EnforceDifficulty(Data->GetDifficulties(), Options))
+	{
+		UE_LOG(LogGamer, Warning, TEXT("World options: values of the difficulty preset taken from the server data"));
+	}
+	State->SetWorldOptions(Options);
 	bWorldOptionsApplied = true;
 	UE_LOG(LogGamer, Log, TEXT("World options: %s"), *State->GetWorldOptions().ToLogString());
 }

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "GameFramework/Actor.h"
 #include "GamerScanComponent.generated.h"
 
 /** One marker after a look-around. */
@@ -63,11 +64,15 @@ public:
 	/** Tests only: freeze the wave at this age (seconds); a negative value ends it. */
 	void SetDebugAge(float Seconds) { DebugAge = Seconds; }
 
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 	/** Test helper: category counts as text ("food=3 wood=2 ..."). */
 	FString DescribeCounts() const;
 
 private:
 	void LoadSettings();
+	/** Adds the markers within the radius of the current centre; with bNewOnly only things not yet marked (the wave moves with the player). */
+	void CollectMarks(bool bNewOnly, double RevealBase);
 	int32 CategoryOfNode(const struct FGamerResourceNodeDef& Def) const;
 	int32 CategoryIndex(FName Id) const;
 
@@ -85,5 +90,7 @@ private:
 	double LastScanTime = -1000.0;
 	double ShowUntil = 0.0;
 	FVector Center = FVector::ZeroVector;
+	TSet<TWeakObjectPtr<const AActor>> Marked;
+	double LastCollectTime = 0.0;
 	float DebugAge = -1.f;
 };

@@ -19,7 +19,7 @@
 | Spieler- und Bewohner-Figuren (Teile) | 2 Grundkörper | ca. 30 Teile | ca. 60 Teile |
 | Tiere (wild und Nutztiere) | 0 | 6 | ca. 16 |
 | Menschliche Gegner (Ausrüstungs-Sätze) | 0 | 8 | ca. 20 |
-| Bosse | 0 | 1–2 | 6 (Sagen-Fassung: +5) |
+| Bosse | 0 | 1–2 | 6 in der Sagen-Fassung ✔ (2026-11-22), dazu 4 Begleitfiguren (Abschnitt 6) |
 | Biome (Landschaftssätze) | 1 Testgelände | 2 | 6 |
 | Ressourcen-Vorkommen | 6 | ca. 20 | ca. 40 |
 | Orte (POIs) | 0 | 6 | ca. 20 |
@@ -64,7 +64,7 @@ Der teuerste Teil sind **Figuren, Tiere und Bosse** (Skelett, Animation). Der um
 | `npc_fishing_villager` | Bewohner des Fischerdorfs (Quests, Ruf) | Küste | ◐ |
 | `npc_lawspeaker` | Gesetzessprecher beim Thing | Thing-Platz | ○ |
 | `npc_skald` | Skalde, trägt die Saga vor (Feste, Saga-Einträge) | Siedlung | ○ |
-| `npc_seeress` | Seherin (Hinweise auf Questlinien, Weltoption Sagenwelt) | Opferstein | ○ |
+| `npc_seeress` | Seherin (Hinweise auf Questlinien) | Opferstein | ○ |
 | `npc_prisoner` | Gefangene in Banditenlagern → werden Bewohner | Banditenlager | ◐ |
 | `npc_mercenary` | anheuerbare Söldner (Ausbau) | überall | ◐ |
 
@@ -99,8 +99,9 @@ Jedes Tier braucht mindestens: Modell, Skelett, 6–10 Animationen (Stehen, Gehe
 
 Assets je Gruppe: 1 Kleidungs-/Rüstungssatz in Gruppenfarbe (aus den Rüstungs-Teilen kombiniert), Banner/Erkennungszeichen, 1 Lager-Set (Zelte, Feuerstelle, Palisade, Beutekiste), 5–8 Ruf-/Kampfrufe.
 
-## 5. Sagenwesen (`creature_`) – zurückgestellt
-**Entschieden am 2026-11-13:** zuerst nur Menschen und Tiere, Bosse in der realistischen Fassung. Sagenwesen höchstens später als Weltoption „Sagenwelt“. Die Tabelle bleibt als Vorrat für diesen Fall.
+## 5. Sagenwesen (`creature_`) ✔ aktiv (seit 2026-11-22)
+**Aktiv seit 2026-11-22:** Fantasy-Kreaturen sind Standard-Gegner neben Tieren und Menschen, alle Bosse treten in der Sagen-Fassung auf, die Weltoption „Sagenwelt“ entfällt (`docs/01_entscheidungen.md`: „Gegnerarten: Fantasy-Kreaturen (Antwort)“, „Bosse: Sagen-Fassung als Standard“). Die vollständige Kreaturenliste mit Namen und IDs kommt mit der bereinigten Fassung des Gemini-Dokuments; die Tabelle unten enthält nur die bisherigen Einträge.
+Früherer Stand (2026-11-13): zuerst nur Menschen und Tiere, Bosse in der realistischen Fassung, Sagenwesen höchstens als Weltoption.
 | ID | Wesen | Biom | Rolle |
 |---|---|---|---|
 | `creature_draugr` | Draugr (Untote aus Grabhügeln) | Hügelgrab-Heide | Gegner, nachts aus Grabhügeln |
@@ -109,20 +110,21 @@ Assets je Gruppe: 1 Kleidungs-/Rüstungssatz in Gruppenfarbe (aus den Rüstungs-
 | `creature_frost_giant` | Frostriese | Eisrand | Boss-Fassung |
 | `creature_lindworm` | Lindwurm | Glutküste | Boss-Fassung |
 
-Aufwand: verdoppelt die Boss-Arbeit. Gemeinfreie Sagenfiguren, aber eigenes Aussehen (keine Anlehnung an bekannte Spiele).
+Aufwand: Die frühere Schätzung „verdoppelt die Boss-Arbeit“ galt für zwei Fassungen je Boss; gebaut wird jetzt nur die Sagen-Fassung. Gemeinfreie Sagenfiguren, aber eigenes Aussehen (keine Anlehnung an bekannte Spiele).
 
 ## 6. Bosse (`boss_`) ◐ – ein Boss pro Biom
-Gebaut wird zuerst die **realistische Fassung** ✔ (2026-11-13); die Sagen-Fassung nur, falls die Weltoption „Sagenwelt“ später kommt.
-| ID | Boss | Biom | Realistische Fassung | Sagen-Fassung | Belohnung |
+Gebaut wird die **Sagen-Fassung** ✔ (2026-11-22, ersetzt „zuerst die realistische Fassung“ vom 2026-11-13); nur der Alte Keiler bleibt ein Tier. Die Weltoption „Sagenwelt“ entfällt. Wie die Story die Bosse einbindet: `docs/17_hauptstory_kapitel.md`, Entscheidungen vom 2026-11-22 in `docs/01_entscheidungen.md`.
+| ID | Boss | Biom | Gestalt (Sagen-Fassung ✔) | Rolle in der Story | Belohnung |
 |---|---|---|---|---|---|
-| `boss_old_boar` | Der Alte Keiler | Fjordwiesen | riesiger, narbiger Keiler | (immer realistisch) | Hauer → Bauplan Rennofen (T2) |
-| `boss_mud_mother` | Die Schlickmutter | Gezeitenmarsch | Plündererin auf einem Wrack | Moorhexe mit Irrlichtern | Bossmaterial → T3 |
-| `boss_barrow_king` | Der Hügelkönig | Hügelgrab-Heide | Eidbrecher-Jarl in Grabfestung | Draugr-Fürst | → T4 |
-| `boss_rock_father` | Der Felsenvater | Basaltfjell | Bärenkönig in Eishöhle | Troll | → T5 |
-| `boss_ash_tongue` | Die Aschezunge | Glutküste | Hohepriester des Aschebunds | Lindwurm | Relikt-Material (T6) |
-| `boss_storm_colossus` | Der Sturmkoloss | Eisrand | Seekönig der Plünderer mit Flotte | Frostriese | Endsieg, Saga-Finale |
+| `boss_old_boar` | Der Alte Keiler | Fjordwiesen | riesiger, narbiger Keiler (bleibt ein Tier) | wühlt am Kreis der Fjordwiesen (Kapitel 1) | Hauer → Bauplan Rennofen (T2) |
+| `boss_mud_mother` | Die Schlickmutter | Gezeitenmarsch | Moorhexe mit Irrlichtern (`creature_will_o_wisp`) | Hrefna, eine Seidr-Hexe (Mensch) im Dienst des Seekönigs, auf einem Wrack (Kapitel 2) | Bossmaterial → T3 |
+| `boss_barrow_king` | Der Hügelkönig | Hügelgrab-Heide | Draugr-Fürst | toter Ahn eines lebenden Jarls in der Grabfestung; der Jarl kämpft zuerst mit und kann im Kampf die Seiten wechseln (Kapitel 4) | → T4 |
+| `boss_rock_father` | Der Felsenvater | Basaltfjell | Troll (erstarrt im Licht kurz zu Stein) | haust vor Hallbjörns Eishöhle (Kapitel 5) | Trollstein → T5 |
+| `boss_ash_tongue` | Die Aschezunge | Glutküste | Lindwurm | Hohepriester des Aschebunds, vom Gezeitenhall verwandelt: spricht als Mensch, kämpft als Lindwurm (Kapitel 6) | Relikt-Material (T6) |
+| `boss_storm_colossus` | Der Sturmkoloss | Eisrand | Frostriese | vom Seekönig am Herz des Rings geweckt; vorher Kampf gegen den Seekönig an Deck seines Flaggschiffs (Kapitel 7) | Endsieg, Saga-Finale |
 
 Je Boss: Figur, 15–25 Animationen (3 Phasen), Arena (`poi_boss_arena`, fester Ort), Leibwache oder Begleiter, Trophäe (`item_trophy_boss_*`, platzierbar ✔), Bossmaterial-Icon, eigene Musik, Phasen-Effekte (Staubwolke, Flut, Nebel, Lawine, Feuerwalze, Eisbruch), Saga-Bild.
+Begleitfiguren der Sagen-Fassung (2026-11-22): Hrefnas Irrlichter (Kapitel 2), der lebende Jarl (Kapitel 4), die Aschezunge in Menschengestalt (Kapitel 6), der Seekönig als starker menschlicher Gegner (Kapitel 7, kein eigener Boss).
 
 ## 7. Landschaften (`biome_`) ◐
 | ID | Biom | Stufe | Stimmung | Typische Assets |
@@ -281,7 +283,7 @@ Quelle: Skelett kompatibel zum UE5-Standardskelett ✔, damit gekaufte oder übe
 - Arbeit: Funken an der Esse, Glut beim Schmieden („Glut und Takt“ ◐), Dampf im Löschtrog, Mehlstaub, Wasserspritzer beim Fischen.
 - Kampf: Treffer auf Holz/Metall/Fleisch, Funken beim Parieren, Blut ✔ und abtrennbare Körperteile ✔ (beides schaltbar), Haltungsbruch-Hinweis.
 - Welt: Regen, Schnee, Nebel (Morgennebel in der Marsch, Nachtnebel in der Heide), Sturm mit Sichtgrenze, Wasserfall-Gischt, Brandung, Gezeiten-Übergang, Lava-Glühen, Dampf heißer Quellen, Fußspuren im Schnee, Staub in Höhlen, Glühwürmchen (Wiesen, Sommer).
-- Sagenwelt ◐: Irrlichter, Draugr-Nebel, Troll wird zu Stein (Sonne).
+- Sagenwesen ✔ (2026-11-22, bisher „Sagenwelt“): Irrlichter, Draugr-Nebel, Troll wird zu Stein (Licht; auch im Bosskampf des Felsenvaters), ○ Verwandlung der Aschezunge in den Lindwurm.
 - Siedlung: Rauch aus Dächern, Feuer an Gebäuden (Weltoption Angriffe), Fest-Feuerwerk aus Funken, Saga-Ereignis-Hinweis.
 
 ## 18. Ton und Musik
@@ -373,7 +375,7 @@ Kleine Modelle, die Orte lebendig machen. Ohne Spielfunktion, aber wichtig für 
 
 ## 24. Was als Nächstes sinnvoll ist
 1. **Biome bestätigen** (Abschnitt 7) – davon hängen Bäume, Felsen, Tiere, Gegner und Bosse ab.
-2. ~~Sagenwelt ja/nein~~ – entschieden am 2026-11-13: zuerst nein, später höchstens Weltoption.
+2. ~~Sagenwelt ja/nein~~ – entschieden am 2026-11-13: zuerst nein, später höchstens Weltoption. **Geändert am 2026-11-22:** Sagenwesen und die Sagen-Fassung der Bosse sind Standard, die Weltoption entfällt.
 3. **Herkunft der Figuren entscheiden** (KI, gekaufte Basis, Freelancer) – größter Kostenblock.
 4. **Icon-Raster festlegen** (Blickwinkel, Licht, Rahmen, Stufenfarbe) – größter Mengenblock.
 5. Die ○-Vorschläge dieser Liste durchgehen: übernehmen, streichen oder später.

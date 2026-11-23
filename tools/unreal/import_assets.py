@@ -373,7 +373,9 @@ float3 c = Tex.rgb;
 float rough = Orm.g;
 float h = WorldPos.z - ObjPos.z;
 float n1, n2, n3; B_VN3(WorldPos / 90.0, n1); B_VN3(WorldPos / 23.0 + 7.1, n2); B_VN3(WorldPos / 5.5 + 3.3, n3);
-float patch = n1 * 0.6 + n2 * 0.3 + n3 * 0.1;
+float patch = n1 * 0.48 + n2 * 0.30 + n3 * 0.22;
+float fiber = saturate(abs(Tex.r - Tex.g) * 5.0 + (1.0 - Tex.b) * 0.22);
+float micro = smoothstep(0.48, 0.68, frac(n3 * 3.71 + n2 * 1.93));
 // Damp band at the bottom: darker, a little less rough.
 float damp = 1.0 - smoothstep(0.0, max(DampHeight, 1.0), h - (patch - 0.5) * DampHeight * 0.8);
 c *= lerp(1.0, 0.6, damp * 0.85);
@@ -386,8 +388,9 @@ c = lerp(c, lum * float3(0.93, 0.96, 1.0) * 1.08, w);
 float bottom = 1.0 - smoothstep(0.0, max(MossHeight, 1.0), h - (patch - 0.5) * MossHeight * 0.9);
 float up = saturate((Nrm.z - 0.25) / 0.6) * UpMoss;
 float mask = saturate(max(bottom, up) * MossAmount) * (1.25 - 0.35 * Orm.r);
-float moss = smoothstep(0.42, 0.62, mask * (0.45 + patch * 0.95));
-float3 mossCol = lerp(MOSS_DARK, MOSS_LIGHT, saturate(n3 * 1.2 - 0.1)) * (0.75 + 1.5 * lum);
+float mossField = mask * (0.20 + patch * 0.72 + fiber * 0.22);
+float moss = smoothstep(0.57, 0.76, mossField) * lerp(0.72, 1.0, micro);
+float3 mossCol = lerp(MOSS_DARK, MOSS_LIGHT, saturate(patch * 0.62 + fiber * 0.30)) * (0.75 + 1.5 * lum);
 c = lerp(c, mossCol, moss);
 rough = lerp(rough, 0.95, moss);
 return float4(c, saturate(rough));
@@ -396,7 +399,9 @@ return float4(c, saturate(rough));
 '''
 building = create_or_load('M_Gamer_Building', MATERIALS, unreal.Material, unreal.MaterialFactoryNew())
 mel.delete_all_material_expressions(building)
-bbc = texture_parameter(building, 'BaseColor', unreal.MaterialSamplerType.SAMPLERTYPE_COLOR, textures.get('T_Trim_Wood_BC'), -900, -200)
+# Drawn fields lay their soil tile as instances (AGamerFarmBuilding::SoilTiles): without this flag they show the default material.
+building.set_editor_property('used_with_instanced_static_meshes', True)
+bbc =texture_parameter(building, 'BaseColor', unreal.MaterialSamplerType.SAMPLERTYPE_COLOR, textures.get('T_Trim_Wood_BC'), -900, -200)
 bnrm = texture_parameter(building, 'Normal', unreal.MaterialSamplerType.SAMPLERTYPE_NORMAL, textures.get('T_Trim_Wood_N'), -900, 100)
 borm = texture_parameter(building, 'ORM', unreal.MaterialSamplerType.SAMPLERTYPE_MASKS, textures.get('T_Trim_Wood_ORM'), -900, 400)
 building_inputs = []

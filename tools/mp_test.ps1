@@ -48,7 +48,10 @@ param(
     # Keep everything running this long after the join check (e.g. for movement tests).
     [int]$HoldSec = 0,
 
-    [switch]$Render
+    [switch]$Render,
+
+    # Window size of rendered clients (-Render), e.g. 1920x1080 for close-up screenshots.
+    [string]$Resolution = '960x540'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -79,6 +82,10 @@ function Wait-ForLog([string]$Path, [string]$Pattern, [int]$Count, [Diagnostics.
 
 $started = @()
 $serverLog = Join-Path $LogDir 'server.log'
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'mp_test.ps1'
+$runStart = Get-Date
 try {
     # --- Server ---
     if ($Mode -eq 'Editor') {
@@ -112,7 +119,7 @@ try {
     for ($i = 1; $i -le $Clients; $i++) {
         $cLog = Join-Path $LogDir "client$i.log"
         $clientLogs += $cLog
-        $rhi = if ($Render) { '-windowed -resx=960 -resy=540' } else { '-nullrhi -nosound' }
+        $rhi = if ($Render) { ('-windowed -resx={0} -resy={1}' -f ($Resolution -split 'x')[0], ($Resolution -split 'x')[1]) } else { '-nullrhi -nosound' }
         $extra = if ($i -eq 1) { "$ClientArgs $Client1Args" } elseif ($i -eq 2) { "$ClientArgs $Client2Args" } else { $ClientArgs }
         # Stable player id per client slot (save system: re-joining players get their inventory back).
         if ($extra -notmatch 'GamerPlayerId=') { $extra = "$extra -GamerPlayerId=mp_client$i" }
@@ -174,5 +181,10 @@ finally {
             ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
         if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
     }
+    foreach ($p in $started) { if ($p) { $p.WaitForExit(15000) | Out-Null } }
+    # Screenshots of this run into its own log folder (several sessions share Saved/Screenshots).
+    $shotCount = Copy-UnrealScreenshots -Since $runStart -Destination (Join-Path $LogDir 'shots')
+    if ($shotCount -gt 0) { Write-Host "Screenshots: $shotCount in $(Join-Path $LogDir 'shots')" }
+    Exit-UnrealLock $unrealLock
 }
 exit $exit

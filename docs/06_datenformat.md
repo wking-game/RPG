@@ -241,3 +241,48 @@ Details und Werte: `docs/10_nahrung_feldbau.md` (Abschnitt „Umsetzung“). Neu
 | `buildables.json` | `tavern` | `{ "stock", "mood_per_tier", "mood_drink" }`: Taverne mit Vorrat für Gerichte und Getränke, Stimmung beim Essen dort |
 | `jobs.json` | `kind: "serve"` | Wirt: bringt Gerichte und Getränke aus dem Lager in die Taverne (Station mit `tavern`) bis `stock_target` |
 | `jobs.json` | `kind: "craft"` + `radius` | Rezepte, deren `station` zur Station gehört (`requires`), kocht der Koch an der nächsten solchen Kochstelle im Umkreis |
+
+## Ergänzung 2026-11-16: `difficulty.json` – Schwierigkeitsstufen
+
+Eine Datei mit `"schema": 1` und der Liste `"presets"` (nicht `"rows"`). Jede Stufe ist eine Voreinstellung mehrerer Weltoptionen; die Werte stehen nur hier, nicht im Code. Geladen von `GamerDifficulty.cpp`, geprüft von den Tests `Gamer.Data.DifficultyPresets` und `Gamer.Data.DifficultyValidatorFindsErrors`.
+
+| Feld | Bedeutung |
+|---|---|
+| `id` | `difficulty_…`, stabil |
+| `level` | `easy`, `medium`, `hard`, `hardcore` – jede genau einmal (Weltoption `?Difficulty=`; `custom` hat keinen Eintrag) |
+| `name`, `description` | Anzeige im Menü |
+| `death` | `none`, `grave`, `hardcore` (Weltoption `?Death=`) |
+| `needs_rate` | Faktor auf Hunger/Durst/Erschöpfung (0,1–5, `?NeedsRate=`) |
+| `damage_taken` | Faktor auf erlittenen Schaden (0,1–5, `?Damage=`) |
+| `yield` | Faktor auf den Ertrag beim Abbauen (0,1–5, `?Yield=`) |
+| `hordes`, `villagers_immortal` | `true`/`false` (streng, kein Text) |
+| `demolish` | `full`, `partial` (etwa 80 %, seit 2026-11-22), `half`, `off` |
+| `gespuer_tempo` | `slow`, `normal`, `fast` |
+
+Regeln: „Mittel“ muss den Standardwerten einer neuen Welt entsprechen (sonst wäre eine unveränderte Welt „Benutzerdefiniert“; der Test prüft das). Startet eine Welt mit einer Stufe, übernimmt der Server die Werte aus seiner eigenen Datei, auch wenn die Karten-URL andere enthält; bei `custom` gelten die URL-Werte.
+
+
+## Ergänzung 2026-11-22: Kreaturen, Tiere, Kampf, Fortschritt
+Neue Tabellen für Phase 3 (Plan: `docs/24_schritt1_daten_und_logik.md`, Regeln: `docs/21_kreaturen_level_kampf.md`). Format wie oben (`{ "schema": 1, ..., "rows": [ ... ] }`), Felder mit `_` am Anfang sind Kommentare. **Quelle ist das JSON**; das Skript `tools/data/creatures_from_gemini.py --json` hat es einmal erzeugt (offene Frage 1 im Plan: danach von Hand pflegen). Geladen von `GamerData::LoadCreatures`, `LoadCombat` und `LoadProgression`; Fehlermeldungen deutsch wie bei den anderen Tabellen.
+
+| Datei | Inhalt | Wichtige Felder |
+|---|---|---|
+| `items_creature.json` | Beute-Gegenstände (zweite Item-Tabelle, wird zusammen mit `items.json` gelesen) | wie `items.json`; Icons und Modelle leer (Warnung, kein Fehler) |
+| `creatures.json` | 48 Kreaturen (ID `creature_…`) | `name` (Anzeigename), `gemini_name`, `role`, `kind`, `temperament` (`passive`, `defensive`, `territorial`, `hostile`, `ambush`), `min_rank`, `home_biome`, `wave` (0 = Kern, 1–5), `ranks` = Liste `{ rank, hp, poise, dmg }` |
+| `animals.json` | 12 Tiere (ID `animal_…`) | wie Kreaturen, dazu `pack` |
+| `spawns.json` | Biome (Liste `biomes`: `id`, `name`, `rank`, `place_rank`, `places`) und Spawn-Regeln (`rows`) | `biome`, `creature`, `weight`, `only_places`, `scale_to_zone`, `scale_chance`, `max_rank` (0 = keine Grenze), `fixed_rank` |
+| `creature_loot.json` | Beute je Kreatur und Tier | `id`, `base`, `rank`, `biome`: Zeilen mit `item` **oder** `item_family`, `min`, `max`, `chance`, bei Grund- und Rang-Beute `min_rank` und `scale_count`, bei Biom-Beute `biomes` |
+| `combat.json` | Kampf-Konstanten | `armor`, `resist`, `poise`, `slots`, `zones`, `attacks`, `spread`, `leaders`, `loot`, `creature_hp_scale`, `player_hp` |
+| `progression.json` | Level 1–50 | `tiers` (Level-Bereiche, Stunden, Ausrüstungswerte), `xp_to_next` (49 Zahlen), `skill_points`, `xp_sources`, `coop`, `under_level_factor`, `typical_hour` |
+| `recipes.json` | neues optionales Feld | `min_level` (0–50, Standard 0); wird gelesen, aber noch nicht erzwungen |
+
+**Teil je Stufe (`item_family`):** Statt je Stufe eine Zeile zu schreiben, nennt eine Beute-Zeile die Familie, z. B. `item_sinew`. Der Würfel macht daraus `item_sinew_t<Rang>`, wobei der Rang der des Exemplars beim Tod ist. Der Prüfer verlangt, dass es den Gegenstand für **jeden Rang gibt, den die Kreatur an dieser Stelle haben kann**.
+
+**Was der Prüfer kontrolliert (Auswahl):** IDs und Präfixe, doppelte IDs, unbekannte Felder (Tippfehler), jeder Verweis (Biom, Kreatur, Gegenstand), jede Kreatur hat Werte für jeden erreichbaren Rang, kein Spawn vor dem Heimat-Biom und nicht unter `min_rank`, jede Kreatur kommt irgendwo vor und hat Beute, Biom-Beute nur in Biomen, in denen die Kreatur vorkommt, Rüstungsanteile ergeben 1, jede Slot-Zone ist eindeutig, die Erfahrungskurve steigt streng und passt zu Stunden × Erfahrung je Stunde × Stufe. Beute-Gegenstände zählen in der Erreichbarkeitsprüfung als „von Anfang an erhältlich“ (Kreaturen droppen sie).
+
+**Prüfsumme:** `UGamerDataSubsystem::GetChecksum()` umfasst jetzt `items`, `items_creature`, alle anderen Tabellen sowie Kreaturen, Kampf und Fortschritt. Sie wird bisher nur in die Spielstand-Kopfdaten (`meta.data_checksum`) und ins Protokoll geschrieben, **nirgends verglichen**: Einen Abgleich zwischen Server und Client gibt es noch nicht (er wäre ein eigener Schritt, wenn sich Spieler mit unterschiedlichen Datenständen verbinden können).
+
+## Ergänzung 2026-11-22: Rüstung (`items.json`) und Spielstand-Schlüssel
+- **Rüstung:** ID `armor_…`, `"category": "armor"`, Block `"armor": { "slot": …, "armor": Zahl, "poise_resist": Zahl, "resist": { "cold": 0.05, … } }`. Plätze: `helmet`, `shoulder`, `chest`, `hands`, `legs`, `feet`, `cloak`, `ring` (zwei Ringplätze). `armor` ist der Anteil des Stücks am Satzwert (Anteile je Platz in `combat.json`, `slots`); ein voller Satz ergibt in jeder Zone den Satzwert. `resist` kennt `heat`, `cold`, `storm`, `poison` mit Werten von −0,25 bis 0,6. Der Lader prüft Platz, Wertebereiche, unbekannte Felder und dass ID und Kategorie zusammenpassen; ein Test (`Gamer.Equipment.ShippedArmorFitsTiers`) prüft, dass ein voller Satz je Stufe in den Bereichen aus `progression.json` bleibt.
+- **Rezepte:** `min_level` (0 = keine Hürde) wird beim Herstellen erzwungen.
+- **Spielstand je Spieler:** neue Komponenten-Schlüssel `equipment` (`worn`: neun Einträge, `None` = leer) und `progress` (`xp`, `crafted`: schon hergestellte Rezepte). Ältere Spielstände ohne diese Schlüssel laden als „nichts angelegt, Level 1“.

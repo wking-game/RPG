@@ -63,6 +63,12 @@ public:
 	/** Seconds per buff minute (60; tests shorten it with -GamerBuffMinuteSeconds=N, not in Shipping). */
 	float GetMinuteSeconds() const { return MinuteSeconds; }
 
+	/** Food that cannot be eaten as it is but goes into a cooking recipe (raw elderberries, potatoes, grain). */
+	static bool NeedsCooking(const UObject* WorldContext, const FGamerItemDef& Item);
+
+	/** One line for the hand hint: "+3 Gesundheit, 3 min" (empty if not edible). */
+	static FString DescribeFood(const FGamerItemDef& Item);
+
 	/** Text for a stat value ("+10 Gesundheit", "+15 % Kälteresistenz"). */
 	static FString DescribeEffect(const FGamerBuffEffect& Effect);
 

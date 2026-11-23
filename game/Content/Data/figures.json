@@ -1,0 +1,511 @@
+{
+  "schema": 1,
+  "figures": {
+    "npc_seeress": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Body/SKM_MHC_Seherin_BodyMesh.SKM_MHC_Seherin_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Face/SKM_MHC_Seherin_FaceMesh.SKM_MHC_Seherin_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Grooms/Hair_L_Straight.Hair_L_Straight",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Grooms/Hair_L_Straight_Binding.Hair_L_Straight_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Grooms/MI_WI_Hair_L_Straight_Hair.MI_WI_Hair_L_Straight_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Grooms/MI_WI_Hair_L_Straight_Hair_Cards.MI_WI_Hair_L_Straight_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Seherin_Low/Grooms/MI_WI_Hair_L_Straight_Hair_Helmet.MI_WI_Hair_L_Straight_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "slim": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Schmal/Body/SKM_MHC_Schmal_BodyMesh.SKM_MHC_Schmal_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Schmal/Face/SKM_MHC_Schmal_FaceMesh.SKM_MHC_Schmal_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Eyebrows_M_Dense.Eyebrows_M_Dense",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Eyebrows_M_Dense_Binding.Eyebrows_M_Dense_Binding"
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Eyebrows_M_Natural.Eyebrows_M_Natural",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Eyebrows_M_Natural_Binding.Eyebrows_M_Natural_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/MI_WI_Eyebrows_M_Natural_None_2_Hair.MI_WI_Eyebrows_M_Natural_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/MI_WI_Eyebrows_M_Natural_None_2_Facial_Hair.MI_WI_Eyebrows_M_Natural_None_2_Facial_Hair"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Hair_M_Layered.Hair_M_Layered",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Hair_M_Layered_Binding.Hair_M_Layered_Binding"
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/GroomAsset_0.GroomAsset_0",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Schmal/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "slim_low": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Body/SKM_MHC_Schmal_BodyMesh.SKM_MHC_Schmal_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Face/SKM_MHC_Schmal_FaceMesh.SKM_MHC_Schmal_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/Hair_M_Layered.Hair_M_Layered",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/Hair_M_Layered_Binding.Hair_M_Layered_Binding"
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/GroomAsset_0.GroomAsset_0",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "slim_mid": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Body/SKM_MHC_Schmal_BodyMesh.SKM_MHC_Schmal_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Face/SKM_MHC_Schmal_FaceMesh.SKM_MHC_Schmal_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/Eyebrows_M_Natural.Eyebrows_M_Natural",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/Eyebrows_M_Natural_Binding.Eyebrows_M_Natural_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Eyebrows_M_Natural_None_2_Hair.MI_WI_Eyebrows_M_Natural_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Eyebrows_M_Natural_None_2_Facial_Hair.MI_WI_Eyebrows_M_Natural_None_2_Facial_Hair"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/GroomAsset_0.GroomAsset_0",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "strong": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Body/SKM_MHC_Kraeftig_BodyMesh.SKM_MHC_Kraeftig_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Face/SKM_MHC_Kraeftig_FaceMesh.SKM_MHC_Kraeftig_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Beard_L_Full.Beard_L_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Beard_L_Full_None_1_Hair.MI_WI_Beard_L_Full_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Cards.MI_WI_Beard_L_Full_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Helmet.MI_WI_Beard_L_Full_None_1_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Eyebrows_M_Thick.Eyebrows_M_Thick",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Eyebrows_M_Thick_Binding.Eyebrows_M_Thick_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Eyebrows_M_Thick_None_1_Hair.MI_WI_Eyebrows_M_Thick_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Eyebrows_M_Thick_None_1_Facial_Hair.MI_WI_Eyebrows_M_Thick_None_1_Facial_Hair"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Hair_M_Layered.Hair_M_Layered",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/Hair_M_Layered_Binding.Hair_M_Layered_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Hair_M_Layered_Hair.MI_WI_Hair_M_Layered_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Hair_M_Layered_Hair_Cards.MI_WI_Hair_M_Layered_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig/Grooms/MI_WI_Hair_M_Layered_Hair_Helmet.MI_WI_Hair_M_Layered_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "strong_low": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Body/SKM_MHC_Kraeftig_BodyMesh.SKM_MHC_Kraeftig_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Face/SKM_MHC_Kraeftig_FaceMesh.SKM_MHC_Kraeftig_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/Beard_L_Full.Beard_L_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Beard_L_Full_None_1_Hair.MI_WI_Beard_L_Full_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Cards.MI_WI_Beard_L_Full_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Helmet.MI_WI_Beard_L_Full_None_1_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/Hair_M_Layered.Hair_M_Layered",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/Hair_M_Layered_Binding.Hair_M_Layered_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Hair_M_Layered_Hair.MI_WI_Hair_M_Layered_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Hair_M_Layered_Hair_Cards.MI_WI_Hair_M_Layered_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Low/Grooms/MI_WI_Hair_M_Layered_Hair_Helmet.MI_WI_Hair_M_Layered_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "strong_mid": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Body/SKM_MHC_Kraeftig_BodyMesh.SKM_MHC_Kraeftig_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Face/SKM_MHC_Kraeftig_FaceMesh.SKM_MHC_Kraeftig_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Beard_L_Full.Beard_L_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair.MI_WI_Beard_L_Full_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Cards.MI_WI_Beard_L_Full_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Helmet.MI_WI_Beard_L_Full_None_1_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Eyebrows_M_Thick.Eyebrows_M_Thick",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Eyebrows_M_Thick_Binding.Eyebrows_M_Thick_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Eyebrows_M_Thick_None_1_Hair.MI_WI_Eyebrows_M_Thick_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Eyebrows_M_Thick_None_1_Facial_Hair.MI_WI_Eyebrows_M_Thick_None_1_Facial_Hair"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Hair_M_Layered.Hair_M_Layered",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Hair_M_Layered_Binding.Hair_M_Layered_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Hair_M_Layered_Hair.MI_WI_Hair_M_Layered_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Hair_M_Layered_Hair_Cards.MI_WI_Hair_M_Layered_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Hair_M_Layered_Hair_Helmet.MI_WI_Hair_M_Layered_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_slim_1": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Body/SKM_MHC_Bewohner_S1_BodyMesh.SKM_MHC_Bewohner_S1_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Face/SKM_MHC_Bewohner_S1_FaceMesh.SKM_MHC_Bewohner_S1_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Grooms/Hair_S_UpdoBraids.Hair_S_UpdoBraids",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Grooms/Hair_S_UpdoBraids_Binding.Hair_S_UpdoBraids_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Grooms/MI_WI_Hair_S_UpdoBraids_None_2_Hair_Cards.MI_WI_Hair_S_UpdoBraids_None_2_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Grooms/MI_WI_Hair_S_UpdoBraids_None_2_Hair.MI_WI_Hair_S_UpdoBraids_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S1_Low/Grooms/MI_WI_Hair_S_UpdoBraids_None_2_Hair_Helmet.MI_WI_Hair_S_UpdoBraids_None_2_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_slim_2": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Body/SKM_MHC_Bewohner_S2_BodyMesh.SKM_MHC_Bewohner_S2_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Face/SKM_MHC_Bewohner_S2_FaceMesh.SKM_MHC_Bewohner_S2_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Grooms/Hair_L_MessyClumps.Hair_L_MessyClumps",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Grooms/Hair_L_MessyClumps_Binding.Hair_L_MessyClumps_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Grooms/MI_WI_Hair_L_MessyClumps_None_1_Hair_Cards.MI_WI_Hair_L_MessyClumps_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Grooms/MI_WI_Hair_L_MessyClumps_None_1_Hair.MI_WI_Hair_L_MessyClumps_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S2_Low/Grooms/MI_WI_Hair_L_MessyClumps_None_1_Hair_Helmet.MI_WI_Hair_L_MessyClumps_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_slim_3": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Body/SKM_MHC_Bewohner_S3_BodyMesh.SKM_MHC_Bewohner_S3_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Face/SKM_MHC_Bewohner_S3_FaceMesh.SKM_MHC_Bewohner_S3_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Grooms/Hair_S_LowPonytail.Hair_S_LowPonytail",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Grooms/Hair_S_LowPonytail_Binding.Hair_S_LowPonytail_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Grooms/MI_WI_Hair_S_LowPonytail_Hair.MI_WI_Hair_S_LowPonytail_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Grooms/MI_WI_Hair_S_LowPonytail_Hair_Cards.MI_WI_Hair_S_LowPonytail_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S3_Low/Grooms/MI_WI_Hair_S_LowPonytail_Hair_Helmet.MI_WI_Hair_S_LowPonytail_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_slim_4": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Body/SKM_MHC_Bewohner_S4_BodyMesh.SKM_MHC_Bewohner_S4_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Face/SKM_MHC_Bewohner_S4_FaceMesh.SKM_MHC_Bewohner_S4_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Grooms/Hair_S_Cornrows.Hair_S_Cornrows",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Grooms/Hair_S_Cornrows_Binding.Hair_S_Cornrows_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair.MI_WI_Hair_S_Cornrows_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair_Helmet.MI_WI_Hair_S_Cornrows_Hair_Helmet",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair_Cards.MI_WI_Hair_S_Cornrows_Hair_Cards"
+          ]
+        }
+      ]
+    },
+    "villager_slim_5": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Body/SKM_MHC_Bewohner_S5_BodyMesh.SKM_MHC_Bewohner_S5_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Face/SKM_MHC_Bewohner_S5_FaceMesh.SKM_MHC_Bewohner_S5_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Grooms/GroomAsset_0.GroomAsset_0",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_2_Hair.MI_WI_Hair_M_TwistedBraids_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_2_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_2_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_2_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_2_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_slim_6": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Body/SKM_MHC_Bewohner_S6_BodyMesh.SKM_MHC_Bewohner_S6_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Face/SKM_MHC_Bewohner_S6_FaceMesh.SKM_MHC_Bewohner_S6_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Grooms/Hair_S_Updo.Hair_S_Updo",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Grooms/Hair_S_Updo_Binding.Hair_S_Updo_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Grooms/MI_WI_Hair_S_Updo_Hair_Cards.MI_WI_Hair_S_Updo_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Grooms/MI_WI_Hair_S_Updo_Hair.MI_WI_Hair_S_Updo_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_S6_Low/Grooms/MI_WI_Hair_S_Updo_Hair_Helmet.MI_WI_Hair_S_Updo_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_strong_1": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Body/SKM_MHC_Bewohner_K1_BodyMesh.SKM_MHC_Bewohner_K1_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Face/SKM_MHC_Bewohner_K1_FaceMesh.SKM_MHC_Bewohner_K1_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/Beard_M_Curly.Beard_M_Curly",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/Beard_M_Curly_Binding.Beard_M_Curly_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Beard_M_Curly_Hair.MI_WI_Beard_M_Curly_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Beard_M_Curly_Hair_Cards.MI_WI_Beard_M_Curly_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Beard_M_Curly_Hair_Helmet.MI_WI_Beard_M_Curly_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/Hair_M_FauxMohawk.Hair_M_FauxMohawk",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/Hair_M_FauxMohawk_Binding.Hair_M_FauxMohawk_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Hair_M_FauxMohawk_Hair.MI_WI_Hair_M_FauxMohawk_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Cards.MI_WI_Hair_M_FauxMohawk_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K1_Low/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Helmet.MI_WI_Hair_M_FauxMohawk_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_strong_2": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Body/SKM_MHC_Bewohner_K2_BodyMesh.SKM_MHC_Bewohner_K2_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Face/SKM_MHC_Bewohner_K2_FaceMesh.SKM_MHC_Bewohner_K2_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/Beard_L_Full.Beard_L_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair.MI_WI_Beard_L_Full_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair_Cards.MI_WI_Beard_L_Full_None_2_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair_Helmet.MI_WI_Beard_L_Full_None_2_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/Hair_L_Straight.Hair_L_Straight",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/Hair_L_Straight_Binding.Hair_L_Straight_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Hair_L_Straight_None_1_Hair.MI_WI_Hair_L_Straight_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Hair_L_Straight_None_1_Hair_Cards.MI_WI_Hair_L_Straight_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K2_Low/Grooms/MI_WI_Hair_L_Straight_None_1_Hair_Helmet.MI_WI_Hair_L_Straight_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_strong_3": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Body/SKM_MHC_Bewohner_K3_BodyMesh.SKM_MHC_Bewohner_K3_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Face/SKM_MHC_Bewohner_K3_FaceMesh.SKM_MHC_Bewohner_K3_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/Beard_S_Full.Beard_S_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/Beard_S_Full_Binding.Beard_S_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Beard_S_Full_None_1_Facial_Hair.MI_WI_Beard_S_Full_None_1_Facial_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Beard_S_Full_None_1_Hair.MI_WI_Beard_S_Full_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Beard_S_Full_None_1_Hair_Helmet.MI_WI_Beard_S_Full_None_1_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/Hair_S_PulledBack.Hair_S_PulledBack",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/Hair_S_PulledBack_Binding.Hair_S_PulledBack_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Hair_S_PulledBack_None_1_Hair.MI_WI_Hair_S_PulledBack_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Hair_S_PulledBack_None_1_Hair_Cards.MI_WI_Hair_S_PulledBack_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K3_Low/Grooms/MI_WI_Hair_S_PulledBack_None_1_Hair_Helmet.MI_WI_Hair_S_PulledBack_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    },
+    "villager_strong_4": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Body/SKM_MHC_Bewohner_K4_BodyMesh.SKM_MHC_Bewohner_K4_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Face/SKM_MHC_Bewohner_K4_FaceMesh.SKM_MHC_Bewohner_K4_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/Beard_L_Full.Beard_L_Full",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair.MI_WI_Beard_L_Full_None_2_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair_Cards.MI_WI_Beard_L_Full_None_2_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Beard_L_Full_None_2_Hair_Helmet.MI_WI_Beard_L_Full_None_2_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/Hair_S_Cornrows.Hair_S_Cornrows",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/Hair_S_Cornrows_Binding.Hair_S_Cornrows_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair.MI_WI_Hair_S_Cornrows_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair_Helmet.MI_WI_Hair_S_Cornrows_Hair_Helmet",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K4_Low/Grooms/MI_WI_Hair_S_Cornrows_Hair_Cards.MI_WI_Hair_S_Cornrows_Hair_Cards"
+          ]
+        }
+      ]
+    },
+    "villager_strong_5": {
+      "body": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Body/SKM_MHC_Bewohner_K5_BodyMesh.SKM_MHC_Bewohner_K5_BodyMesh",
+      "face": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Face/SKM_MHC_Bewohner_K5_FaceMesh.SKM_MHC_Bewohner_K5_FaceMesh",
+      "grooms": [
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/Beard_L_Messy.Beard_L_Messy",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/Beard_L_Messy_Binding.Beard_L_Messy_Binding",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Beard_L_Messy_Hair_Cards.MI_WI_Beard_L_Messy_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Beard_L_Messy_Hair.MI_WI_Beard_L_Messy_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Beard_L_Messy_Hair_Helmet.MI_WI_Beard_L_Messy_Hair_Helmet"
+          ]
+        },
+        {
+          "groom": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/GroomAsset_0.GroomAsset_0",
+          "binding": "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+          "materials": [
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+            "/Game/Gamer/Characters/MetaHuman/Bewohner_K5_Low/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+          ]
+        }
+      ]
+    }
+  },
+  "hair_kits": {
+    "strong": {
+      "hair_short": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Grooms/Hair_S_Messy.Hair_S_Messy",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Grooms/Hair_S_Messy_Binding.Hair_S_Messy_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair.MI_WI_Hair_S_Messy_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair_Cards.MI_WI_Hair_S_Messy_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair_Helmet.MI_WI_Hair_S_Messy_Hair_Helmet"
+        ]
+      },
+      "hair_long": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/Hair_L_MessyClumps.Hair_L_MessyClumps",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/Hair_L_MessyClumps_Binding.Hair_L_MessyClumps_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair_Cards.MI_WI_Hair_L_MessyClumps_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair.MI_WI_Hair_L_MessyClumps_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair_Helmet.MI_WI_Hair_L_MessyClumps_Hair_Helmet"
+        ]
+      },
+      "hair_braids": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK3_Mid/Grooms/GroomAsset_0.GroomAsset_0",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK3_Mid/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK3_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK3_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK3_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+        ]
+      },
+      "hair_undercut": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK4_Mid/Grooms/Hair_M_FauxMohawk.Hair_M_FauxMohawk",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK4_Mid/Grooms/Hair_M_FauxMohawk_Binding.Hair_M_FauxMohawk_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK4_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair.MI_WI_Hair_M_FauxMohawk_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK4_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Cards.MI_WI_Hair_M_FauxMohawk_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK4_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Helmet.MI_WI_Hair_M_FauxMohawk_Hair_Helmet"
+        ]
+      },
+      "beard_full": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Beard_L_Full.Beard_L_Full",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair.MI_WI_Beard_L_Full_None_1_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Cards.MI_WI_Beard_L_Full_None_1_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_Mid/Grooms/MI_WI_Beard_L_Full_None_1_Hair_Helmet.MI_WI_Beard_L_Full_None_1_Hair_Helmet"
+        ]
+      },
+      "beard_braided": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/Beard_L_Messy.Beard_L_Messy",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/Beard_L_Messy_Binding.Beard_L_Messy_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair_Cards.MI_WI_Beard_L_Messy_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair.MI_WI_Beard_L_Messy_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair_Helmet.MI_WI_Beard_L_Messy_Hair_Helmet"
+        ]
+      },
+      "beard_stubble": {
+        "face": "/Game/Gamer/Characters/MetaHuman/Kraeftig_HK1_Mid/Face/SKM_MHC_Kraeftig_HK1_FaceMesh.SKM_MHC_Kraeftig_HK1_FaceMesh"
+      }
+    },
+    "slim": {
+      "hair_short": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Grooms/Hair_S_Messy.Hair_S_Messy",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Grooms/Hair_S_Messy_Binding.Hair_S_Messy_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair.MI_WI_Hair_S_Messy_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair_Cards.MI_WI_Hair_S_Messy_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Grooms/MI_WI_Hair_S_Messy_Hair_Helmet.MI_WI_Hair_S_Messy_Hair_Helmet"
+        ]
+      },
+      "hair_long": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/Hair_L_MessyClumps.Hair_L_MessyClumps",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/Hair_L_MessyClumps_Binding.Hair_L_MessyClumps_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair_Cards.MI_WI_Hair_L_MessyClumps_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair.MI_WI_Hair_L_MessyClumps_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Hair_L_MessyClumps_Hair_Helmet.MI_WI_Hair_L_MessyClumps_Hair_Helmet"
+        ]
+      },
+      "hair_braids": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/GroomAsset_0.GroomAsset_0",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/Hair_M_TwistedBraids.Hair_M_TwistedBraids",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair.MI_WI_Hair_M_TwistedBraids_None_1_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_Mid/Grooms/MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet.MI_WI_Hair_M_TwistedBraids_None_1_Hair_Helmet"
+        ]
+      },
+      "hair_undercut": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/Hair_M_FauxMohawk.Hair_M_FauxMohawk",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/Hair_M_FauxMohawk_Binding.Hair_M_FauxMohawk_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair.MI_WI_Hair_M_FauxMohawk_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Cards.MI_WI_Hair_M_FauxMohawk_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Hair_M_FauxMohawk_Hair_Helmet.MI_WI_Hair_M_FauxMohawk_Hair_Helmet"
+        ]
+      },
+      "beard_full": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/Beard_L_Full.Beard_L_Full",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/Beard_L_Full_Binding.Beard_L_Full_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Beard_L_Full_Hair.MI_WI_Beard_L_Full_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Beard_L_Full_Hair_Cards.MI_WI_Beard_L_Full_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK3_Mid/Grooms/MI_WI_Beard_L_Full_Hair_Helmet.MI_WI_Beard_L_Full_Hair_Helmet"
+        ]
+      },
+      "beard_braided": {
+        "groom": "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/Beard_L_Messy.Beard_L_Messy",
+        "binding": "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/Beard_L_Messy_Binding.Beard_L_Messy_Binding",
+        "materials": [
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair_Cards.MI_WI_Beard_L_Messy_Hair_Cards",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair.MI_WI_Beard_L_Messy_Hair",
+          "/Game/Gamer/Characters/MetaHuman/Schmal_HK2_Mid/Grooms/MI_WI_Beard_L_Messy_Hair_Helmet.MI_WI_Beard_L_Messy_Hair_Helmet"
+        ]
+      },
+      "beard_stubble": {
+        "face": "/Game/Gamer/Characters/MetaHuman/Schmal_HK1_Mid/Face/SKM_MHC_Schmal_HK1_FaceMesh.SKM_MHC_Schmal_HK1_FaceMesh"
+      }
+    }
+  }
+}

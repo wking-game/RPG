@@ -390,7 +390,13 @@ void AGamerHUD::DrawHUD()
 		if (const FGamerResourceNodeDef* Def = Node->GetDef())
 		{
 			const float HintY = Height * 0.5f + LineH * 0.8f;
-			if (Def->RequiredTool.IsRequired())
+			if (Node->IsDepleted())
+			{
+				// Fruit tree out of season or a growing sapling: no action, only what it is and why.
+				DrawCentered(Node->GetDisplayName(), HintY, TextDim);
+				DrawCentered(Node->IsPlantedGrowing() ? TEXT("wächst noch") : TEXT("jetzt nichts zu ernten"), HintY + LineH * 1.1f, TextDim, 0.9f);
+			}
+			else if (Def->RequiredTool.IsRequired())
 			{
 				DrawCentered(FString::Printf(TEXT("%s: %s abbauen"), *UGamerKeyBindings::ActionKeyName(GamerInputActions::Strike), *Def->Name), HintY, TextHint);
 				const FName ToolType = Def->RequiredTool.Type;
@@ -618,6 +624,16 @@ void AGamerHUD::DrawHUD()
 		if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef())
 		{
 			DrawCentered(Held->Name, Y - LineH * 1.15f, TextWhite, 0.85f);
+			// Food in hand: how to eat it and what it gives (Taverne-Session, player test 2026-11-22 "Essen geht nicht").
+			const FString StrikeKey = UGamerKeyBindings::ActionKeyName(GamerInputActions::Strike);
+			if (Held->Food.IsMeal())
+			{
+				DrawCentered(FString::Printf(TEXT("%s oder %s: essen (%s)"), *StrikeKey, *UGamerKeyBindings::ActionKeyName(GamerInputActions::Interact), *UGamerBuffComponent::DescribeFood(*Held)), Y - LineH * 2.25f, TextHint, 0.8f);
+			}
+			else if (UGamerBuffComponent::NeedsCooking(this, *Held))
+			{
+				DrawCentered(TEXT("roh nicht essbar – erst kochen"), Y - LineH * 2.25f, TextMissing, 0.8f);
+			}
 		}
 
 		// Building with the hammer in hand: what a click does, the chosen piece and its cost (lines from the bottom up).
@@ -798,6 +814,10 @@ void AGamerHUD::DrawHUD()
 		const float BlockWidth = FMath::Max(TextWidth(Move, Ui * HelpSize), TextWidth(Act, Ui * HelpSize));
 		DrawLineBlock(Lines, (Width - BlockWidth) * 0.5f, Margin);
 	}
+
+	// Hit points, hurt flash, grave hint and the death screen come last so the death screen covers every other hint.
+	DrawEquipment(Character);
+	DrawHealth(Character);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -877,10 +897,16 @@ void AGamerHUD::DrawMenu(const AGamerPlayerController& PC)
 		}
 		const FString Note = TEXT("Das Spiel läuft weiter (Koop).");
 		DrawShadowText(Note, (Width - TextWidth(Note, S * 0.75f)) * 0.5f, Y + 6.f * S, TextDim, S * 0.75f);
-		const FString World = TEXT("Welt: ") + AGamerGameState::Get(this).Describe();
-		DrawShadowText(World, (Width - TextWidth(World, S * 0.7f)) * 0.5f, Y + 6.f * S + LineHeight(S * 0.75f) * 1.2f, TextDim, S * 0.7f);
-		const FString Own = DescribeOwnCharacter();
-		DrawShadowText(Own, (Width - TextWidth(Own, S * 0.7f)) * 0.5f, Y + 6.f * S + LineHeight(S * 0.75f) * 1.2f + LineHeight(S * 0.7f) * 1.1f, TextDim, S * 0.7f);
+		// World options and own character, wrapped to the window (the options line got long with mode and difficulty).
+		float InfoY = Y + 6.f * S + LineHeight(S * 0.75f) * 1.2f;
+		const float InfoScale = S * 0.6f;
+		TArray<FString> InfoLines = WrapText(TEXT("Welt: ") + AGamerGameState::Get(this).Describe(), Width * 0.96f, InfoScale);
+		InfoLines.Append(WrapText(DescribeOwnCharacter(), Width * 0.96f, InfoScale));
+		for (const FString& Line : InfoLines)
+		{
+			DrawShadowText(Line, (Width - TextWidth(Line, InfoScale)) * 0.5f, InfoY, TextDim, InfoScale);
+			InfoY += LineHeight(InfoScale) * 1.02f;
+		}
 		return;
 	}
 
@@ -899,9 +925,19 @@ void AGamerHUD::DrawMenu(const AGamerPlayerController& PC)
 		DrawStorageMenu(PC);
 		return;
 	}
+	if (PC.GetMenuPage() == EGamerMenuPage::Inventory)
+	{
+		DrawInventoryMenu(PC);
+		return;
+	}
 	if (PC.GetMenuPage() == EGamerMenuPage::Graphics)
 	{
 		DrawGraphicsMenu(PC);
+		return;
+	}
+	if (PC.GetMenuPage() == EGamerMenuPage::CreateWorld || PC.GetMenuPage() == EGamerMenuPage::WorldAdvanced)
+	{
+		DrawWorldMenu(PC);
 		return;
 	}
 	if (PC.GetMenuPage() == EGamerMenuPage::Character || PC.GetMenuPage() == EGamerMenuPage::CharacterLook)
@@ -1156,82 +1192,6 @@ void AGamerHUD::DrawStartMenu(const AGamerPlayerController& PC)
 		if (Session && !Session->GetLastError().IsEmpty())
 		{
 			Centered(Session->GetLastError(), Y + 6.f * S, TextMissing, 0.8f);
-		}
-		return;
-	}
-
-	if (PC.GetMenuPage() == EGamerMenuPage::CreateWorld)
-	{
-		const FGamerWorldOptions& Options = UGamerMenuSettings::Get()->WorldOptions;
-		struct FOptionRow
-		{
-			FName Id;
-			FString Label;
-			FString Value;
-			FString Explain;
-		};
-		const FOptionRow Rows[] = {
-			{ TEXT("opt:flow"), TEXT("Bauablauf"),
-				Options.BuildFlow == EGamerBuildFlow::Blueprint ? TEXT("Bauplan + Hammer") : Options.BuildFlow == EGamerBuildFlow::Instant ? TEXT("Sofort fertig") : TEXT("Material beim Bauen"),
-				Options.BuildFlow == EGamerBuildFlow::Blueprint ? TEXT("Material beim Platzieren, dann fertig hämmern.")
-					: Options.BuildFlow == EGamerBuildFlow::Instant ? TEXT("Material beim Platzieren, das Teil steht sofort.")
-					: TEXT("Der Bauplan ist kostenlos, jeder Hammerschlag nimmt seinen Teil Material.") },
-			{ TEXT("opt:place"), TEXT("Platzierung"),
-				Options.Placement == EGamerPlacement::FreeSnap ? TEXT("Frei mit Einrasten") : TEXT("Festes Raster"),
-				Options.Placement == EGamerPlacement::FreeSnap ? TEXT("Erstes Fundament frei, alles Weitere rastet am Vorhandenen ein.")
-					: TEXT("Alles auf einem festen 3-m-Raster der Welt, Drehen in 90-Grad-Schritten.") },
-			{ TEXT("opt:demolish"), TEXT("Abreißen"),
-				Options.Demolish == EGamerDemolish::FullRefund ? TEXT("Volles Material zurück") : Options.Demolish == EGamerDemolish::HalfRefund ? TEXT("Halbes Material zurück") : TEXT("Aus"),
-				Options.Demolish == EGamerDemolish::Disabled ? TEXT("Fertige Teile bleiben stehen. Unfertige Pläne geben immer alles zurück.")
-					: TEXT("Gilt für fertige Teile. Unfertige Pläne geben immer alles zurück.") },
-			{ TEXT("opt:inventory"), TEXT("Inventar"),
-				Options.bCarryInventory ? TEXT("Wandert mit dem Charakter") : TEXT("Bleibt in dieser Welt"),
-				Options.bCarryInventory ? TEXT("Was du trägst, nimmst du in jede Welt mit, die das auch erlaubt (gespeichert bei dir).")
-					: TEXT("Jede Welt merkt sich dein Inventar; in einer anderen Welt beginnst du mit eigener Ausrüstung.") },
-			{ TEXT("opt:gespuer"), TEXT("Gespür-Tempo"),
-				Options.GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("Langsam (×0,6)") : Options.GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("Schnell (×1,6)") : TEXT("Normal (×1)"),
-				TEXT("Wie schnell das Lauschen nach Magie besser wird (Erfahrung pro Fund). Gilt für alle Spieler dieser Welt.") },
-		};
-		float LabelW = 0.f, ValueW = 0.f, ExplainW = 0.f;
-		for (const FOptionRow& Row : Rows)
-		{
-			LabelW = FMath::Max(LabelW, TextWidth(Row.Label, S));
-			ValueW = FMath::Max(ValueW, FMath::Max(TextWidth(TEXT("Material beim Bauen"), S), TextWidth(Row.Value, S)));
-			ExplainW = FMath::Max(ExplainW, TextWidth(Row.Explain, S * 0.7f));
-		}
-		ValueW += 40.f * S;
-		const float BlockW = FMath::Max(LabelW + 20.f * S + ValueW, ExplainW);
-		const float X = (Width - BlockW) * 0.5f;
-		float Y = Height * 0.12f;
-		Centered(TEXT("Welt erstellen"), Y, TextWhite, 1.4f);
-		Y += LineHeight(S * 1.4f) * 1.2f;
-		Centered(TEXT("Wert anklicken, um ihn zu ändern. Gilt für alle Spieler dieser Welt."), Y, TextDim, 0.7f);
-		Y += LineHeight(S * 0.7f) * 1.8f;
-		for (const FOptionRow& Row : Rows)
-		{
-			const float TextH = LineHeight(S) / 1.12f;
-			DrawShadowText(Row.Label, X, Y + (ButtonH - TextH) * 0.5f, TextWhite, S);
-			DrawButton(Row.Id, Row.Value, X + LabelW + 20.f * S, Y, ValueW, ButtonH, S);
-			Y += ButtonH + 3.f * S;
-			DrawShadowText(Row.Explain, X, Y, TextDim, S * 0.7f);
-			Y += LineHeight(S * 0.7f) * 1.5f;
-		}
-		Y += 4.f * S;
-		Centered(TEXT("Du bist Gastgeber. Mitspieler treten über deine IP-Adresse bei (Port 7777)."), Y, TextDim, 0.7f);
-		Y += LineHeight(S * 0.7f) * 1.2f;
-		Centered(FString::Printf(TEXT("Wird gespeichert als „%s“ (später unter „Welt laden“)."), *AGamerPlayerController::MakeNewWorldName()), Y, TextDim, 0.7f);
-		Y += LineHeight(S * 0.7f) * 1.6f;
-		const FString StartText = TEXT("Welt starten");
-		const FString BackText = TEXT("Zurück");
-		const float StartW = TextWidth(StartText, S) + 60.f * S;
-		const float BackW = TextWidth(BackText, S) + 60.f * S;
-		const float ButtonsX = (Width - (StartW + 20.f * S + BackW)) * 0.5f;
-		DrawButton(TEXT("start"), StartText, ButtonsX, Y, StartW, ButtonH, S, true);
-		DrawButton(TEXT("back"), BackText, ButtonsX + StartW + 20.f * S, Y, BackW, ButtonH, S);
-		Y += ButtonH + Gap;
-		if (!PC.GetMenuNote().IsEmpty())
-		{
-			Centered(PC.GetMenuNote(), Y, TextHint, 0.8f);
 		}
 		return;
 	}
@@ -1512,11 +1472,16 @@ void AGamerHUD::DrawGraphicsMenu(const AGamerPlayerController& PC)
 	const float AutoW = TextWidth(AutoText, S * 0.85f) + 50.f * S;
 	const float DefaultW = TextWidth(DefaultText, S * 0.85f) + 50.f * S;
 	const float BackW = TextWidth(BackText, S * 0.85f) + 50.f * S;
-	float ButtonX = (Width - (AutoW + DefaultW + BackW + 32.f * S)) * 0.5f;
+	// Quest hints: a player setting (decision 2026-11-16), lives here until there is a general settings page.
+	const FString HintsText = UGamerMenuSettings::Get()->bQuestHints ? TEXT("Questhilfen: an") : TEXT("Questhilfen: aus");
+	const float HintsW = TextWidth(HintsText, S * 0.85f) + 50.f * S;
+	float ButtonX = (Width - (AutoW + DefaultW + HintsW + BackW + 48.f * S)) * 0.5f;
 	DrawButton(TEXT("gfx:auto"), AutoText, ButtonX, Y, AutoW, ButtonH, S * 0.85f);
 	ButtonX += AutoW + 16.f * S;
 	DrawButton(TEXT("gfx:defaults"), DefaultText, ButtonX, Y, DefaultW, ButtonH, S * 0.85f);
 	ButtonX += DefaultW + 16.f * S;
+	DrawButton(TEXT("questhints"), HintsText, ButtonX, Y, HintsW, ButtonH, S * 0.85f);
+	ButtonX += HintsW + 16.f * S;
 	DrawButton(TEXT("back"), BackText, ButtonX, Y, BackW, ButtonH, S * 0.85f);
 	Y += ButtonH + 8.f * S;
 	if (!PC.GetMenuNote().IsEmpty())

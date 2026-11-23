@@ -56,6 +56,9 @@ public:
 	/** Removes all listed amounts, or nothing if one of them is missing. */
 	bool RemoveItems(const TArray<FGamerItemAmount>& Amounts);
 
+	/** Server: empties the whole inventory and returns what was in it (with freshness). Used when a player dies (world option "Tod"). */
+	TArray<FGamerItemAmount> TakeEverything();
+
 	// --- Queries (server and owning client) ---
 
 	int32 CountOf(FName Item) const;
@@ -92,6 +95,14 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerSelectSlot(int32 Index);
+
+	/** Inventory window: moves the stack of slot From to slot To (swaps, or merges equal items up to the stack size). */
+	UFUNCTION(Server, Reliable)
+	void ServerSwapSlots(int32 From, int32 To);
+
+	/** Inventory window: throws the stack (or Count of it) of a slot onto the ground in front of the player. */
+	UFUNCTION(Server, Reliable)
+	void ServerDropSlot(int32 Index, int32 Count);
 
 	/**
 	 * Server: puts the best hotbar tool of that type into the hand if a better (or any) one is there

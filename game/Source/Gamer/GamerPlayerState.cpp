@@ -78,6 +78,21 @@ void AGamerPlayerState::TrySendLocalProfile()
 		const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
 		Local = Data ? Data->GetCharacters().MakeProfile(FName(*Origin), Name) : Local;
 	}
+	// Tests: -GamerLook=look_hair:hair_long,look_beard:beard_braided overrides single look slots (server validates).
+	FString LookOverride;
+	if (FParse::Value(FCommandLine::Get(), TEXT("GamerLook="), LookOverride, false))
+	{
+		TArray<FString> Pairs;
+		LookOverride.ParseIntoArray(Pairs, TEXT(","));
+		for (const FString& Pair : Pairs)
+		{
+			FString Slot, Option;
+			if (Pair.Split(TEXT(":"), &Slot, &Option))
+			{
+				Local.SetLook(FName(*Slot), FName(*Option));
+			}
+		}
+	}
 	UE_LOG(LogGamer, Log, TEXT("Character: sending %s"), *Local.ToLogString());
 	ServerSetCharacter(Local);
 }

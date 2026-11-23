@@ -26,8 +26,9 @@ FGamerWorldOptions FGamerWorldOptions::FromUrlOptions(const FString& Options)
 	const FString Demolish = Read(TEXT("Demolish"));
 	if (Demolish == TEXT("full")) { Result.Demolish = EGamerDemolish::FullRefund; }
 	else if (Demolish == TEXT("half")) { Result.Demolish = EGamerDemolish::HalfRefund; }
+	else if (Demolish == TEXT("partial")) { Result.Demolish = EGamerDemolish::PartialRefund; }
 	else if (Demolish == TEXT("off")) { Result.Demolish = EGamerDemolish::Disabled; }
-	else if (!Demolish.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Demolish=%s unknown (full, half, off)"), *Demolish); }
+	else if (!Demolish.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Demolish=%s unknown (full, partial, half, off)"), *Demolish); }
 
 	const FString Inventory = Read(TEXT("Inventory"));
 	if (Inventory == TEXT("world")) { Result.bCarryInventory = false; }
@@ -39,6 +40,60 @@ FGamerWorldOptions FGamerWorldOptions::FromUrlOptions(const FString& Options)
 	else if (Tempo == TEXT("normal")) { Result.GespuerTempo = EGamerGespuerTempo::Normal; }
 	else if (Tempo == TEXT("fast")) { Result.GespuerTempo = EGamerGespuerTempo::Fast; }
 	else if (!Tempo.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Tempo=%s unknown (slow, normal, fast)"), *Tempo); }
+
+	const FString Death = Read(TEXT("Death"));
+	if (Death == TEXT("none")) { Result.DeathMode = EGamerDeathMode::None; }
+	else if (Death == TEXT("grave")) { Result.DeathMode = EGamerDeathMode::Grave; }
+	else if (Death == TEXT("hardcore")) { Result.DeathMode = EGamerDeathMode::Hardcore; }
+	else if (!Death.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Death=%s unknown (none, grave, hardcore)"), *Death); }
+
+	// Mode, difficulty and factors (2026-11-16).
+	const FString Mode = Read(TEXT("Mode"));
+	if (Mode == TEXT("saga")) { Result.PlayMode = EGamerPlayMode::Saga; }
+	else if (Mode == TEXT("free")) { Result.PlayMode = EGamerPlayMode::Free; }
+	else if (!Mode.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Mode=%s unknown (saga, free)"), *Mode); }
+
+	const FString Level = Read(TEXT("Difficulty"));
+	if (Level == TEXT("easy")) { Result.Difficulty = EGamerDifficulty::Easy; }
+	else if (Level == TEXT("medium")) { Result.Difficulty = EGamerDifficulty::Medium; }
+	else if (Level == TEXT("hard")) { Result.Difficulty = EGamerDifficulty::Hard; }
+	else if (Level == TEXT("hardcore")) { Result.Difficulty = EGamerDifficulty::Hardcore; }
+	else if (Level == TEXT("custom")) { Result.Difficulty = EGamerDifficulty::Custom; }
+	else if (!Level.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option Difficulty=%s unknown (easy, medium, hard, hardcore, custom)"), *Level); }
+
+	auto ReadFactor = [&Read](const TCHAR* Key, float& Out)
+	{
+		const FString Text = Read(Key);
+		if (Text.IsEmpty()) { return; }
+		const float Value = FCString::Atof(*Text);
+		if (Value >= 0.1f && Value <= 5.f) { Out = Value; }
+		else { UE_LOG(LogGamer, Warning, TEXT("World option %s=%s out of range (0.1..5)"), Key, *Text); }
+	};
+	ReadFactor(TEXT("NeedsRate"), Result.NeedsRate);
+	ReadFactor(TEXT("Damage"), Result.DamageTaken);
+	ReadFactor(TEXT("Yield"), Result.YieldFactor);
+
+	auto ReadSwitch = [&Read](const TCHAR* Key, bool& Out)
+	{
+		const FString Text = Read(Key);
+		if (Text == TEXT("on")) { Out = true; }
+		else if (Text == TEXT("off")) { Out = false; }
+		else if (!Text.IsEmpty()) { UE_LOG(LogGamer, Warning, TEXT("World option %s=%s unknown (on, off)"), Key, *Text); }
+	};
+	ReadSwitch(TEXT("Hordes"), Result.bHordes);
+	ReadSwitch(TEXT("Immortal"), Result.bVillagersImmortal);
+	ReadSwitch(TEXT("FreeBuild"), Result.bFreeBuild);
+	// "Sagenwelt" was removed on 2026-11-22 (saga bosses are standard). Old saves still contain ?Sagenwelt=...; keys that
+	// are not read here are simply ignored.
+	ReadSwitch(TEXT("FriendlyFire"), Result.bFriendlyFire);
+
+	const FString Players = Read(TEXT("MaxPlayers"));
+	if (!Players.IsEmpty())
+	{
+		const int32 Count = FCString::Atoi(*Players);
+		if (Count >= 1 && Count <= 8) { Result.MaxPlayers = Count; }
+		else { UE_LOG(LogGamer, Warning, TEXT("World option MaxPlayers=%s out of range (1..8)"), *Players); }
+	}
 
 	const FString Season = Read(TEXT("SeasonMinutes"));
 	if (!Season.IsEmpty())
@@ -56,10 +111,14 @@ FString FGamerWorldOptions::Describe() const
 		: BuildFlow == EGamerBuildFlow::Instant ? TEXT("sofort fertig") : TEXT("Material beim Bauen");
 	const TCHAR* Place = Placement == EGamerPlacement::FreeSnap ? TEXT("frei mit Einrasten") : TEXT("festes Raster");
 	const TCHAR* Tear = Demolish == EGamerDemolish::FullRefund ? TEXT("Abreißen: volles Material")
-		: Demolish == EGamerDemolish::HalfRefund ? TEXT("Abreißen: halbes Material") : TEXT("kein Abreißen");
+		: Demolish == EGamerDemolish::HalfRefund ? TEXT("Abreißen: halbes Material")
+		: Demolish == EGamerDemolish::PartialRefund ? TEXT("Abreißen: etwa 80 % Material") : TEXT("kein Abreißen");
 	const TCHAR* Gespuer = GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("langsam") : GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("schnell") : TEXT("normal");
-	return FString::Printf(TEXT("%s · %s · %s · Jahreszeit %g Min. · Inventar %s · Gespür %s"), Flow, Place, Tear, SeasonMinutes,
-		bCarryInventory ? TEXT("mit dem Charakter") : TEXT("pro Welt"), Gespuer);
+	const TCHAR* DeathText = DeathMode == EGamerDeathMode::None ? TEXT("nichts verlieren") : DeathMode == EGamerDeathMode::Hardcore ? TEXT("alles verlieren") : TEXT("Grab");
+	static const TCHAR* const Levels[] = { TEXT("Einfach"), TEXT("Mittel"), TEXT("Schwer"), TEXT("Hardcore"), TEXT("Benutzerdefiniert") };
+	return FString::Printf(TEXT("%s · %s · %s · %s · %s · Jahreszeit %g Min. · Inventar %s · Gespür %s · Tod: %s"),
+		PlayMode == EGamerPlayMode::Saga ? TEXT("Saga") : TEXT("Freies Spiel"), Levels[FMath::Min<int32>(static_cast<int32>(Difficulty), 4)],
+		Flow, Place, Tear, SeasonMinutes, bCarryInventory ? TEXT("mit dem Charakter") : TEXT("pro Welt"), Gespuer, DeathText);
 }
 
 FString FGamerWorldOptions::ToLogString() const
@@ -68,10 +127,16 @@ FString FGamerWorldOptions::ToLogString() const
 		: BuildFlow == EGamerBuildFlow::Instant ? TEXT("instant") : TEXT("material");
 	const TCHAR* Place = Placement == EGamerPlacement::FreeSnap ? TEXT("free") : TEXT("grid");
 	const TCHAR* Tear = Demolish == EGamerDemolish::FullRefund ? TEXT("full")
-		: Demolish == EGamerDemolish::HalfRefund ? TEXT("half") : TEXT("off");
+		: Demolish == EGamerDemolish::HalfRefund ? TEXT("half") : Demolish == EGamerDemolish::PartialRefund ? TEXT("partial") : TEXT("off");
 	const TCHAR* Tempo = GespuerTempo == EGamerGespuerTempo::Slow ? TEXT("slow") : GespuerTempo == EGamerGespuerTempo::Fast ? TEXT("fast") : TEXT("normal");
-	return FString::Printf(TEXT("BuildFlow=%s Placement=%s Demolish=%s SeasonMinutes=%g Inventory=%s Tempo=%s"), Flow, Place, Tear, SeasonMinutes,
-		bCarryInventory ? TEXT("character") : TEXT("world"), Tempo);
+	const TCHAR* DeathKey = DeathMode == EGamerDeathMode::None ? TEXT("none") : DeathMode == EGamerDeathMode::Hardcore ? TEXT("hardcore") : TEXT("grave");
+	static const TCHAR* const Levels[] = { TEXT("easy"), TEXT("medium"), TEXT("hard"), TEXT("hardcore"), TEXT("custom") };
+	auto OnOff = [](bool b) { return b ? TEXT("on") : TEXT("off"); };
+	return FString::Printf(TEXT("BuildFlow=%s Placement=%s Demolish=%s SeasonMinutes=%g Inventory=%s Tempo=%s Death=%s")
+		TEXT(" Mode=%s Difficulty=%s NeedsRate=%g Damage=%g Yield=%g Hordes=%s Immortal=%s FreeBuild=%s FriendlyFire=%s MaxPlayers=%d"),
+		Flow, Place, Tear, SeasonMinutes, bCarryInventory ? TEXT("character") : TEXT("world"), Tempo, DeathKey,
+		PlayMode == EGamerPlayMode::Saga ? TEXT("saga") : TEXT("free"), Levels[FMath::Min<int32>(static_cast<int32>(Difficulty), 4)],
+		NeedsRate, DamageTaken, YieldFactor, OnOff(bHordes), OnOff(bVillagersImmortal), OnOff(bFreeBuild), OnOff(bFriendlyFire), MaxPlayers);
 }
 
 FString FGamerWorldOptions::ToUrlOptions() const

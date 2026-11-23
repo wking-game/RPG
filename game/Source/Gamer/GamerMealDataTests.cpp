@@ -28,13 +28,17 @@ bool FGamerMealDataTest::RunTest(const FString& Parameters)
 		{
 			TestTrue(TEXT("T6 lasts longer than T1"), Cake->Food.Minutes > Meal->Food.Minutes);
 		}
+		const FGamerItemDef* Berries = Data.Items.Find(TEXT("item_berries"));
+		TestTrue(TEXT("raw berries are a snack (edible, weak)"), Berries && Berries->Food.IsMeal() && Berries->Food.bSnack);
+		const FGamerItemDef* Elder = Data.Items.Find(TEXT("item_elderberry"));
+		TestTrue(TEXT("raw elderberries are not edible (poisonous)"), Elder && !Elder->Food.IsMeal());
 		const FGamerBuildableDef* Oven = Data.Buildables.Find(TEXT("building_clay_oven"));
 		TestTrue(TEXT("clay oven needs tavern level 2"), Oven && Oven->Requires.Building == TEXT("building_tavern") && Oven->Requires.Level == 2);
 		const FGamerBuildableDef* Tavern = Data.Buildables.Find(TEXT("building_tavern"));
 		TestTrue(TEXT("tavern has a stock and 3 levels"), Tavern && Tavern->Tavern.IsTavern() && Tavern->MaxLevel() == 3);
 		for (const TPair<FName, FGamerItemDef>& Pair : Data.Items)
 		{
-			if (Pair.Value.Food.IsMeal())
+			if (Pair.Value.Food.IsMeal() && !Pair.Value.Food.bSnack) // raw snacks: nuts and honey keep
 			{
 				TestTrue(FString::Printf(TEXT("%s spoils (cooked food spoils too)"), *Pair.Key.ToString()), Pair.Value.SpoilDays > 0.f);
 			}

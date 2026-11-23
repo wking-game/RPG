@@ -13,7 +13,7 @@
     ProjectFiles - regenerate Visual Studio project files.
 
   Engine path: $env:UE_ROOT, otherwise E:\UE58 (source build, tag 5.8.4-release).
-  The launcher build D:\gamer\unreal\UE_5.8 still works for Editor/Game/Package, not for Server.
+  The former launcher build D:\gamer\unreal\UE_5.8 was deleted (2026-11-16); only the source build is used.
   Exit code is non-zero if a step fails.
 
 .EXAMPLE
@@ -85,6 +85,11 @@ function Get-FolderSizeGB([string]$Path) {
     return [math]::Round($bytes / 1GB, 2)
 }
 
+# One Unreal at a time (tools/unreal_lock.ps1): building/cooking waits while another run or an open editor
+# uses Unreal. -Force skips the lock (e.g. building while your own editor is open).
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = if ($Force -or $Step -eq 'ProjectFiles') { $null } else { Enter-UnrealLock -Owner "build.ps1 $Step" }
+try {
 switch ($Step) {
     'ProjectFiles' {
         $pfArgs = @('-projectfiles', "-project=`"$Project`"", '-game', '-progress')
@@ -126,3 +131,5 @@ switch ($Step) {
         if ($size -gt $budget) { Write-Warning "Packaged size exceeds the budget." }
     }
 }
+}
+finally { Exit-UnrealLock $unrealLock }

@@ -48,6 +48,47 @@ AGamerFarmBuilding::AGamerFarmBuilding()
 	Crops->SetUsingAbsoluteScale(true);
 	Crops->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Crops->SetCastShadow(true);
+
+	SoilTiles = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SoilTiles"));
+	SoilTiles->SetupAttachment(GetRootComponent());
+	SoilTiles->SetUsingAbsoluteScale(true);
+	SoilTiles->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AGamerFarmBuilding::UpdateSoil()
+{
+	if (!SoilTiles || !Mesh || IsPreview() || GetNetMode() == NM_DedicatedServer || GetKind() != EGamerFarmKind::Field)
+	{
+		return;
+	}
+	UStaticMesh* Tile = Mesh->GetStaticMesh();
+	const bool bShow = IsFinished() && Tile && !Tile->GetPathName().StartsWith(TEXT("/Engine/"));
+	if (bShow == bSoilShown)
+	{
+		return;
+	}
+	bSoilShown = bShow;
+	Mesh->SetVisibility(!bShow); // hidden, but its collision stays
+	SoilTiles->ClearInstances();
+	if (!bShow)
+	{
+		return;
+	}
+	SoilTiles->SetStaticMesh(Tile);
+	const FVector2D Size = GetSizeCm();
+	const int32 NX = FMath::Max(1, FMath::CeilToInt(Size.X / 100.f - 0.01f));
+	const int32 NY = FMath::Max(1, FMath::CeilToInt(Size.Y / 100.f - 0.01f));
+	const FVector TileScale(Size.X / NX / 100.f, Size.Y / NY / 100.f, 1.f);
+	TArray<FTransform> Tiles;
+	for (int32 X = 0; X < NX; ++X)
+	{
+		for (int32 Y = 0; Y < NY; ++Y)
+		{
+			const FVector Local(-Size.X * 0.5f + (X + 0.5f) * Size.X / NX, -Size.Y * 0.5f + (Y + 0.5f) * Size.Y / NY, 0.f);
+			Tiles.Add(FTransform(FRotator::ZeroRotator, Local, TileScale));
+		}
+	}
+	SoilTiles->AddInstances(Tiles, false);
 }
 
 void AGamerFarmBuilding::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -80,6 +121,12 @@ void AGamerFarmBuilding::BeginPlay()
 		}
 	}
 	UpdateCrops();
+	if (GetNetMode() != NM_DedicatedServer && GetKind() == EGamerFarmKind::Field && !IsPreview())
+	{
+		// The plan becomes a finished field later (hammer): check now and then.
+		UpdateSoil();
+		GetWorldTimerManager().SetTimer(SoilTimer, this, &AGamerFarmBuilding::UpdateSoil, 1.f, true);
+	}
 }
 
 void AGamerFarmBuilding::PlantTree()

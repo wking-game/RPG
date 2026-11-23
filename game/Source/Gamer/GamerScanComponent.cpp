@@ -15,7 +15,7 @@
 
 UGamerScanComponent::UGamerScanComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void UGamerScanComponent::LoadSettings()
@@ -157,19 +157,40 @@ bool UGamerScanComponent::TryScan()
 	const double Start = World->GetTimeSeconds();
 	LastScanTime = Start;
 	Marks.Reset();
+	Marked.Reset();
 	Counts.Init(0, Categories.Num());
 	Center = Owner->GetActorLocation();
 	ShowUntil = Start + SpreadSeconds + VisibleSeconds;
-	auto Add = [&](const FVector& Location, int32 Category)
+	LastCollectTime = Start;
+	CollectMarks(false, Start);
+	UE_LOG(LogGamer, Log, TEXT("Scan: %d marks within %.0f m (%s)"), Marks.Num(), RadiusCm / 100.f, *DescribeCounts());
+	return true;
+}
+
+void UGamerScanComponent::CollectMarks(bool bNewOnly, double RevealBase)
+{
+	UWorld* World = GetWorld();
+	if (!World)
 	{
+		return;
+	}
+	const double Now = World->GetTimeSeconds();
+	auto Add = [&](const AActor* Actor, const FVector& Location, int32 Category)
+	{
+		if (bNewOnly && Marked.Contains(Actor))
+		{
+			return;
+		}
 		const float Distance = FVector::Dist(Location, Center);
 		if (Category != INDEX_NONE && Distance <= RadiusCm)
 		{
 			FGamerScanMark& Mark = Marks.AddDefaulted_GetRef();
 			Mark.Location = Location;
 			Mark.Category = Category;
-			Mark.RevealTime = Start + SpreadSeconds * (Distance / RadiusCm);   // the wave reaches it
+			// At the start the wave reaches it later; things that come into range while walking appear at once.
+			Mark.RevealTime = bNewOnly ? Now : RevealBase + SpreadSeconds * (Distance / RadiusCm);
 			Mark.ExpireTime = Mark.RevealTime + VisibleSeconds;
+			Marked.Add(Actor);
 			++Counts[Category];
 		}
 	};
@@ -178,16 +199,39 @@ bool UGamerScanComponent::TryScan()
 		const FGamerResourceNodeDef* Def = It->GetDef();
 		if (Def && !It->IsDepleted())
 		{
-			Add(It->GetActorLocation() + FVector(0.f, 0.f, 60.f), CategoryOfNode(*Def));   // middle of the object, not its feet
+			Add(*It, It->GetActorLocation() + FVector(0.f, 0.f, 60.f), CategoryOfNode(*Def));   // middle of the object, not its feet
 		}
 	}
 	const int32 ItemsCategory = CategoryIndex(TEXT("items"));
 	for (TActorIterator<AGamerGroundItem> It(World); It; ++It)
 	{
-		Add(It->GetActorLocation() + FVector(0.f, 0.f, 30.f), ItemsCategory);
+		Add(*It, It->GetActorLocation() + FVector(0.f, 0.f, 30.f), ItemsCategory);
 	}
-	UE_LOG(LogGamer, Log, TEXT("Scan: %d marks within %.0f m (%s)"), Marks.Num(), RadiusCm / 100.f, *DescribeCounts());
-	return true;
+}
+
+void UGamerScanComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	const AActor* Owner = GetOwner();
+	const UWorld* World = GetWorld();
+	if (!Owner || !World || DebugAge >= 0.f || !IsShowing())
+	{
+		return;
+	}
+	// The wave and the look-around follow the figure while it runs (decision: the centre moves with the player).
+	Center = Owner->GetActorLocation();
+	const double Now = World->GetTimeSeconds();
+	if (Now - LastCollectTime >= 0.5 && Counts.Num() > 0)
+	{
+		UE_LOG(LogGamer, Log, TEXT("Scan: following the figure at %s (%d markers)"), *Center.ToCompactString(), Marks.Num());
+		LastCollectTime = Now;
+		const int32 Before = Marks.Num();
+		CollectMarks(true, Now);
+		if (Marks.Num() > Before)
+		{
+			UE_LOG(LogGamer, Log, TEXT("Scan: %d new markers came into range while walking"), Marks.Num() - Before);
+		}
+	}
 }
 
 FString UGamerScanComponent::DescribeCounts() const

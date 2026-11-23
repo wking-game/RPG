@@ -104,6 +104,15 @@ Gerste und Hafer haben vorläufig die Flachs-Modelle im Feld und als Wildpflanze
 
 **Nachtest 2026-11-21** mit dem gemeinsamen Stand (nach Speichersystem, HUD-Anzeige und Stimmung): Build ok, Datentest `Gamer.Data.MealsAndTavern` grün. Dasselbe Testskript mit Host + 2 Clients und mit Server + 1 Spieler bestanden: Bauplatz-Regel, Kochen, Essen, Ersetzen der kürzesten Mahlzeit, Ablauf, Ausbau 1 → 3, Koch am Lagerfeuer, Wirt (7 Lieferungen), 6 Mahlzeiten in der Taverne. Die Stimmung wird jetzt über `AddMood` erhöht (im Test bis zu +0,15 Bonus je Bewohner). Die HUD-Anzeige selbst wurde ohne Grafik nicht angesehen.
 
+## Rohes Essen (Snacks, 2026-11-22)
+
+Anlass: Spieltest „Essen geht auch noch nicht“. Nur Gekochtes hatte Buff-Werte, Rohes ließ sich weder mit Linksklick noch mit E essen, und es gab keinen Hinweis.
+- Rohes Obst, Beeren, Pilze, Haselnüsse, Möhren, Zwiebeln, Hagebutten, Schlehen und Honig haben jetzt `"food"` mit `"snack": true`: ein schwacher Buff für 3 min (Honig 5 min) ⚑. Ein Snack nimmt nur einen freien Platz oder den eines anderen Snacks; sind alle 3 Plätze gekocht belegt, kommt „Du bist satt“.
+- Holunderbeeren, Kartoffeln, Gerste, Hafer, Leinsamen bleiben roh ungenießbar: Hinweis „roh nicht essbar – erst kochen“.
+- Essen: Linksklick oder E mit dem Essen in der Hand. E isst nur, wenn vorne nichts zu sammeln ist; zielt man auf Baum, Fels oder Bauplan, nimmt der Linksklick das Werkzeug.
+- Hinweis unter dem Gegenstand in der Hand: „Linksklick oder E: essen (+0,2 Regeneration/s, 3 min)“.
+- Geprüft: Build, Datentests 9/9, Host + 2 Clients (Snack essen, Holunder abgelehnt, Snack ersetzt Snack, Gekochtes ersetzt Snack, „satt“), Lauf mit Bild. Nicht geprüft: Essen mit E ohne Ziel (im Test stand eine Faserpflanze davor, E sammelte sie richtigerweise).
+
 ## Grenzen, ehrlich
 
 - **Die meisten Buffs wirken noch nicht:** Es gibt noch keine Lebenspunkte, keinen Kampf, keine Traglast-Grenze und keine Kälte. Die Buffs werden gesetzt, übertragen und abgefragt (`GetBonus`); die Systeme müssen sie lesen, sobald es sie gibt.

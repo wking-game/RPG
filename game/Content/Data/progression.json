@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "_comment": "Level 1-50 (Entscheidung 2026-11-22). Alle Zahlen sind Startwerte. xp_to_next[i] = Erfahrung von Level i+1 zu Level i+2 (Index 0 = Level 1). Aus Stunden je Stufe und der typischen Stunde berechnet (tools/data/creatures_from_gemini.py).",
+  "max_level": 50,
+  "tiers": [
+    {
+      "tier": 1,
+      "biome": "biome_fjord_meadow",
+      "level_min": 1,
+      "level_max": 8,
+      "hours": 6,
+      "weapon_damage": [
+        14,
+        24
+      ],
+      "weapon_poise": [
+        12,
+        19
+      ],
+      "armor": [
+        15,
+        37
+      ],
+      "poise_resist": [
+        20,
+        35
+      ],
+      "resist_cap": 0.08
+    },
+    {
+      "tier": 2,
+      "biome": "biome_tidal_marsh",
+      "level_min": 9,
+      "level_max": 16,
+      "hours": 8,
+      "weapon_damage": [
+        26,
+        39
+      ],
+      "weapon_poise": [
+        21,
+        30
+      ],
+      "armor": [
+        41,
+        66
+      ],
+      "poise_resist": [
+        37,
+        53
+      ],
+      "resist_cap": 0.16
+    },
+    {
+      "tier": 3,
+      "biome": "biome_barrow_heath",
+      "level_min": 17,
+      "level_max": 25,
+      "hours": 10,
+      "weapon_damage": [
+        41,
+        60
+      ],
+      "weapon_poise": [
+        32,
+        45
+      ],
+      "armor": [
+        71,
+        110
+      ],
+      "poise_resist": [
+        56,
+        80
+      ],
+      "resist_cap": 0.26
+    },
+    {
+      "tier": 4,
+      "biome": "biome_basalt_fell",
+      "level_min": 26,
+      "level_max": 34,
+      "hours": 12,
+      "weapon_damage": [
+        61,
+        86
+      ],
+      "weapon_poise": [
+        46,
+        62
+      ],
+      "armor": [
+        111,
+        156
+      ],
+      "poise_resist": [
+        81,
+        108
+      ],
+      "resist_cap": 0.36
+    },
+    {
+      "tier": 5,
+      "biome": "biome_ember_coast",
+      "level_min": 35,
+      "level_max": 42,
+      "hours": 14,
+      "weapon_damage": [
+        89,
+        111
+      ],
+      "weapon_poise": [
+        64,
+        79
+      ],
+      "armor": [
+        162,
+        199
+      ],
+      "poise_resist": [
+        112,
+        136
+      ],
+      "resist_cap": 0.46
+    },
+    {
+      "tier": 6,
+      "biome": "biome_ice_rim",
+      "level_min": 43,
+      "level_max": 50,
+      "hours": 16,
+      "weapon_damage": [
+        115,
+        145
+      ],
+      "weapon_poise": [
+        83,
+        105
+      ],
+      "armor": [
+        208,
+        260
+      ],
+      "poise_resist": [
+        142,
+        175
+      ],
+      "resist_cap": 0.55
+    }
+  ],
+  "xp_to_next": [
+    95,
+    165,
+    235,
+    310,
+    380,
+    455,
+    525,
+    595,
+    670,
+    740,
+    810,
+    885,
+    955,
+    1030,
+    1100,
+    1170,
+    1220,
+    1290,
+    1360,
+    1430,
+    1500,
+    1600,
+    1700,
+    1800,
+    1900,
+    1970,
+    2070,
+    2170,
+    2265,
+    2365,
+    2545,
+    2720,
+    2900,
+    3080,
+    3280,
+    3460,
+    3640,
+    3820,
+    4055,
+    4350,
+    4650,
+    4945,
+    5395,
+    5700,
+    6005,
+    6310,
+    6615,
+    6920,
+    7220
+  ],
+  "skill_points": {
+    "per_level": 1,
+    "bonus_every": 5,
+    "bonus": 1
+  },
+  "xp_sources": {
+    "kill_per_rank": 10,
+    "leader_multipliers": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "boss_first_win_per_tier": 300,
+    "quest_stage_per_tier": 50,
+    "discovery_per_tier": 25,
+    "first_craft_per_tier": 20,
+    "repeat_craft_per_tier": 1,
+    "build_piece_per_tier": 2,
+    "gather_per_tier": 0.5
+  },
+  "coop": {
+    "radius_cm": 5000,
+    "share_combat": 1.0,
+    "share_work": 0.25
+  },
+  "under_level_factor": [
+    1.0,
+    0.75,
+    0.25,
+    0.1
+  ],
+  "typical_hour": {
+    "kills": 15,
+    "kill_xp_per_rank": 10,
+    "quests": 1,
+    "quest_xp_per_tier": 50,
+    "discoveries": 1,
+    "discovery_xp_per_tier": 25,
+    "first_crafts": 3,
+    "first_craft_xp_per_tier": 20,
+    "repeat_crafts": 20,
+    "repeat_craft_xp_per_tier": 1,
+    "build_pieces": 40,
+    "build_xp_per_tier": 2,
+    "gathered": 150,
+    "gather_xp_per_tier": 0.5,
+    "xp_per_tier": 460.0
+  }
+}

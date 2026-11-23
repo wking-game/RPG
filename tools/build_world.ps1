@@ -21,10 +21,10 @@ $EditorCmd = Join-Path $UeRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
 $Script   = Join-Path $RepoRoot 'tools\unreal\build_world.py'
 $LogFile  = Join-Path $RepoRoot ("game\Saved\Logs\build_world_{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 
-if (Get-Process UnrealEditor -ErrorAction SilentlyContinue) {
-    throw 'Unreal Editor (or a game started from it) is running. Close it first.'
-}
-
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'build_world.ps1'
+try {
 Write-Host ">> Building world map ..." -ForegroundColor Cyan
 $start = Get-Date
 & $EditorCmd "`"$Project`"" -run=pythonscript "-script=`"$Script`"" -unattended -nosplash -nullrhi "-abslog=`"$LogFile`"" | Out-Null
@@ -52,3 +52,5 @@ Write-Host ("<< exit {0} after {1:N0} s. Log: {2}" -f $code, ((Get-Date) - $star
 if ($code -ne 0) {
     throw 'PCG generation failed, see log.'
 }
+}
+finally { Exit-UnrealLock $unrealLock }

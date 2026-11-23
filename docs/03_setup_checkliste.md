@@ -28,3 +28,12 @@
 - Ich habe bewusst kein `git init` in dem verbundenen Ordner ausgeführt: Über diese Verbindung kann Git seine Sperrdateien nicht löschen, das würde das Repository blockieren. Git bitte auf der Windows-Seite initialisieren.
 - Alles unter `reference/` ist fremder Code zum Nachlesen. Er wird nicht ausgeführt und ist nicht Teil des Spiels.
 - Mit 16 GB RAM wird es beim Arbeiten im Editor eng. Browser und Chat-Fenster beim Bauen schließen.
+
+## Immer nur ein Unreal gleichzeitig (Sperre, seit 2026-11-16)
+- **Warum:** Mehrere Sessions starteten Unreal gleichzeitig. Bilder in `Saved/Screenshots`, Protokolle und gespeicherte Menü-Einstellungen mischten sich, Testserver nahmen sich den Port weg, der Speicher reichte nicht.
+- **Wie:** `tools/unreal_lock.ps1` legt beim Start die Sperrdatei `game/Saved/unreal.lock` an (nicht im Repo; Inhaber-Skript, PID, Startzeit). Belegt ist Unreal, wenn die Sperrdatei einen laufenden Prozess nennt **oder** irgendein Unreal-Prozess ohne Sperre läuft (offener Editor des Nutzers, MetaHuman-Arbeit, Reste eines Laufs). Dann wartet das Skript und meldet alle 30 s „Warte auf Unreal: …“, höchstens 60 Minuten (Umgebungsvariable `GAMER_UNREAL_LOCK_TIMEOUT` in Minuten). Eine Sperre, deren Prozess nicht mehr existiert, wird übernommen. Freigabe in `finally`, also auch bei Fehler oder Abbruch.
+- **Wer sie nutzt:** `mp_test.ps1`, `menu_test.ps1`, `play_local.ps1` (Spiel_testen.bat), `start_menu.ps1` (Spiel_starten.bat), `test_data.ps1`, `build.ps1` (außer `ProjectFiles`; `-Force` überspringt die Sperre), `build_world.ps1`, `import_assets.ps1`, `import_characters.ps1`, `metahuman.ps1`, `build_showcase.ps1`. Verschachtelte Aufrufe (ein Skript mit Sperre ruft ein anderes auf) nutzen dieselbe Sperre weiter (`GAMER_UNREAL_LOCK_TOKEN`).
+- **Neues Skript, das Unreal startet:** `. (Join-Path $PSScriptRoot 'unreal_lock.ps1')`, `$lock = Enter-UnrealLock -Owner 'name.ps1'`, Arbeit in `try { … } finally { Exit-UnrealLock $lock }`.
+- **Bilder:** `mp_test.ps1` und `menu_test.ps1` kopieren die Bildschirmfotos ihres Laufs nach `<Log-Ordner>/shots` (`Copy-UnrealScreenshots`).
+- **Von Hand:** `.\tools\unreal_lock.ps1 -Status` zeigt Inhaber und laufende Unreal-Prozesse; `-Clear` löscht die Sperrdatei (nur, wenn sicher nichts mehr läuft).
+- **Grenze:** Wer Unreal direkt startet (Editor per Doppelklick, eigene Befehle), nimmt keine Sperre; die Skripte warten dann trotzdem, weil sie den Prozess sehen. Die Menütests schreiben weiterhin in die echte `GameUserSettings.ini` dieses PCs.

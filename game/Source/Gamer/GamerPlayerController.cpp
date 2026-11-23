@@ -16,6 +16,11 @@
 #include "GamerFarmBuilding.h"
 #include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerGrave.h"
+#include "GamerHealthComponent.h"
+#include "GamerEquipmentComponent.h"
+#include "GamerProgressComponent.h"
+#include "GamerStaminaComponent.h"
 #include "GamerListenComponent.h"
 #include "GamerScanComponent.h"
 #include "GamerSettlement.h"
@@ -43,6 +48,12 @@ bool AGamerPlayerController::InputKey(const FInputKeyEventArgs& Params)
 
 	if (IsMenuOpen() && bPressed && !Params.Key.IsAnalog())
 	{
+		// The inventory key closes the inventory window again.
+		if (MenuPage == EGamerMenuPage::Inventory && Params.Key == UGamerKeyBindings::Get()->GetKey(GamerInputActions::InventoryMenu))
+		{
+			CloseMenu();
+			return true;
+		}
 		// Controls page: the next key becomes the new binding.
 		if (!ListeningAction.IsNone())
 		{
@@ -77,6 +88,11 @@ bool AGamerPlayerController::InputKey(const FInputKeyEventArgs& Params)
 		}
 		if (MenuPage == EGamerMenuPage::Character && TypeIntoCharacterName(Params.Key))
 		{
+			return true;
+		}
+		if (bMenuKey && MenuPage == EGamerMenuPage::WorldAdvanced)
+		{
+			HandleWorldOptionButton(TEXT("opt:advdone"));
 			return true;
 		}
 		if (bMenuKey && MenuPage == EGamerMenuPage::CharacterLook)
@@ -215,6 +231,7 @@ void AGamerPlayerController::CloseMenu()
 		return; // the start menu cannot be closed, only left by starting or joining a world
 	}
 	MenuPage = EGamerMenuPage::None;
+	InventorySelected = INDEX_NONE;
 	ListeningAction = NAME_None;
 	MenuNote.Reset();
 	FlushPressedKeys();
@@ -284,35 +301,52 @@ void AGamerPlayerController::PressMenuButton(FName ButtonId)
 	}
 	else if (Id.StartsWith(TEXT("opt:")))
 	{
-		// Cycle one world option; remembered for the next start.
-		FGamerWorldOptions& Options = UGamerMenuSettings::Get()->WorldOptions;
-		const FString Which = Id.Mid(4);
-		if (Which == TEXT("flow"))
-		{
-			Options.BuildFlow = static_cast<EGamerBuildFlow>((static_cast<uint8>(Options.BuildFlow) + 1) % 3);
-		}
-		else if (Which == TEXT("place"))
-		{
-			Options.Placement = static_cast<EGamerPlacement>((static_cast<uint8>(Options.Placement) + 1) % 2);
-		}
-		else if (Which == TEXT("demolish"))
-		{
-			Options.Demolish = static_cast<EGamerDemolish>((static_cast<uint8>(Options.Demolish) + 1) % 3);
-		}
-		else if (Which == TEXT("inventory"))
-		{
-			Options.bCarryInventory = !Options.bCarryInventory; // save system 2026-11-15: asked when creating a world
-		}
-		else if (Which == TEXT("gespuer"))
-		{
-			Options.GespuerTempo = static_cast<EGamerGespuerTempo>((static_cast<uint8>(Options.GespuerTempo) + 1) % 3);   // 2026-11-15: tempo of the magic sense
-		}
-		UGamerMenuSettings::Get()->Save();
-		UE_LOG(LogGamer, Log, TEXT("Start menu world options: %s"), *Options.ToLogString());
+		HandleWorldOptionButton(Id); // "Welt erstellen" pages, GamerPlayerControllerWorld.cpp
+	}
+	else if (Id == TEXT("questhints"))
+	{
+		UGamerMenuSettings* Settings = UGamerMenuSettings::Get();
+		Settings->bQuestHints = !Settings->bQuestHints; // player setting, effect comes with the saga
+		Settings->Save();
 	}
 	else if (Id == TEXT("start"))
 	{
 		HostWorld();
+	}
+	else if (Id.StartsWith(TEXT("slot:")))
+	{
+		// Inventory window: first click picks a slot up, the second click puts it on another (moves, swaps or merges); same slot = let go.
+		AGamerCharacter* GamerCharacter = Cast<AGamerCharacter>(GetPawn());
+		const int32 Slot = FCString::Atoi(*Id.Mid(5));
+		if (GamerCharacter && GamerCharacter->GetInventory()->GetSlots().IsValidIndex(Slot))
+		{
+			if (InventorySelected == INDEX_NONE)
+			{
+				if (!GamerCharacter->GetInventory()->GetSlots()[Slot].IsEmpty()) { InventorySelected = Slot; }
+			}
+			else if (InventorySelected == Slot)
+			{
+				InventorySelected = INDEX_NONE;
+			}
+			else
+			{
+				GamerCharacter->GetInventory()->ServerSwapSlots(InventorySelected, Slot);
+				InventorySelected = INDEX_NONE;
+			}
+		}
+	}
+	else if (Id == TEXT("invdrop") || Id == TEXT("invdrop1"))
+	{
+		AGamerCharacter* GamerCharacter = Cast<AGamerCharacter>(GetPawn());
+		if (GamerCharacter && InventorySelected != INDEX_NONE)
+		{
+			GamerCharacter->GetInventory()->ServerDropSlot(InventorySelected, Id == TEXT("invdrop1") ? 1 : 9999);
+			if (Id == TEXT("invdrop") || !GamerCharacter->GetInventory()->GetSlots().IsValidIndex(InventorySelected)
+				|| GamerCharacter->GetInventory()->GetSlots()[InventorySelected].Count <= 1)
+			{
+				InventorySelected = INDEX_NONE;
+			}
+		}
 	}
 	else if (Id.StartsWith(TEXT("take:")))
 	{
@@ -944,6 +978,14 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 				}
 			}
 		}
+		// None full: a fruit tree out of season or a sapling (still aimable, shows why nothing can be taken).
+		for (TActorIterator<AGamerResourceNode> It(GetWorld()); It && !Nearest; ++It)
+		{
+			if (It->GetNodeId() == FName(*Argument) && It->ShowsWhenDepleted())
+			{
+				Nearest = *It;
+			}
+		}
 		if (!Nearest)
 		{
 			UE_LOG(LogGamer, Warning, TEXT("Test %s: no full node %s found"), *Kind, *Argument);
@@ -1015,6 +1057,138 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 		for (const FGamerListenFind& Find : L->GetFinds()) { Revealed += Find.RevealTime > 0.0 ? 1 : 0; }
 		UE_LOG(LogGamer, Log, TEXT("Test listen state: listening %d showing %d level %d range %.0f m wave %.1f s finds %d revealed %d proximity %.2f cooldown %.1f"),
 			L->IsListening() ? 1 : 0, L->IsShowing() ? 1 : 0, L->GetEffectiveLevel(), L->GetRangeCm() / 100.f, L->GetWaveSeconds(), L->GetFinds().Num(), Revealed, L->GetProximity(), L->GetCooldownLeft());
+	}
+	else if (Kind == TEXT("hands"))
+	{
+		GamerCharacter->GetHealth()->ServerDebugHealingHands(Argument != TEXT("off"));   // hands:on|off gives the ability (no learning system yet)
+	}
+	else if (Kind == TEXT("newday"))
+	{
+		GamerCharacter->GetHealth()->ServerDebugNewDay();
+	}
+	else if (Kind == TEXT("revive"))
+	{
+		// revive:start holds E at the nearest downed teammate, revive:stop lets go (the HUD bar shows the progress)
+		UGamerHealthComponent* Hp = GamerCharacter->GetHealth();
+		if (Argument == TEXT("stop")) { Hp->ServerSetReviving(nullptr, false); }
+		else if (AActor* Downed = Hp->FindDownedNearby()) { Hp->ServerSetReviving(Downed, true); UE_LOG(LogGamer, Log, TEXT("Test revive: holding at %s"), *Downed->GetName()); }
+		else { UE_LOG(LogGamer, Log, TEXT("Test revive: nobody downed within reach")); }
+	}
+	else if (Kind == TEXT("gotodowned"))
+	{
+		for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+		{
+			const UGamerHealthComponent* Other = It->FindComponentByClass<UGamerHealthComponent>();
+			if (Other && Other->IsDowned()) { Work->ServerDebugTeleportTo(It->GetActorLocation() + FVector(120.f, 0.f, 20.f)); break; }
+		}
+	}
+	else if (Kind == TEXT("inv"))
+	{
+		UE_LOG(LogGamer, Log, TEXT("Test inventory: %s"), *GamerCharacter->GetInventory()->Describe());
+	}
+	else if (Kind == TEXT("damage"))
+	{
+		// damage:<amount>[|<type>] through the general damage door (server)
+		FString Amount, Type;
+		if (!Argument.Split(TEXT("|"), &Amount, &Type)) { Amount = Argument; }
+		GamerCharacter->GetHealth()->ServerDebugDamage(FCString::Atof(*Amount), FName(*Type));
+	}
+	else if (Kind == TEXT("hit"))
+	{
+		// hit:<amount>|<zone head/body/limbs/none>[|<resist kind>] - a hit through armor (and a resistance), see docs/25
+		TArray<FString> Parts;
+		Argument.ParseIntoArray(Parts, TEXT("|"), false);
+		const FString ZoneText = Parts.IsValidIndex(1) ? Parts[1] : FString(TEXT("none"));
+		const int32 Zone = ZoneText == TEXT("head") ? 0 : ZoneText == TEXT("body") ? 1 : ZoneText == TEXT("limbs") ? 2 : -1;
+		GamerCharacter->GetHealth()->ServerDebugHit(Parts.Num() > 0 ? FCString::Atof(*Parts[0]) : 0.f, Zone, Parts.IsValidIndex(2) ? FName(*Parts[2]) : NAME_None);
+	}
+	else if (Kind == TEXT("equip"))
+	{
+		// equip:<item id>[|<place 0-8>] puts armor from the inventory on
+		FString Item, Place;
+		if (!Argument.Split(TEXT("|"), &Item, &Place)) { Item = Argument; }
+		GamerCharacter->GetEquipment()->ServerEquip(FName(*Item), Place.IsEmpty() ? INDEX_NONE : FCString::Atoi(*Place));
+	}
+	else if (Kind == TEXT("xp"))
+	{
+		// xp:<amount> gives experience (server); xp alone logs level and experience as this machine sees them
+		UGamerProgressComponent* Progress = GamerCharacter->GetProgress();
+		if (!Argument.IsEmpty()) { Progress->ServerDebugAddXp(FCString::Atof(*Argument)); }
+		UE_LOG(LogGamer, Log, TEXT("Test xp: %s%s: %s"), HasAuthority() ? TEXT("(server)") : TEXT("(client)"), IsLocalController() ? TEXT(" local") : TEXT(""), *Progress->Describe());
+	}
+	else if (Kind == TEXT("gearmenu"))
+	{
+		GamerCharacter->SetGearMenuOpen(Argument != TEXT("off"));   // gearmenu:on / gearmenu:off
+	}
+	else if (Kind == TEXT("unequip"))
+	{
+		GamerCharacter->GetEquipment()->ServerUnequip(FCString::Atoi(*Argument));
+	}
+	else if (Kind == TEXT("gear"))
+	{
+		// gear - worn pieces and their sums as this machine sees them (owner copy on the client)
+		const UGamerEquipmentComponent* Gear = GamerCharacter->GetEquipment();
+		const FGamerEquipmentTotals& T = Gear->GetTotals();
+		UE_LOG(LogGamer, Log, TEXT("Test gear: %s%s: %s | pieces %d, head %.1f body %.1f limbs %.1f, poise %.1f, cold %.2f poison %.2f heat %.2f storm %.2f, %.1f kg"),
+			HasAuthority() ? TEXT("(server)") : TEXT("(client)"), IsLocalController() ? TEXT(" local") : TEXT(""), *Gear->Describe(), T.Pieces,
+			GamerEquipment::ZoneArmor(T, EGamerHitZone::Head, UGamerDataSubsystem::Get(this)->GetCombat()),
+			GamerEquipment::ZoneArmor(T, EGamerHitZone::Body, UGamerDataSubsystem::Get(this)->GetCombat()),
+			GamerEquipment::ZoneArmor(T, EGamerHitZone::Limbs, UGamerDataSubsystem::Get(this)->GetCombat()),
+			T.PoiseResist, T.GetResist(TEXT("cold")), T.GetResist(TEXT("poison")), T.GetResist(TEXT("heat")), T.GetResist(TEXT("storm")), T.WeightKg);
+	}
+	else if (Kind == TEXT("fall"))
+	{
+		// fall:<cm> as if the player had fallen that far
+		GamerCharacter->GetHealth()->ServerDebugFall(FCString::Atof(*Argument));
+	}
+	else if (Kind == TEXT("stam"))
+	{
+		// stam:<stamina>|<exhaustion> (a negative or missing value leaves it), stam logs the state
+		FString A, B;
+		Argument.Split(TEXT("|"), &A, &B);
+		if (!Argument.IsEmpty()) { GamerCharacter->GetStamina()->ServerDebugSet(A.IsEmpty() ? -1.f : FCString::Atof(*A), B.IsEmpty() ? -1.f : FCString::Atof(*B)); }
+		UE_LOG(LogGamer, Log, TEXT("Test stam: %s"), *GamerCharacter->GetStamina()->DescribeState());
+	}
+	else if (Kind == TEXT("lapse"))
+	{
+		GamerCharacter->GetStamina()->ServerDebugTimeLapse(FCString::Atof(*Argument));   // lapse:<factor> exhaustion rises that much faster
+	}
+	else if (Kind == TEXT("sleep"))
+	{
+		GamerCharacter->GetStamina()->ServerSleep();
+	}
+	else if (Kind == TEXT("hp"))
+	{
+		UE_LOG(LogGamer, Log, TEXT("Test hp: %s"), *GamerCharacter->GetHealth()->DescribeState());
+	}
+	else if (Kind == TEXT("getup"))
+	{
+		GamerCharacter->GetHealth()->ServerRequestRespawn();   // as the interact key does while dead (after the minimum delay)
+	}
+	else if (Kind == TEXT("getupnow"))
+	{
+		GamerCharacter->GetHealth()->ServerDebugRespawnNow();
+	}
+	else if (Kind == TEXT("opengrave"))
+	{
+		if (AGamerGrave* Grave = GamerCharacter->GetHealth()->FindNearbyGrave())
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test grave: opening the grave of %s (%d pieces, age %.0f s, may open %d)"), *Grave->GetOwnerName(), Grave->GetItemCount(),
+				Grave->GetAgeSeconds(), GamerCharacter->GetHealth()->MayOpenGrave(Grave) ? 1 : 0);
+			GamerCharacter->GetHealth()->ServerCollectGrave(Grave);
+		}
+		else
+		{
+			UE_LOG(LogGamer, Log, TEXT("Test grave: no grave in reach"));
+		}
+	}
+	else if (Kind == TEXT("gotograve"))
+	{
+		for (TActorIterator<AGamerGrave> It(GetWorld()); It; ++It)
+		{
+			Work->ServerDebugTeleportTo(It->GetActorLocation() + FVector(120.f, 0.f, 100.f));
+			break;
+		}
 	}
 	else if (Kind == TEXT("scanage"))
 	{
@@ -1190,6 +1364,7 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 			const EGamerMenuPage Page = Argument == TEXT("controls") ? EGamerMenuPage::Controls
 				: Argument == TEXT("village") ? EGamerMenuPage::Village
 				: Argument == TEXT("storage") ? EGamerMenuPage::Storage
+				: Argument == TEXT("inventory") ? EGamerMenuPage::Inventory
 				: Argument == TEXT("graphics") ? EGamerMenuPage::Graphics
 				: Argument == TEXT("build") ? EGamerMenuPage::Build : EGamerMenuPage::Main;
 			OpenMenu(Page);
@@ -1299,6 +1474,14 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 		Work->ServerDebugSetSeason(Phase);
 		UE_LOG(LogGamer, Log, TEXT("Test season: request %.2f (%s), local phase before %.2f"), Phase,
 			*AGamerGameState::DescribeSeason(Phase), GetWorld()->GetGameState<AGamerGameState>() ? GetWorld()->GetGameState<AGamerGameState>()->GetSeasonPhase() : -1.f);
+	}
+	else if (Kind == TEXT("rotate"))
+	{
+		// rotate[:n] - press the rotate key n times for the piece in hand (keep the same piece for the next place: step)
+		for (int32 Press = FMath::Max(1, Argument.IsEmpty() ? 1 : FCString::Atoi(*Argument)); Press > 0; --Press)
+		{
+			GamerCharacter->GetBuild()->Rotate();
+		}
 	}
 	else if (Kind == TEXT("upgrade"))
 	{
@@ -1682,7 +1865,28 @@ void AGamerPlayerController::RunTestScript(float DeltaTime)
 	}
 	else if (Kind == TEXT("craft"))
 	{
-		Work->ServerCraft(FName(*Argument));
+		GamerCharacter->RequestCraft(FName(*Argument));
+	}
+	else if (Kind == TEXT("strike"))
+	{
+		// strike or strike:<item id> - left click with what is in the hand (same code as the mouse button: eat food, hammer,
+		// strike); with an item id its hotbar slot is selected first
+		UGamerInventoryComponent* Inventory = GamerCharacter->GetInventory();
+		if (!Argument.IsEmpty())
+		{
+			const int32 Slot = Inventory->GetSlots().IndexOfByPredicate([&Argument](const FGamerInventorySlot& S) { return S.Item == FName(*Argument); });
+			if (Slot != INDEX_NONE && Slot < Inventory->GetHotbarSize())
+			{
+				Inventory->SelectSlot(Slot);
+			}
+			else
+			{
+				UE_LOG(LogGamer, Warning, TEXT("Test strike: %s is not in the hotbar (slot %d)"), *Argument, Slot);
+			}
+		}
+		const FGamerItemDef* Held = Inventory->GetSelectedItemDef();
+		UE_LOG(LogGamer, Log, TEXT("Test strike with %s"), Held ? *Held->Id.ToString() : TEXT("nothing"));
+		GamerCharacter->PerformStrike();
 	}
 	else if (Kind == TEXT("eat"))
 	{

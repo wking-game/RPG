@@ -1,6 +1,8 @@
 #include "GamerResourceNode.h"
 
 #include "Gamer.h"
+#include "EngineUtils.h"
+#include "GameFramework/Pawn.h"
 #include "GamerDataSubsystem.h"
 #include "GamerGameState.h"
 #include "GamerGroundItem.h"
@@ -16,6 +18,11 @@
 
 namespace
 {
+	TAutoConsoleVariable<float> CVarRegrowClearanceCm(
+		TEXT("gamer.RegrowClearanceCm"),
+		300.f,
+		TEXT("A used-up wild node waits to grow back while a player or villager stands closer than this many cm (0 = off)."));
+
 	TAutoConsoleVariable<float> CVarRegrowScale(
 		TEXT("gamer.RegrowScale"),
 		1.f,
@@ -487,6 +494,21 @@ void AGamerResourceNode::Grow()
 
 void AGamerResourceNode::Regrow()
 {
+	// Wild nodes do not grow back in front of somebody's eyes: while a player or villager stands close, try again shortly
+	// (decision 2026-11-22, Gemini GDD v3 idea 2). Planted trees are exempt, the farmer stands next to them on purpose.
+	const float Clearance = CVarRegrowClearanceCm.GetValueOnGameThread();
+	if (!bPlantedGrowing && Clearance > 0.f && GetWorld())
+	{
+		for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+		{
+			if (!It->IsHidden() && FVector::Dist(It->GetActorLocation(), GetActorLocation()) < Clearance)
+			{
+				UE_LOG(LogGamer, Log, TEXT("Node %s (%s) regrow postponed: %s stands within %.0f cm"), *GetName(), *NodeId.ToString(), *It->GetName(), Clearance);
+				GetWorldTimerManager().SetTimer(RegrowTimer, this, &AGamerResourceNode::Regrow, 5.f, false);
+				return;
+			}
+		}
+	}
 	GetWorldTimerManager().ClearTimer(GrowTimer);
 	bDepleted = false;
 	GrowStage = 0;

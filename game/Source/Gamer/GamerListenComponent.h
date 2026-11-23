@@ -100,7 +100,8 @@ public:
 	float GetAgeSeconds() const;
 	float GetWaveSeconds() const;
 	float GetWaveRadiusCm() const;
-	FVector GetCenter() const { return Center; }
+	/** The wave follows the figure while listening (it only runs while standing, so it hardly moves). */
+	FVector GetCenter() const { return (bListening && GetOwner()) ? GetOwner()->GetActorLocation() : Center; }
 	const TArray<FGamerListenFind>& GetFinds() const { return Finds; }
 	/** Seconds a find stays visible after the wave reached it (level, group bonus). */
 	float GetVisibleSeconds() const;

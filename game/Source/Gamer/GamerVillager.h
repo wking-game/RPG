@@ -140,6 +140,25 @@ protected:
 	UPROPERTY()
 	TObjectPtr<class USkeletalMesh> BodyB;
 
+	/** MetaHuman head (follows the body pose); empty while the interim figures are used. */
+	UPROPERTY(VisibleAnywhere, Category = "Visual")
+	TObjectPtr<class USkeletalMeshComponent> FaceMesh;
+
+	/** Hair, beard, eyebrows of the MetaHuman figure (groom components, created on demand). */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class USceneComponent>> GroomComponents;
+
+	/** Own Norse clothing on the MetaHuman body (GamerFigures::ApplyClothing, created on demand). */
+	UPROPERTY(Transient)
+	TObjectPtr<class USkeletalMeshComponent> ClothMesh;
+
+	/** Cloak layer over the clothing (GamerFigures::ApplyClothing "Umhang"). */
+	UPROPERTY(Transient)
+	TObjectPtr<class USkeletalMeshComponent> CloakMesh;
+
+	/** Last figure written to the log (once per change). */
+	TWeakObjectPtr<class USkeletalMesh> LoggedFace;
+
 private:
 	enum class ETask : uint8
 	{

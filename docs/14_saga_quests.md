@@ -57,7 +57,7 @@ Je Biom läuft dasselbe Muster (gut für Daten und Umfang):
 3. **Steinkreis lauschen:** Das vollständige Lied verrät den Ort des Kreises. Dort aktiv lauschen (Steinkreis +8 EP beim ersten Mal).
 4. **Boss:** Der Kreis zeigt die Arena. Sieg → Bossmaterial (nächste Stufe T2–T6), Trophäe, Saga-Bild.
 
-**Realistisch und Sagenwelt:** Die Geschichte funktioniert mit beiden Boss-Fassungen (bestätigt: zuerst Menschen und Tiere, Sagenwesen nur als Weltoption „Sagenwelt“). Der Gezeitenhall bleibt in beiden Fassungen leise; Texte können je Fassung eine eigene Variante haben (`text_sagenwelt`).
+**Bosse und Sagenwesen:** Alle Bosse treten in der Sagen-Fassung auf, nur der Alte Keiler bleibt ein Tier; Fantasy-Kreaturen sind Standard-Gegner, die Weltoption „Sagenwelt“ entfällt (bestätigt 2026-11-22; ersetzt „zuerst Menschen und Tiere, Sagenwesen nur als Weltoption“ vom 2026-11-13). Die Sagenwesen gab es schon immer, die alten Lieder kennen sie. Weil der Ring gebrochen ist, sickert der Gezeitenhall durch, und an starken Orten sind sie wach. Die Magie der Spieler bleibt leise (Lauschen, Seeglas, Nebelbilder). Es gibt nur eine Textfassung; die frühere Idee eigener Varianten je Fassung (`text_sagenwelt`) entfällt. Wie die Story die Bosse einbindet: `docs/17_hauptstory_kapitel.md`.
 
 **Offen (für später):** Was passiert im Finale mit dem Ring? Er schließt sich (die Kraft wird gebändigt) oder bleibt offen (die Kraft bleibt wild, die Siedler leben mit ihr). Das ist eine erzählerische Entscheidung des Nutzers.
 
@@ -189,7 +189,10 @@ Gleiche Schreibweise wie in `listen.json` (`art:wert`), ein Prüfbaustein für a
 | `deed:<deed_id>` | Welt | Welt-Tat geschehen |
 | `job:<id>`, `building:<id>` | Welt | wie bisher |
 | `season:`, `night`, `fog`, `place:` | Welt/Ort | wie in `listen.json` |
-| `option:<name>` | Welt | Weltoption aktiv (z. B. `option:hordes`, `option:sagenwelt`) |
+| `option:<name>` | Welt | Weltoption aktiv (z. B. `option:hordes`; `option:sagenwelt` entfällt seit 2026-11-22) |
+| `stance:<hueter\|rufer>` | Spieler | Haltung aus Kapitel 3 (bestätigt 2026-11-16); vor Kapitel 3 nicht gesetzt |
+| `tide:<low\|high>` | Welt/Ort | Ebbe oder Flut (bestätigt 2026-11-21: zweimal pro Spieltag) |
+| `mode:<saga\|free>` | Welt | Spielmodus; im Freien Spiel startet kein `main`-Strang |
 
 ### 7.3 `saga_lines.json` – Stränge und Wege
 ```json
@@ -247,6 +250,7 @@ Ziel-Typen (`objectives[].type`):
 | `build` | `buildable` | Gebäude steht (Welt; zählt für jeden, der die Etappe aktiv hat) |
 | `defeat` | `enemy` / `boss` | besiegt (mit Gutschrift im Umkreis) |
 | `assign_job` | `job` | ein Bewohner hat den Beruf (Welt) |
+| `puzzle` | `puzzle` (ID eines Rätsels, z. B. Steine in richtiger Reihenfolge legen) | das Rätsel gelöst ist (keine Uhr, beliebig viele Versuche; im Koop zählt für alle in der Nähe, bestätigt 2026-11-21) |
 
 Questgegner und Questgegenstände werden **pro Spieler gezeigt**: Hat ein Spieler sie schon, sieht er sie nicht mehr; wer sie noch braucht, sieht sein eigenes Exemplar. Questgegner spawnen nach `quest_enemy_respawn_days` nach.
 
@@ -279,6 +283,7 @@ Questgegner und Questgegenstände werden **pro Spieler gezeigt**: Hat ein Spiele
   Entscheidungen ohne Gespräch, etwa am leeren Stein, laufen über denselben Block: Das Spiel bietet die Optionen als Handlung an.
 - **Hilfe:** Antworten mit `requires: ["setting:quest_help"]` erscheinen nur, wenn die Questhilfe im Menü an ist. Ihr Effekt `quest_help` schaltet für diesen Spieler `area_help` frei. Beim Ausschalten im Menü erklärt ein Hinweis, dass diese Fragen dann fehlen.
 - **Koop:** Jeder spricht für sich (eigener Queststand). Mitspieler in der Nähe hören die vertonten Zeilen mit, aber nur der Sprechende wählt.
+- **Gemeinsame Entscheidung** (bestätigt 2026-11-21): Eine Entscheidung mit `"group": true` und `"fallback": "<option>"` öffnet sich für alle Spieler im Umkreis gleichzeitig; jeder wählt, keine Uhr. Einig: das gilt. Uneinig: `fallback` (die umkehrbare Option). Gebraucht für Entscheidungen, die die Welt nur auf eine Art verändern können (z. B. `choice_mud_mother` mit `fallback: "capture"`).
 
 ### 7.6 `lore.json` – Schriftstücke
 ```json

@@ -13,6 +13,10 @@ class UGamerInventoryComponent;
 class UMaterialInstanceDynamic;
 class UGamerScanComponent;
 class UGamerListenComponent;
+class UGamerHealthComponent;
+class UGamerEquipmentComponent;
+class UGamerProgressComponent;
+class UGamerStaminaComponent;
 class UGamerWorkComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -57,6 +61,8 @@ public:
 
 	/** Local player: turn the body towards what it works on (the movement component replicates the rotation). */
 	void FaceTowards(const AActor* Target);
+	/** Work clip for crafting at the station of this recipe (workbench, camp fire, other). */
+	EGamerAnimAction StationAnim(FName RecipeId) const;
 
 	/** Server: play a one-shot work animation on all machines. bPredicted: the owner already played it. */
 	void MulticastAction(EGamerAnimAction Kind, bool bPredicted);
@@ -89,6 +95,16 @@ public:
 	UGamerBuildComponent* GetBuild() const { return Build; }
 	UGamerScanComponent* GetScan() const { return Scan; }
 	UGamerListenComponent* GetListen() const { return Listen; }
+	UGamerHealthComponent* GetHealth() const { return Health; }
+	UGamerEquipmentComponent* GetEquipment() const { return Equipment; }
+	UGamerProgressComponent* GetProgress() const { return Progress; }
+	UGamerStaminaComponent* GetStamina() const { return Stamina; }
+	/** Sets the walk speed from sprint state and stamina (the stamina component calls it when it runs empty or recovers). */
+	void ApplyMoveSpeed();
+	virtual void OnJumped_Implementation() override;
+
+	/** Server: damages by the height fallen (the health component). */
+	virtual void Landed(const FHitResult& Hit) override;
 	class UGamerBuffComponent* GetBuffs() const { return Buffs; }
 
 	/** Camera position and direction through the crosshair (for aiming at resources and building spots). */
@@ -104,11 +120,17 @@ public:
 
 	/** Local player only: the crafting menu (recipes by hand plus those of stations nearby). */
 	bool IsCraftMenuOpen() const { return bCraftMenuOpen; }
+	/** Equipment window open: number keys 1-9 put on / take off the piece of that place. */
+	bool IsGearMenuOpen() const { return bGearMenuOpen; }
+	/** Tests: open or close the equipment window without the key. */
+	void SetGearMenuOpen(bool bOpen) { bGearMenuOpen = bOpen; if (bOpen) { CloseCraftMenu(); } }
 	const TArray<FName>& GetHandRecipes() const { return HandRecipes; }
 
 	/** Station window: E at a finished station opens the crafting menu with only that station's recipes (null = normal menu). */
 	AGamerBuilding* GetStationWindow() const { return StationWindow.Get(); }
 	void OpenStationWindow(AGamerBuilding* Station);
+	/** Starts a recipe (server checks it); at a station the figure first turns to it. Used by keys and tests. */
+	void RequestCraft(FName RecipeId);
 	bool HasStationRecipes(const AGamerBuilding* Station) const;
 	void CloseCraftMenu();
 
@@ -140,6 +162,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<UGamerListenComponent> Listen;
 
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerHealthComponent> Health;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerEquipmentComponent> Equipment;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
+	TObjectPtr<UGamerProgressComponent> Progress;
+
+	UPROPERTY()
+	TObjectPtr<UGamerStaminaComponent> Stamina;
+
+	/** Highest point of the current fall (server), for the fall damage. */
+	float FallApexZ = 0.f;
+
 	/** Meal buffs (Taverne-Session, decision 2026-11-14). */
 	UPROPERTY(VisibleAnywhere, Category = "Gameplay")
 	TObjectPtr<class UGamerBuffComponent> Buffs;
@@ -156,6 +193,22 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<class USkeletalMesh> BodySlim;
+
+	/** MetaHuman head (follows the body pose); empty while the interim figures are used. */
+	UPROPERTY(VisibleAnywhere, Category = "Visual")
+	TObjectPtr<class USkeletalMeshComponent> FaceMesh;
+
+	/** Hair, beard, eyebrows of the MetaHuman figure (groom components, created on demand). */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class USceneComponent>> GroomComponents;
+
+	/** Own Norse clothing on the MetaHuman body (GamerFigures::ApplyClothing, created on demand). */
+	UPROPERTY(Transient)
+	TObjectPtr<class USkeletalMeshComponent> ClothMesh;
+
+	/** Cloak layer over the clothing (GamerFigures::ApplyClothing "Umhang"). */
+	UPROPERTY(Transient)
+	TObjectPtr<class USkeletalMeshComponent> CloakMesh;
 
 	// Tunable values. Read from [/Script/Gamer.GamerCharacter] in DefaultGame.ini;
 	// the numbers here are only fallbacks. Server and clients must use the same values.
@@ -178,6 +231,14 @@ protected:
 	/** Give up walking up after this long (blocked by the bush itself, a slope ...) and grab from where we stand. */
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float GrabApproachSeconds = 1.5f;
+
+	/** Crafting at a station: walk up until this close to the station's outline (cm, horizontal), then work. */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float StationWorkDistance = 55.f;
+
+	/** Give up walking to the station after this long and work from where we stand (the server allows its reach). */
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
+	float StationApproachSeconds = 3.f;
 
 	UPROPERTY(Config, EditDefaultsOnly, Category = "Movement")
 	float GravityScale = 2.f;
@@ -206,13 +267,14 @@ private:
 	/** What the pick-up-all key combination acts on: the aimed thing of the pile. */
 	AActor* GetPickAnchor() const;
 	bool bInteractDown = false;
+	bool bReviveHeld = false;
 	bool bHoldFired = false;
 	double InteractDownTime = 0.0;
 	void SprintStart() { SetSprinting(true); }
 	void SprintStop() { SetSprinting(false); }
 	void HotbarNext() { CycleHotbar(1); }
 	void HotbarPrev() { CycleHotbar(-1); }
-	void ApplyMoveSpeed();
+	
 	/** Selects the best hotbar tool of that type if it is not already in hand. True if one is (now) in hand. */
 	bool TakeToolInHand(FName ToolType, int32 MinTier);
 
@@ -240,6 +302,13 @@ private:
 	float PendingGrabBestDistance = 0.f;
 	void TickGrab(float DeltaSeconds);
 	void FinishGrab();
+
+	/** Local player: walking up to a station before crafting there (RequestCraft). */
+	TWeakObjectPtr<const AActor> PendingCraftStation;
+	FName PendingCraftRecipe;
+	float PendingCraftTime = 0.f;
+	float PendingCraftBestDistance = 0.f;
+	void TickCraftApproach(float DeltaSeconds);
 	FName AppliedBodyLook;
 	void ApplyBodyLook();
 
@@ -265,6 +334,8 @@ private:
 	void Demolish();
 	void OpenVillageMenu();
 	void ToggleCraftMenu();
+	void ToggleGearMenu();
+	void OpenInventoryWindow();
 	/** Number keys: pick a recipe while the crafting menu is open, otherwise select a hotbar slot. */
 	void NumberKey(const FInputActionValue& Value);
 	void UpdateFocus();
@@ -286,6 +357,12 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> CraftMenuAction;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UInputAction> GearMenuAction;
+
+	UPROPERTY()
+	TObjectPtr<UInputAction> InventoryMenuAction;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> NumberAction;
@@ -310,6 +387,7 @@ private:
 	TWeakObjectPtr<AGamerBuilding> FocusBuilding;
 	double LastStrikeTime = -1000.0;
 	bool bCraftMenuOpen = false;
+	bool bGearMenuOpen = false;
 	TArray<FName> HandRecipes;
 	TWeakObjectPtr<AGamerBuilding> StationWindow;
 	TArray<TWeakObjectPtr<AActor>> Pile;

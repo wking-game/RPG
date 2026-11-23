@@ -4,6 +4,7 @@
 #include "GamerBuilding.h"
 #include "GamerDataSubsystem.h"
 #include "GamerGameState.h"
+#include "GamerGrave.h"
 #include "GamerGroundItem.h"
 #include "GamerInventoryComponent.h"
 #include "GamerResourceNode.h"
@@ -904,6 +905,20 @@ FGamerSaveRecord UGamerSaveSubsystem::CollectWorld() const
 	}
 	Out.SetRecords(TEXT("ground_items"), GroundItems);
 
+	TArray<FGamerSaveRecord> Graves;
+	for (TActorIterator<AGamerGrave> It(World); It; ++It)
+	{
+		if (!IsValid(*It) || It->IsActorBeingDestroyed() || It->GetItemCount() <= 0)
+		{
+			continue;
+		}
+		FGamerSaveRecord Record;
+		Record.SetTransform(TEXT("transform"), It->GetActorTransform());
+		It->WriteSaveState(Record);
+		Graves.Add(Record);
+	}
+	Out.SetRecords(TEXT("graves"), Graves);
+
 	TArray<FGamerSaveRecord> Villagers;
 	for (TActorIterator<AGamerVillager> It(World); It; ++It)
 	{
@@ -934,6 +949,7 @@ void UGamerSaveSubsystem::RestoreWorld(const FGamerSaveRecord& Block, int32& Out
 	OutSkipped = 0;
 
 	// Start from an empty world (maps may bring their own nodes; tests restore twice).
+	for (TActorIterator<AGamerGrave> It(World); It; ++It) { It->Destroy(); }
 	for (TActorIterator<AGamerVillager> It(World); It; ++It) { It->Destroy(); }
 	for (TActorIterator<AGamerGroundItem> It(World); It; ++It) { It->Destroy(); }
 	for (TActorIterator<AGamerBuilding> It(World); It; ++It) { if (!It->IsPreview()) { It->Destroy(); } }
@@ -1033,6 +1049,20 @@ void UGamerSaveSubsystem::RestoreWorld(const FGamerSaveRecord& Block, int32& Out
 		}
 	}
 
+	int32 Graves = 0;
+	for (const FGamerSaveRecord& Record : Block.GetRecords(TEXT("graves")))
+	{
+		const FTransform Transform = Record.GetTransform(TEXT("transform"));
+		TArray<FGamerItemAmount> Items = Record.GetItems(TEXT("items"));
+		GamerSave::FilterKnownItems(World, Items, TEXT("grave"));
+		if (AGamerGrave* Grave = AGamerGrave::Create(World, Transform.GetLocation(), Record.GetString(TEXT("owner_key")), Record.GetString(TEXT("owner_name")), Items))
+		{
+			Grave->SetActorRotation(Transform.Rotator());
+			Grave->ReadSaveState(Record);
+			++Graves;
+		}
+	}
+
 	int32 Villagers = 0;
 	for (const FGamerSaveRecord& Record : Block.GetRecords(TEXT("villagers")))
 	{
@@ -1050,7 +1080,7 @@ void UGamerSaveSubsystem::RestoreWorld(const FGamerSaveRecord& Block, int32& Out
 		Villager->ReadSaveState(Record);
 		++Villagers;
 	}
-	UE_LOG(LogGamer, Log, TEXT("Save: restored %d nodes, %d buildings, %d ground items, %d villagers (%d skipped)"), Nodes, Buildings, GroundItems, Villagers, OutSkipped);
+	UE_LOG(LogGamer, Log, TEXT("Save: restored %d nodes, %d buildings, %d ground items, %d graves, %d villagers (%d skipped)"), Nodes, Buildings, GroundItems, Graves, Villagers, OutSkipped);
 }
 
 // --- Players ---

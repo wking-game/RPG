@@ -36,6 +36,31 @@ namespace GamerData
 	/** Highest tier (T6 Relikt). */
 	inline constexpr int32 MaxTier = 6;
 
+	/** Equipment slots for worn armor (docs/21: helmet, shoulder, chest, hands, legs, feet, 2 rings, cloak). */
+	inline const TArray<FName>& ArmorSlots()
+	{
+		static const TArray<FName> Slots = { TEXT("helmet"), TEXT("shoulder"), TEXT("chest"), TEXT("hands"), TEXT("legs"), TEXT("feet"), TEXT("ring"), TEXT("cloak") };
+		return Slots;
+	}
+	inline FString ArmorSlotList()
+	{
+		FString Out;
+		for (const FName& Slot : ArmorSlots())
+		{
+			Out += (Out.IsEmpty() ? TEXT("") : TEXT(", ")) + Slot.ToString();
+		}
+		return Out;
+	}
+	/** Kinds of resistance a piece of armor or a buff can give (docs/21 5.2). */
+	inline const TArray<FName>& ResistKinds()
+	{
+		static const TArray<FName> Kinds = { TEXT("heat"), TEXT("cold"), TEXT("storm"), TEXT("poison") };
+		return Kinds;
+	}
+
+	/** Highest player level (decision 2026-11-22: level 1-50). */
+	inline constexpr int32 MaxPlayerLevel = 50;
+
 	/** Data folder of the project: <Project>/Content/Data. */
 	GAMER_API FString DefaultDirectory();
 

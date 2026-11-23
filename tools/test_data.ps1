@@ -33,9 +33,15 @@ $Log = Join-Path $LogDir ("data_{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 $arguments = "`"$Project`" -ExecCmds=`"Automation RunTests $Filter;Quit`" -TestExit=`"Automation Test Queue Empty`" " +
              "-unattended -nopause -nullrhi -nosplash -nosound -log -abslog=`"$Log`""
 Write-Host ">> Running automation tests '$Filter' ..." -ForegroundColor Cyan
-$sw = [Diagnostics.Stopwatch]::StartNew()
-$proc = Start-Process $EditorCmd -ArgumentList $arguments -WindowStyle Hidden -PassThru -Wait
-$sw.Stop()
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'test_data.ps1'
+try {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $proc = Start-Process $EditorCmd -ArgumentList $arguments -WindowStyle Hidden -PassThru -Wait
+    $sw.Stop()
+}
+finally { Exit-UnrealLock $unrealLock }
 
 if (-not (Test-Path $Log)) { throw "No log written ($Log). Exit code $($proc.ExitCode)." }
 

@@ -93,6 +93,19 @@ TArray<FGamerItemAmount> AGamerBuilding::CostFor(const FGamerBuildableDef& Def, 
 	return Cost;
 }
 
+FBox AGamerBuilding::LocalBounds(const FGamerBuildableDef& Def)
+{
+	if (Def.Mesh.IsValid())
+	{
+		if (const UStaticMesh* StaticMesh = Cast<UStaticMesh>(Def.Mesh.TryLoad()))
+		{
+			return StaticMesh->GetBoundingBox();
+		}
+	}
+	const FVector Size = PlaceholderFor(Def.Id).SizeCm;
+	return FBox(FVector(-Size.X * 0.5f, -Size.Y * 0.5f, 0.f), FVector(Size.X * 0.5f, Size.Y * 0.5f, Size.Z));
+}
+
 FVector AGamerBuilding::ClampScale(const FGamerBuildableDef& Def, const FVector& Scale)
 {
 	if (!Def.IsAreaPiece())

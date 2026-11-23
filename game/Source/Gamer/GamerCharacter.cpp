@@ -11,10 +11,16 @@
 #include "GamerFarmBuilding.h"
 #include "GamerGroundItem.h"
 #include "GamerResourceNode.h"
+#include "GamerGrave.h"
+#include "GamerHealthComponent.h"
+#include "GamerEquipmentComponent.h"
+#include "GamerProgressComponent.h"
+#include "GamerStaminaComponent.h"
 #include "GamerListenComponent.h"
 #include "GamerScanComponent.h"
 #include "GamerWorkComponent.h"
 #include "GamerAnimInstance.h"
+#include "GamerFigures.h"
 #include "GamerPlayerState.h"
 #include "Engine/SkeletalMesh.h"
 #include "EngineUtils.h"
@@ -104,6 +110,10 @@ AGamerCharacter::AGamerCharacter()
 	Build = CreateDefaultSubobject<UGamerBuildComponent>(TEXT("Build"));
 	Scan = CreateDefaultSubobject<UGamerScanComponent>(TEXT("Scan"));
 	Listen = CreateDefaultSubobject<UGamerListenComponent>(TEXT("Listen"));
+	Health = CreateDefaultSubobject<UGamerHealthComponent>(TEXT("Health"));
+	Equipment = CreateDefaultSubobject<UGamerEquipmentComponent>(TEXT("Equipment"));
+	Progress = CreateDefaultSubobject<UGamerProgressComponent>(TEXT("Progress"));
+	Stamina = CreateDefaultSubobject<UGamerStaminaComponent>(TEXT("Stamina"));
 	Buffs = CreateDefaultSubobject<UGamerBuffComponent>(TEXT("Buffs"));
 
 	// Figure on the UE5 skeleton: Epic Manny/Quinn for now, MetaHuman bodies later (same skeleton, same animation).
@@ -118,6 +128,11 @@ AGamerCharacter::AGamerCharacter()
 	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	// A dedicated server never renders: no pose work there (gameplay does not read bones).
 	Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+
+	FaceMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FaceMesh"));
+	FaceMesh->SetupAttachment(Body);
+	FaceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FaceMesh->SetLeaderPoseComponent(Body);
 }
 
 void AGamerCharacter::BeginPlay()
@@ -144,6 +159,10 @@ void AGamerCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	ApplyBodyLook(); // cheap when unchanged; the profile can replicate after the player state
+	if (!PendingCraftRecipe.IsNone() && IsLocallyControlled())
+	{
+		TickCraftApproach(DeltaSeconds);
+	}
 	if (PendingGrab.IsValid() && IsLocallyControlled())
 	{
 		TickGrab(DeltaSeconds);
@@ -153,6 +172,13 @@ void AGamerCharacter::Tick(float DeltaSeconds)
 	{
 		TestWalkRemaining -= DeltaSeconds;
 		AddMovementInput(GetActorForwardVector(), 1.f);
+	}
+
+	if (HasAuthority())
+	{
+		// Highest point of the fall, so Landed() knows how far it was.
+		const float Z = GetActorLocation().Z;
+		FallApexZ = GetCharacterMovement()->IsFalling() ? FMath::Max(FallApexZ, Z) : Z;
 	}
 
 	if (IsLocallyControlled())
@@ -215,6 +241,8 @@ void AGamerCharacter::BuildInput()
 	InteractAction = MakeAction(TEXT("IA_Interact"), EInputActionValueType::Boolean);
 	StrikeAction = MakeAction(TEXT("IA_Strike"), EInputActionValueType::Boolean);
 	CraftMenuAction = MakeAction(TEXT("IA_CraftMenu"), EInputActionValueType::Boolean);
+	GearMenuAction = MakeAction(TEXT("IA_GearMenu"), EInputActionValueType::Boolean);
+	InventoryMenuAction = MakeAction(TEXT("IA_InventoryMenu"), EInputActionValueType::Boolean);
 	// Number keys: one action, the number arrives as the value (hotbar slot, or recipe while crafting).
 	NumberAction = MakeAction(TEXT("IA_Number"), EInputActionValueType::Axis1D);
 	BuildMenuAction = MakeAction(TEXT("IA_BuildMenu"), EInputActionValueType::Boolean);
@@ -279,6 +307,8 @@ void AGamerCharacter::ApplyKeyBindings()
 	MappingContext->MapKey(InteractAction, EKeys::Gamepad_FaceButton_Left);
 	MappingContext->MapKey(StrikeAction, Keys->GetKey(GamerInputActions::Strike));
 	MappingContext->MapKey(StrikeAction, EKeys::Gamepad_RightTrigger);
+	MappingContext->MapKey(GearMenuAction, Keys->GetKey(GamerInputActions::GearMenu));
+	MappingContext->MapKey(InventoryMenuAction, Keys->GetKey(GamerInputActions::InventoryMenu));
 	MappingContext->MapKey(CraftMenuAction, Keys->GetKey(GamerInputActions::CraftMenu));
 	MappingContext->MapKey(CraftMenuAction, EKeys::Gamepad_FaceButton_Top);
 	MappingContext->MapKey(BuildMenuAction, Keys->GetKey(GamerInputActions::BuildMenu));
@@ -388,6 +418,8 @@ void AGamerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		Input->BindAction(InteractAction, ETriggerEvent::Started, this, &AGamerCharacter::InteractPressed);
 		Input->BindAction(InteractAction, ETriggerEvent::Completed, this, &AGamerCharacter::InteractReleased);
 		Input->BindAction(CraftMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::ToggleCraftMenu);
+		Input->BindAction(GearMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::ToggleGearMenu);
+		Input->BindAction(InventoryMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::OpenInventoryWindow);
 		Input->BindAction(NumberAction, ETriggerEvent::Started, this, &AGamerCharacter::NumberKey);
 		Input->BindAction(StrikeAction, ETriggerEvent::Triggered, this, &AGamerCharacter::Strike);
 		Input->BindAction(BuildMenuAction, ETriggerEvent::Started, this, &AGamerCharacter::OpenBuildMenu);
@@ -410,6 +442,10 @@ void AGamerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void AGamerCharacter::Move(const FInputActionValue& Value)
 {
+	if (Health && Health->IsIncapacitated())
+	{
+		return;
+	}
 	const FVector2D Axis = Value.Get<FVector2D>();
 	if (!Controller)
 	{
@@ -451,6 +487,16 @@ AActor* AGamerCharacter::GetPickAnchor() const
 
 void AGamerCharacter::InteractPressed()
 {
+	// Next to a knocked-down teammate: holding the interact key revives them (the server counts the hold, HUD shows the bar).
+	if (Health && !Health->IsIncapacitated())
+	{
+		if (AActor* Downed = Health->FindDownedNearby())
+		{
+			bReviveHeld = true;
+			Health->ServerSetReviving(Downed, true);
+			return;
+		}
+	}
 	bInteractDown = true;
 	bHoldFired = false;
 	InteractDownTime = GetWorld()->GetTimeSeconds();
@@ -467,7 +513,26 @@ void AGamerCharacter::InteractPressed()
 
 void AGamerCharacter::InteractReleased()
 {
+	if (bReviveHeld)
+	{
+		bReviveHeld = false;
+		if (Health)
+		{
+			Health->ServerSetReviving(nullptr, false);
+		}
+		return;
+	}
 	bInteractDown = false;
+}
+
+void AGamerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	if (HasAuthority() && Health)
+	{
+		Health->NotifyLanded(FallApexZ - GetActorLocation().Z);
+		FallApexZ = GetActorLocation().Z;
+	}
 }
 
 void AGamerCharacter::DoScan()
@@ -564,7 +629,7 @@ void AGamerCharacter::BuildPile()
 	{
 		const AGamerResourceNode* Node = FocusNode.Get();
 		const FGamerResourceNodeDef* Def = Node ? Node->GetDef() : nullptr;
-		if (Def && !Def->RequiredTool.IsRequired())
+		if (Def && !Def->RequiredTool.IsRequired() && !Node->IsDepleted())
 		{
 			Leader = FocusNode.Get();
 		}
@@ -649,7 +714,7 @@ void AGamerCharacter::UpdateFocusRaw()
 			return;
 		}
 		AGamerResourceNode* Node = Cast<AGamerResourceNode>(Hit.GetActor());
-		if (Node && !Node->IsDepleted() && FVector::Dist2D(Node->GetActorLocation(), GetActorLocation()) <= Reach)
+		if (Node && (!Node->IsDepleted() || Node->ShowsWhenDepleted()) && FVector::Dist2D(Node->GetActorLocation(), GetActorLocation()) <= Reach)
 		{
 			FocusNode = Node;
 			return;
@@ -666,20 +731,40 @@ void AGamerCharacter::UpdateFocusRaw()
 	// 2) Small things on the ground are easy to miss with the camera: nearest node in front within reach.
 	const FVector Forward2D = FVector(CameraForward.X, CameraForward.Y, 0.f).GetSafeNormal();
 	float BestDistance = Reach;
+	AGamerResourceNode* Seasonal = nullptr;   // fruit tree out of season: only if nothing can be taken nearby
+	float SeasonalDistance = Reach;
 	for (TActorIterator<AGamerResourceNode> It(GetWorld()); It; ++It)
 	{
 		AGamerResourceNode* Node = *It;
-		if (Node->IsDepleted())
+		const bool bInfoOnly = Node->IsDepleted();
+		if (bInfoOnly && !Node->ShowsWhenDepleted())
 		{
 			continue;
 		}
 		const FVector ToNode = FVector(Node->GetActorLocation() - GetActorLocation()) * FVector(1.f, 1.f, 0.f);
 		const float Distance = ToNode.Size();
-		if (Distance <= BestDistance && FVector::DotProduct(ToNode.GetSafeNormal(), Forward2D) > 0.5f)
+		if (FVector::DotProduct(ToNode.GetSafeNormal(), Forward2D) <= 0.5f)
+		{
+			continue;
+		}
+		if (bInfoOnly)
+		{
+			if (Distance <= SeasonalDistance)
+			{
+				SeasonalDistance = Distance;
+				Seasonal = Node;
+			}
+		}
+		else if (Distance <= BestDistance)
 		{
 			BestDistance = Distance;
 			FocusNode = Node;
 		}
+	}
+	if (!FocusNode.IsValid() && Seasonal)
+	{
+		FocusNode = Seasonal;
+		BestDistance = SeasonalDistance;
 	}
 	// Ground items are tiny: the nearest one in front wins when it is closer than the nearest node.
 	for (TActorIterator<AGamerGroundItem> It(GetWorld()); It; ++It)
@@ -697,9 +782,54 @@ void AGamerCharacter::UpdateFocusRaw()
 
 void AGamerCharacter::Interact()
 {
+	// Dead: the interact key gets up again (after the short delay; the HUD shows "Aufstehen").
+	if (Health && Health->IsDead())
+	{
+		Health->ServerRequestRespawn();
+		return;
+	}
+	if (Health && Health->IsDowned())
+	{
+		return;   // knocked down: only waiting for help
+	}
 	if (Work->IsBusy())
 	{
 		return; // already gathering or crafting; the progress bar shows it
+	}
+	// A grave next to us and nothing else aimed at: open it (the owner at once, teammates after the protection time).
+	if (Health && !FocusNode.IsValid() && !FocusGroundItem.IsValid() && !FocusBuilding.IsValid())
+	{
+		if (AGamerGrave* Grave = Health->FindNearbyGrave())
+		{
+			Health->ServerCollectGrave(Grave);
+			return;
+		}
+	}
+	// The own bed and nothing else aimed at: sleep (brings the exhaustion down).
+	{
+		// The aimed bed, or (a bed is low and easy to miss with the crosshair) the nearest finished bed right in front of the player.
+		AGamerBuilding* Bed = FocusBuilding.Get();
+		if (Bed && !(Bed->IsFinished() && Bed->GetBuildableId() == TEXT("building_bed"))) { Bed = nullptr; }
+		if (!Bed && Health && !FocusGroundItem.IsValid() && !FocusBuilding.IsValid())
+		{
+			float Best = 200.f;
+			for (TActorIterator<AGamerBuilding> It(GetWorld()); It; ++It)
+			{
+				const FVector ToBed = It->GetActorLocation() - GetActorLocation();
+				const float Distance = FVector(ToBed.X, ToBed.Y, 0.f).Size();
+				if (It->IsFinished() && It->GetBuildableId() == TEXT("building_bed") && Distance < Best
+					&& FVector::DotProduct(FVector(ToBed.X, ToBed.Y, 0.f).GetSafeNormal(), GetActorForwardVector()) > 0.3f)
+				{
+					Best = Distance;
+					Bed = *It;
+				}
+			}
+		}
+		if (Health && Stamina && Bed)
+		{
+			Stamina->ServerSleepAt(Bed);
+			return;
+		}
 	}
 	// The settlement storage: open it (every finished storage building is an access point to the same storage).
 	if (const AGamerBuilding* Building = FocusBuilding.Get(); Building && Building->IsFinished() && Building->GetBuildableId() == TEXT("building_storage"))
@@ -742,7 +872,22 @@ void AGamerCharacter::Interact()
 			return;
 		}
 	}
-	if (AGamerResourceNode* Node = FocusNode.Get())
+	// Nothing to gather in front of you: E eats the food in hand, like the left click (player test 2026-11-22).
+	if (const AGamerResourceNode* Node = FocusNode.Get(); !Node || Node->IsDepleted())
+	{
+		if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef(); Held && Held->Food.IsMeal())
+		{
+			PlayActionLocally(EGamerAnimAction::Consume);
+			Buffs->ServerEat(Held->Id);
+			return;
+		}
+		else if (Held && UGamerBuffComponent::NeedsCooking(this, *Held))
+		{
+			Work->ShowMessage(FString::Printf(TEXT("%s kann man so nicht essen – erst kochen."), *Held->Name));
+			return;
+		}
+	}
+	if (AGamerResourceNode* Node = FocusNode.Get(); Node && !Node->IsDepleted())
 	{
 		const FGamerResourceNodeDef* Def = Node->GetDef();
 		if (Def && !Def->RequiredTool.IsRequired())
@@ -880,8 +1025,32 @@ void AGamerCharacter::RefreshHandRecipes()
 	HandRecipes.Append(StationRecipes);
 }
 
+void AGamerCharacter::OpenInventoryWindow()
+{
+	if (Health && Health->IsIncapacitated())
+	{
+		return;
+	}
+	if (AGamerPlayerController* PC = Cast<AGamerPlayerController>(Controller))
+	{
+		bGearMenuOpen = false;
+		CloseCraftMenu();
+		PC->OpenMenu(EGamerMenuPage::Inventory);   // a menu page with the mouse cursor; the key (or Esc) closes it again
+	}
+}
+
+void AGamerCharacter::ToggleGearMenu()
+{
+	bGearMenuOpen = !bGearMenuOpen;
+	if (bGearMenuOpen)
+	{
+		CloseCraftMenu();
+	}
+}
+
 void AGamerCharacter::ToggleCraftMenu()
 {
+	bGearMenuOpen = false;
 	if (bCraftMenuOpen)
 	{
 		CloseCraftMenu();
@@ -895,11 +1064,48 @@ void AGamerCharacter::ToggleCraftMenu()
 void AGamerCharacter::NumberKey(const FInputActionValue& Value)
 {
 	const int32 Index = FMath::RoundToInt(Value.Get<float>()) - 1;
+	if (bGearMenuOpen)
+	{
+		// Keys 1-7 = helmet ... cloak: take off what is worn, else put on the best fitting piece from the inventory.
+		// Key 8 = both rings: put a ring on while a ring place is free, else take the last worn ring off.
+		if (Equipment && Index >= 0 && Index < UGamerEquipmentComponent::PlaceCount - 1)
+		{
+			if (Index < 7)
+			{
+				if (!Equipment->GetWornAt(Index).IsNone())
+				{
+					Equipment->ServerUnequip(Index);
+				}
+				else if (const FName Candidate = Equipment->FindCandidateFor(Index); !Candidate.IsNone())
+				{
+					Equipment->ServerEquip(Candidate, Index);
+				}
+			}
+			else
+			{
+				const FName Candidate = Equipment->FindCandidateFor(7);
+				const bool bFree = Equipment->GetWornAt(7).IsNone() || Equipment->GetWornAt(8).IsNone();
+				if (!Candidate.IsNone() && bFree)
+				{
+					Equipment->ServerEquip(Candidate, INDEX_NONE);
+				}
+				else if (!Equipment->GetWornAt(8).IsNone())
+				{
+					Equipment->ServerUnequip(8);
+				}
+				else if (!Equipment->GetWornAt(7).IsNone())
+				{
+					Equipment->ServerUnequip(7);
+				}
+			}
+		}
+		return;
+	}
 	if (bCraftMenuOpen)
 	{
 		if (HandRecipes.IsValidIndex(Index))
 		{
-			Work->ServerCraft(HandRecipes[Index]);
+			RequestCraft(HandRecipes[Index]);
 		}
 		return;
 	}
@@ -932,8 +1138,22 @@ bool AGamerCharacter::TakeToolInHand(FName ToolType, int32 MinTier)
 
 void AGamerCharacter::PerformStrike()
 {
-	// A dish or drink in hand: eat it (meal buffs, Taverne-Session; architecture rule 5).
-	if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef(); Held && Held->Food.IsMeal())
+	if (Health && Health->IsIncapacitated())
+	{
+		return;
+	}
+	// A dish, drink or raw food in hand: eat it (meal buffs, Taverne-Session; architecture rule 5) -
+	// unless the crosshair is on work for a tool (tree, rock, plan): then the tool is taken as before.
+	const AGamerResourceNode* WorkNode = FocusNode.Get();
+	const bool bToolWork = (WorkNode && WorkNode->GetDef() && WorkNode->GetDef()->RequiredTool.IsRequired())
+		|| (FocusBuilding.IsValid() && !FocusBuilding->IsFinished());
+	if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef(); !bToolWork && Held && UGamerBuffComponent::NeedsCooking(this, *Held))
+	{
+		// Food that cannot be eaten as it is (raw elderberries, potatoes, grain): say so instead of a swing into the air.
+		Work->ShowMessage(FString::Printf(TEXT("%s kann man so nicht essen – erst kochen."), *Held->Name));
+		return;
+	}
+	if (const FGamerItemDef* Held = Inventory->GetSelectedItemDef(); !bToolWork && Held && Held->Food.IsMeal())
 	{
 		PlayActionLocally(EGamerAnimAction::Consume);
 		Buffs->ServerEat(Held->Id);
@@ -1019,7 +1239,17 @@ void AGamerCharacter::OnRep_Sprinting()
 
 void AGamerCharacter::ApplyMoveSpeed()
 {
-	GetCharacterMovement()->MaxWalkSpeed = bSprinting ? SprintSpeed : WalkSpeed;
+	// Empty stamina only slows down (architecture rule 5), it never blocks.
+	GetCharacterMovement()->MaxWalkSpeed = (bSprinting ? SprintSpeed : WalkSpeed) * (Stamina ? Stamina->GetSpeedFactor() : 1.f);
+}
+
+void AGamerCharacter::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+	if (HasAuthority() && Stamina)
+	{
+		Stamina->NoteJump();
+	}
 }
 
 void AGamerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1108,16 +1338,46 @@ void AGamerCharacter::ApplyBodyLook()
 	const FGamerCharacterProfile& Profile = PS->GetProfile();
 	const FName BodyLook = Profile.GetLook(TEXT("look_body"));
 	const FName Cloth = Profile.GetLook(TEXT("look_cloth_color"));
-	const FName Key(*FString::Printf(TEXT("%s|%s"), *BodyLook.ToString(), *Cloth.ToString()));
+	const FName Hair = Profile.GetLook(TEXT("look_hair"));
+	const FName Beard = Profile.GetLook(TEXT("look_beard"));
+	const FName HairColour = Profile.GetLook(TEXT("look_hair_color"));
+	const FName Key(*FString::Printf(TEXT("%s|%s|%s|%s|%s"), *BodyLook.ToString(), *Cloth.ToString(), *Hair.ToString(),
+		*Beard.ToString(), *HairColour.ToString()));
 	if (Key == AppliedBodyLook)
 	{
 		return;
 	}
 	AppliedBodyLook = Key;
-	USkeletalMesh* Wanted = BodyLook == TEXT("body_slim") && BodySlim ? BodySlim.Get() : BodyStrong.Get();
+	// MetaHuman figure if assembled and linked (Content/Data/figures.json), else the interim Manny/Quinn.
+	const bool bSlim = BodyLook == TEXT("body_slim");
+	GamerFigures::FFigure Figure;
+	// Medium assembly first (hair cards that move: docs/01_entscheidungen.md "Haare"), then Low (static helmet hair),
+	// then High (its long hair did not render, 21.11.).
+	const bool bMetaHuman = GamerFigures::Find(bSlim ? TEXT("slim_mid") : TEXT("strong_mid"), Figure)
+		|| GamerFigures::Find(bSlim ? TEXT("slim_low") : TEXT("strong_low"), Figure)
+		|| GamerFigures::Find(bSlim ? TEXT("slim") : TEXT("strong"), Figure);
+	USkeletalMesh* Wanted = bMetaHuman ? Figure.Body : (bSlim && BodySlim ? BodySlim.Get() : BodyStrong.Get());
 	if (Wanted && GetMesh()->GetSkeletalMeshAsset() != Wanted)
 	{
 		GetMesh()->SetSkeletalMesh(Wanted);
+	}
+	if (Figure.GroomLOD == 3) // hair kits are Medium assemblies: only for the Medium player figure
+	{
+		GamerFigures::ApplyHairChoice(Figure, bSlim, Hair, Beard);
+	}
+	FaceMesh->SetSkeletalMesh(bMetaHuman ? Figure.Face : nullptr);
+	FaceMesh->SetLeaderPoseComponent(GetMesh());
+	GamerFigures::ApplyGrooms(FaceMesh, GroomComponents, Figure);
+	GamerFigures::SetHairColour(GroomComponents, HairColour);
+	// Own Norse clothing (tunic) in the chosen cloth colour, red-brown trim; only on the MetaHuman figure.
+	GamerFigures::ApplyClothing(GetMesh(), ClothMesh, bMetaHuman, bSlim, TEXT("Tunika"), ClothTint(Cloth),
+		GamerFigures::ClothPalette(Cloth == TEXT("cloth_red") ? 3 : 4));
+	// Travel cloak in Aschebraun over every outfit (players are on the road; villagers only sometimes).
+	GamerFigures::ApplyClothing(GetMesh(), CloakMesh, bMetaHuman, bSlim, TEXT("Umhang"), GamerFigures::ClothPalette(2),
+		GamerFigures::ClothPalette(4));
+	if (bMetaHuman)
+	{
+		return; // the tint below is for the interim figure
 	}
 	// Mannequin material: "Paint Tint" colours the painted panels (the clothing stand-in).
 	const FLinearColor Tint = ClothTint(Cloth);
@@ -1137,9 +1397,79 @@ void AGamerCharacter::FillAnimInputs(FGamerAnimInputs& Out) const
 	// bLowOrStation (Gameplay-Session): Harvest = target lies low (crouch); Craft = at a station.
 	// Crafting the first tools by hand (no station) kneels and hammers.
 	Out.Loop = State.Kind == EGamerWorkKind::Harvest ? (State.bLowOrStation ? EGamerAnimAction::GatherLow : EGamerAnimAction::Gather)
-		: State.Kind == EGamerWorkKind::Craft ? (State.bLowOrStation ? EGamerAnimAction::CraftStation : EGamerAnimAction::Craft)
+		: State.Kind == EGamerWorkKind::Craft ? (State.bLowOrStation ? StationAnim(State.Subject) : EGamerAnimAction::Craft)
 		: EGamerAnimAction::None;
 	Out.Pulse = LocalAction;
+}
+
+void AGamerCharacter::RequestCraft(FName RecipeId)
+{
+	// At a station: walk up to it and work facing it (it can be up to the station reach away).
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	const FGamerRecipeDef* Recipe = Data ? Data->FindRecipe(RecipeId) : nullptr;
+	const AActor* Station = nullptr;
+	if (Recipe && !Recipe->Station.IsNone())
+	{
+		const AGamerBuilding* Open = StationWindow.Get();
+		Station = Open && Open->GetBuildableId() == Recipe->Station ? Open : Work->FindStationNearby(Recipe->Station);
+	}
+	if (!Station)
+	{
+		Work->ServerCraft(RecipeId); // by hand: right here
+		return;
+	}
+	// Walk up to the station first (TickCraftApproach), then turn to it and work.
+	PendingCraftStation = Station;
+	PendingCraftRecipe = RecipeId;
+	PendingCraftTime = 0.f;
+	PendingCraftBestDistance = TNumericLimits<float>::Max();
+	TickCraftApproach(0.f); // close enough already: start at once
+}
+
+void AGamerCharacter::TickCraftApproach(float DeltaSeconds)
+{
+	const AActor* Station = PendingCraftStation.Get();
+	const FName Recipe = PendingCraftRecipe;
+	if (!Station)
+	{
+		PendingCraftRecipe = NAME_None;
+		return;
+	}
+	PendingCraftTime += DeltaSeconds;
+	// Distance to the station's outline (a workbench is long: its centre can be a metre away while standing at it).
+	const FBox Box = Station->GetComponentsBoundingBox(false);
+	const FVector Here = GetActorLocation();
+	const FVector Closest(FMath::Clamp(Here.X, Box.Min.X, Box.Max.X), FMath::Clamp(Here.Y, Box.Min.Y, Box.Max.Y), Here.Z);
+	const float Distance = Box.IsValid ? FVector::Dist2D(Here, Closest) : FVector::Dist2D(Here, Station->GetActorLocation());
+	const bool bStuck = PendingCraftTime > 0.4f && Distance > PendingCraftBestDistance - 1.f;
+	PendingCraftBestDistance = FMath::Min(PendingCraftBestDistance, Distance);
+	if (Distance <= StationWorkDistance || PendingCraftTime >= StationApproachSeconds || bStuck)
+	{
+		PendingCraftStation.Reset();
+		PendingCraftRecipe = NAME_None;
+		FaceTowards(Station);
+		Work->ServerCraft(Recipe);
+		return;
+	}
+	const FVector Delta = (Box.IsValid ? Closest : Station->GetActorLocation()) - Here;
+	AddMovementInput(FVector(Delta.X, Delta.Y, 0.f).GetSafeNormal(), 1.f);
+}
+
+EGamerAnimAction AGamerCharacter::StationAnim(FName RecipeId) const
+{
+	// Work clip per station (the recipe of the running work replicates as its subject).
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(this);
+	const FGamerRecipeDef* Recipe = Data ? Data->FindRecipe(RecipeId) : nullptr;
+	const FName Station = Recipe ? Recipe->Station : NAME_None;
+	if (Station == TEXT("building_workbench"))
+	{
+		return EGamerAnimAction::CraftBench;
+	}
+	if (Station == TEXT("building_campfire"))
+	{
+		return EGamerAnimAction::CraftLow;
+	}
+	return EGamerAnimAction::CraftStation;
 }
 
 void AGamerCharacter::FaceTowards(const AActor* Target)

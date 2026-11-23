@@ -130,7 +130,7 @@ Beide Seiten sind **hallend**: Sie liegen in der Nähe von Seeglas, und das Summ
 | Wahl | Text | Folge |
 |---|---|---|
 | **Hallbjörns Ring nehmen** | *„Wenn das Glas antwortet, will ich hören, was es sagt.“* | Ring für den Ring-Slot: „Hallbjörns Ring“, Lauschen-Reichweite +20 % (Vorschlag). **Weg des Kreises:** Die Leute um Hallbjörn am Steinkreis im Norden nehmen dich als seinen Erben auf. Deine nächsten Kapitel führen tiefer in den Gezeitenhall: Steinkreise, Lieder, Seidr. Asgerds Leute begegnen dir mit Misstrauen: Handel ja, Zuzug nein |
-| **Den Ring liegen lassen und Hallbjörns Namen in den Stein ritzen** | *„Sie hat auf ihn gewartet. Jetzt muss sie es nicht mehr.“* | **Weg des Hofs:** Du erfüllst, was Asgerd nicht konnte. Ihre überlebenden Leute, die acht Verschollenen, verstecken sich an einem Fjord. Sie erkennen das Zeichen und vertrauen dir. Deine nächsten Kapitel führen zu ihnen; später können sie als Bewohner in die Siedlung ziehen, mit eigenem Wissen (Flachs, Boote, alte Saat). Hallbjörns Kreis bleibt dir verschlossen, die Steinkreise erreichst du auf einem härteren Weg |
+| **Den Ring liegen lassen und Hallbjörns Namen in den Stein ritzen** | *„Sie hat auf ihn gewartet. Jetzt muss sie es nicht mehr.“* | **Weg des Hofs:** Du erfüllst, was Asgerd nicht konnte. Ihre überlebenden Leute, verstecken sich an einem Fjord. Sie erkennen das Zeichen und vertrauen dir. Deine nächsten Kapitel führen zu ihnen; später können sie als Bewohner in die Siedlung ziehen, mit eigenem Wissen (Flachs, Boote, alte Saat). Hallbjörns Kreis bleibt dir verschlossen, die Steinkreise erreichst du auf einem härteren Weg |
 
 - Beide Wege führen zum Ende der Hauptstory. Sie zeigen aber andere Kapitel, andere Orte und andere Verbündete. Der andere Weg ist für diesen Spieler zu.
 - **Koop:** Jeder entscheidet für sich. Was die Welt verändert, **addiert sich**, statt sich auszuschließen. Hat ein Spieler den Hof-Weg gewählt, ziehen Asgerds Leute ins Dorf; hat ein anderer den Ring genommen, spricht Hallbjörns Kreis mit ihm. So braucht es keine Abstimmung (Vorschlag von Claude als Antwort auf die offene Frage „Wer entscheidet bei Entscheidungen, die die Welt verändern?“).
@@ -147,7 +147,7 @@ Beide Seiten sind **hallend**: Sie liegen in der Nähe von Seeglas, und das Summ
 *Erst jetzt setzt leise Musik ein: eine Leier, ein tiefer Ton darunter.*
 
 **Saga-Buch** (Abschluss, Kapitelzeile):
-> *Siebzehn kamen vor ihnen. Vier liegen auf dem Hügel. Einer ging nach Norden und nahm drei mit. Acht sind noch irgendwo, und eine von ihnen hat ein Grab für einen Lebenden gegraben.*
+> *Siebzehn kamen vor ihnen. Vier liegen auf dem Hügel. Einer ging nach Norden und nahm drei mit. Neun sind noch irgendwo, und eine von ihnen hat ein Grab für einen Lebenden gegraben.*
 
 **Offene Frage im Saga-Buch:** je nach Weg *„Was hört Hallbjörn im Norden?“* oder *„Wer zündet das Feuer am Fjord an?“*
 

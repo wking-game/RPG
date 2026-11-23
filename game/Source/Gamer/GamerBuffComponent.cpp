@@ -56,6 +56,8 @@ FString UGamerBuffComponent::DescribeEffect(const FGamerBuffEffect& Effect)
 	case EGamerBuffStat::ColdResist:   return FString::Printf(TEXT("+%s %% Kälteresistenz"), *Value);
 	case EGamerBuffStat::PoisonResist: return FString::Printf(TEXT("+%s %% Giftresistenz"), *Value);
 	case EGamerBuffStat::Damage:       return FString::Printf(TEXT("+%s %% Schaden"), *Value);
+	case EGamerBuffStat::StaminaMax:   return FString::Printf(TEXT("+%s Ausdauer"), *Value);
+	case EGamerBuffStat::StaminaRegen: return FString::Printf(TEXT("+%s Ausdauer-Erholung/s"), *Value);
 	}
 	return Value;
 }
@@ -81,6 +83,24 @@ void UGamerBuffComponent::ServerEat_Implementation(FName Item)
 	if (!Def->Food.IsMeal())
 	{
 		return Tell(FString::Printf(TEXT("%s kann man nicht als Mahlzeit essen."), *Def->Name));
+	}
+	// Raw food (snack) only takes a free place or the place of another snack; it never pushes out a cooked meal.
+	const bool bAlreadyActive = Meals.ContainsByPredicate([Item](const FGamerActiveMeal& M) { return M.Item == Item; });
+	int32 SnackToReplace = INDEX_NONE;
+	if (!bAlreadyActive && Def->Food.bSnack && Meals.Num() >= FMath::Max(1, MaxMeals))
+	{
+		for (int32 Index = 0; Index < Meals.Num(); ++Index)
+		{
+			const FGamerItemDef* Other = Data->FindItem(Meals[Index].Item);
+			if (Other && Other->Food.bSnack && (SnackToReplace == INDEX_NONE || Meals[Index].EndTime < Meals[SnackToReplace].EndTime))
+			{
+				SnackToReplace = Index;
+			}
+		}
+		if (SnackToReplace == INDEX_NONE)
+		{
+			return Tell(FString::Printf(TEXT("Du bist satt: %s würde keine deiner %d gekochten Mahlzeiten verdrängen."), *Def->Name, Meals.Num()));
+		}
 	}
 	FGamerItemAmount One;
 	One.Item = Item;
@@ -108,6 +128,10 @@ void UGamerBuffComponent::ServerEat_Implementation(FName Item)
 			for (int32 Index = 1; Index < Meals.Num(); ++Index)
 			{
 				Shortest = Meals[Index].EndTime < Meals[Shortest].EndTime ? Index : Shortest;
+			}
+			if (SnackToReplace != INDEX_NONE)
+			{
+				Shortest = SnackToReplace;
 			}
 			const FGamerItemDef* Old = Data->FindItem(Meals[Shortest].Item);
 			Replaced = Old ? Old->Name : Meals[Shortest].Item.ToString();
@@ -179,4 +203,35 @@ FString UGamerBuffComponent::Describe() const
 		Parts.Add(FString::Printf(TEXT("%s %d:%02d"), *Meals[Index].Item.ToString(), Seconds / 60, Seconds % 60));
 	}
 	return Parts.Num() > 0 ? FString::Join(Parts, TEXT(", ")) : TEXT("none");
+}
+
+bool UGamerBuffComponent::NeedsCooking(const UObject* WorldContext, const FGamerItemDef& Item)
+{
+	const UGamerDataSubsystem* Data = UGamerDataSubsystem::Get(WorldContext);
+	if (!Data || Item.Category != EGamerItemCategory::Food || Item.Food.IsMeal())
+	{
+		return false;
+	}
+	for (const TPair<FName, FGamerRecipeDef>& Pair : Data->GetData().Recipes)
+	{
+		if (!Pair.Value.Station.IsNone() && Pair.Value.Inputs.ContainsByPredicate([&Item](const FGamerItemAmount& In) { return In.Item == Item.Id; }))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+FString UGamerBuffComponent::DescribeFood(const FGamerItemDef& Item)
+{
+	if (!Item.Food.IsMeal())
+	{
+		return FString();
+	}
+	TArray<FString> Effects;
+	for (const FGamerBuffEffect& Effect : Item.Food.Buffs)
+	{
+		Effects.Add(DescribeEffect(Effect));
+	}
+	return FString::Printf(TEXT("%s, %.0f min"), *FString::Join(Effects, TEXT(", ")), Item.Food.Minutes);
 }

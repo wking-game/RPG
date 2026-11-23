@@ -46,6 +46,11 @@ New-Item -ItemType Directory -Force $LogDir | Out-Null
 $serverLog = Join-Path $LogDir 'server.log'
 
 $mapUrl = "$Map" + '?game=/Script/Gamer.GamerGameMode' + "?BuildFlow=$BuildFlow?Placement=$Placement?Demolish=$Demolish"
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'play_local.ps1'
+$server = $null
+try {
 Write-Host "Starting server ($mapUrl) ..." -ForegroundColor Cyan
 $server = Start-Process $Editor -ArgumentList "`"$Project`" $mapUrl -server -port=$Port -log -nosplash -abslog=`"$serverLog`"" -WindowStyle Minimized -PassThru
 
@@ -89,5 +94,8 @@ Write-Host "$Clients client window(s) started. WASD = move, mouse = look, Space 
 Write-Host "Close all client windows to end. Logs: $LogDir"
 
 $clientsStarted | Wait-Process
-if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
-Write-Host "Server stopped."
+}
+finally {
+    if ($server -and -not $server.HasExited) { Stop-Process -Id $server.Id -Force; $server.WaitForExit(15000) | Out-Null; Write-Host "Server stopped." }
+    Exit-UnrealLock $unrealLock
+}

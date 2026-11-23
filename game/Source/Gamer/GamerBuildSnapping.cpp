@@ -3,6 +3,8 @@
 #include "GamerBuilding.h"
 #include "GamerDataTypes.h"
 #include "EngineUtils.h"
+#include "CollisionQueryParams.h"
+#include "Engine/OverlapResult.h"
 #include "Engine/World.h"
 
 namespace
@@ -168,8 +170,11 @@ namespace
 
 	float FreeYaw(float ViewYaw, int32 Steps, EGamerPlacement Mode)
 	{
+		// Base direction follows the camera (15 degree steps); each rotate press turns by 45 degrees
+		// (15 was too small to notice, user test 2026-11-22). World grid: 90 degrees for both.
 		const float Step = Mode == EGamerPlacement::WorldGrid ? 90.f : 15.f;
-		return NormalizeYaw(FMath::RoundToFloat(ViewYaw / Step) * Step + Steps * Step);
+		const float PressStep = Mode == EGamerPlacement::WorldGrid ? 90.f : 45.f;
+		return NormalizeYaw(FMath::RoundToFloat(ViewYaw / Step) * Step + Steps * PressStep);
 	}
 
 	FString NoSocketProblem(FName Snap)
@@ -289,6 +294,10 @@ FGamerPlacement GamerBuildSnap::FindPlacement(UWorld* World, const FGamerBuildab
 		return Result;
 	}
 	Result.Problem = CheckFreeSpacing(World, Def, Location);
+	if (Result.Problem.IsEmpty())
+	{
+		Result.Problem = CheckOverlap(World, Def, Result.Transform);
+	}
 	Result.bValid = Result.Problem.IsEmpty();
 	return Result;
 }
@@ -354,5 +363,54 @@ FString GamerBuildSnap::CheckTransform(UWorld* World, const FGamerBuildableDef& 
 	{
 		return TEXT("Kein Boden darunter");
 	}
-	return CheckFreeSpacing(World, Def, Location);
+	const FString Spacing = CheckFreeSpacing(World, Def, Location);
+	return Spacing.IsEmpty() ? CheckOverlap(World, Def, Transform) : Spacing;
+}
+
+FString GamerBuildSnap::CheckOverlap(UWorld* World, const FGamerBuildableDef& Def, const FTransform& Transform)
+{
+	if (!World)
+	{
+		return FString();
+	}
+	// What it stands on: ground, a foundation or a floor - not a roof, a station or a field.
+	{
+		FHitResult Hit;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(GamerBuildStandOn), false);
+		const FVector Pivot = Transform.GetLocation();
+		if (World->LineTraceSingleByChannel(Hit, Pivot + FVector(0.f, 0.f, 20.f), Pivot - FVector(0.f, 0.f, 40.f), ECC_Visibility, Params))
+		{
+			const AGamerBuilding* Below = Cast<AGamerBuilding>(Hit.GetActor());
+			const FGamerBuildableDef* BelowDef = Below && !Below->IsPreview() ? Below->GetDef() : nullptr;
+			if (BelowDef && !IsCell(BelowDef))
+			{
+				return FString::Printf(TEXT("Nicht auf: %s"), *BelowDef->Name);
+			}
+		}
+	}
+	const FVector Scale = Transform.GetScale3D();
+	const FBox Bounds = AGamerBuilding::LocalBounds(Def);
+	// Local box: 10 cm in from the sides (pieces may touch), from 10 cm above the pivot (floors, ground) to the top.
+	const FVector Min(Bounds.Min.X * Scale.X + 10.f, Bounds.Min.Y * Scale.Y + 10.f, 10.f);
+	const FVector Max(Bounds.Max.X * Scale.X - 10.f, Bounds.Max.Y * Scale.Y - 10.f, FMath::Max(Bounds.Max.Z * Scale.Z, 20.f));
+	if (Max.X <= Min.X || Max.Y <= Min.Y)
+	{
+		return FString();
+	}
+	const FVector Center = Transform.TransformPositionNoScale((Min + Max) * 0.5f);
+	const FCollisionShape Box = FCollisionShape::MakeBox((Max - Min) * 0.5f);
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GamerBuildOverlap), false);
+	// Finished buildings block everything, plans block visibility traces only: the visibility channel finds both.
+	World->OverlapMultiByChannel(Overlaps, Center, Transform.GetRotation(), ECC_Visibility, Box, Params);
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		const AGamerBuilding* Other = Cast<AGamerBuilding>(Overlap.GetActor());
+		const FGamerBuildableDef* OtherDef = Other && !Other->IsPreview() ? Other->GetDef() : nullptr;
+		if (OtherDef)
+		{
+			return FString::Printf(TEXT("Steht im Weg: %s"), *OtherDef->Name);
+		}
+	}
+	return FString();
 }

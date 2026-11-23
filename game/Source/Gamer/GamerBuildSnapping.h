@@ -42,7 +42,7 @@ namespace GamerBuildSnap
 
 	/**
 	 * Where would Def go? AimPoint: what the camera looks at (bAimHit: the trace hit something).
-	 * ViewYaw: camera yaw in degrees. RotationSteps: number of "rotate" presses (15 degree steps when free,
+	 * ViewYaw: camera yaw in degrees. RotationSteps: number of "rotate" presses (45 degree steps when free, base yaw in 15 degree steps,
 	 * 90 on the world grid; on snapped pieces odd values flip the side).
 	 * AimNormal: surface normal at the aim point; free pieces need a roughly level surface.
 	 */
@@ -51,4 +51,11 @@ namespace GamerBuildSnap
 
 	/** Server: may Def be placed exactly at Transform (sent by a client)? Returns an empty string if yes. */
 	GAMER_API FString CheckTransform(UWorld* World, const FGamerBuildableDef& Def, const FTransform& Transform, EGamerPlacement Mode);
+
+	/**
+	 * Freely placed pieces (stations, fields, a first foundation): their footprint may not cut into another building or plan
+	 * (no stations on roofs or inside walls). The box starts 10 cm above the pivot, so standing on a floor or next to a wall is fine.
+	 * Returns an empty string if the spot is free.
+	 */
+	GAMER_API FString CheckOverlap(UWorld* World, const FGamerBuildableDef& Def, const FTransform& Transform);
 }

@@ -46,3 +46,7 @@ Startwerte je Herkunft: Summe 25, jeder Wert 3–8. Später steigen Werte durch 
 - Geschlecht/Körperform: frei im Editor, unabhängig von der Herkunft (Vorschlag).
 - Charakter pro Spieler oder pro Welt?
 - Technik: Figurenmodell und Gesichts-/Haar-Varianten fehlen noch (Platzhalter-Zylinder). MetaHuman ist kostenlos in Unreal, aber groß und nicht im Wikinger-Stil vorgefertigt; Alternative eigenes modulares Modell. Muss entschieden werden, bevor der Editor gebaut wird.
+
+## Ergänzung 2026-11-22: Werte steigen durch Tun
+
+Bestätigt (`docs/01_entscheidungen.md`, „Charakter: eigene Werte, Lernen durch Tun“): Die fünf Werte und fünf Herkünfte bleiben. Jeder Wert hat eine eigene Erfahrung, die aus dem Tun kommt (Vorschlag der Zuordnung): Bauen und Herstellen → Handwerk, Kämpfen und Tragen → Stärke, Ausweichen und Schießen → Geschick, Treffer einstecken → Zähigkeit, Lauschen und Magie → Wille. Meilensteine geben kleine Boni. Das Charakterlevel 1–50 mit Fähigkeitspunkten (`docs/21_kreaturen_level_kampf.md`, Abschnitt 3) bleibt daneben bestehen; Wert-Erfahrung und Level-Erfahrung sind zwei getrennte Zähler, nur das Level gibt Fähigkeitspunkte. Zahlen (Schwellen, Boni) sind noch offen.

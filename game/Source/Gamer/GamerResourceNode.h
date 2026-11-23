@@ -75,6 +75,8 @@ public:
 	 */
 	void SetPlanted(float GrowDays);
 	bool IsPlantedGrowing() const { return bPlantedGrowing; }
+	/** Fruit trees out of season and planted saplings: nothing to take now, but players can still aim at them and read why. */
+	bool ShowsWhenDepleted() const { return bPlantedGrowing || FruitStage != EGamerFruitStage::None; }
 
 	/** Name shown in hints ("Wildapfelbaum (blüht)"). */
 	FString GetDisplayName() const;

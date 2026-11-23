@@ -5,6 +5,8 @@
 #include "GamerCharacter.h"
 #include "GamerDataSubsystem.h"
 #include "GamerGameState.h"
+#include "GamerHealthComponent.h"
+#include "GamerProgressComponent.h"
 #include "GamerInventoryComponent.h"
 #include "GamerTavern.h"
 #include "GamerWorkComponent.h"
@@ -200,6 +202,12 @@ void UGamerBuildComponent::UpdatePreview()
 			Placement.bValid = false;
 			Placement.Problem = TEXT("Zu weit weg");
 		}
+		else if (Placement.bValid)
+		{
+			// The drawn rectangle may reach into a building even if its corner is free.
+			Placement.Problem = GamerBuildSnap::CheckOverlap(GetWorld(), *AreaDef, Placement.Transform);
+			Placement.bValid = Placement.Problem.IsEmpty();
+		}
 	}
 	else if (AreaDef && AreaDef->IsAreaPiece())
 	{
@@ -388,6 +396,20 @@ void UGamerBuildComponent::ServerPlace_Implementation(FName BuildableId, FTransf
 		Building->SetSpent(Cost);
 	}
 	Building->FinishSpawning(Transform);
+	if (UGamerHealthComponent* Hp = Owner->FindComponentByClass<UGamerHealthComponent>())
+	{
+		Hp->NoteBuilt(BuildableId, Transform.GetLocation());   // a straw bed built by this player is where they get up again
+	}
+	if (UGamerProgressComponent* Progress = Owner->FindComponentByClass<UGamerProgressComponent>())
+	{
+		// Experience for the piece, tier = highest tier among its materials (placed counts; the piece may still be a blueprint).
+		int32 PieceTier = 1;
+		for (const FGamerItemAmount& Amount : Cost)
+		{
+			if (const FGamerItemDef* Item = Data->FindItem(Amount.Item)) { PieceTier = FMath::Max(PieceTier, Item->Tier); }
+		}
+		Progress->NoteBuild(PieceTier);
+	}
 
 	UE_LOG(LogGamer, Log, TEXT("Build placed: player=%d id=%s flow=%s at %s yaw %.0f"), BuildPlayerIdOf(Owner), *BuildableId.ToString(),
 		FlowName(Options.BuildFlow), *Transform.GetLocation().ToCompactString(), Transform.Rotator().Yaw);
@@ -557,12 +579,9 @@ void UGamerBuildComponent::ServerDemolish_Implementation(AGamerBuilding* Buildin
 
 	// Unfinished plans give back everything spent; finished pieces as the world option says.
 	TArray<FGamerItemAmount> Refund = Building->GetSpent();
-	if (Building->IsFinished() && Options.Demolish == EGamerDemolish::HalfRefund)
+	for (FGamerItemAmount& Amount : Refund)
 	{
-		for (FGamerItemAmount& Amount : Refund)
-		{
-			Amount.Count /= 2;
-		}
+		Amount.Count = DemolishRefundCount(Amount.Count, Options.Demolish, Building->IsFinished());   // 80 % rounds to the nearest piece
 	}
 	TArray<FGamerItemAmount> Given;
 	int32 Lost = 0;

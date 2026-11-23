@@ -51,6 +51,10 @@ namespace
 		"ground_items": [
 			{ "transform": { "loc": [100, 100, 0], "rot": [0, 0, 0] }, "item": "item_apple_bruised", "count": 1, "fresh": 0.6 }
 		],
+		"graves": [
+			{ "transform": { "loc": [200, -200, 0], "rot": [0, 30, 0], "scale": [0.6, 1.7, 0.22] }, "owner_key": "player_test", "owner_name": "Åsa",
+			  "items": [ { "item": "item_log", "count": 3 }, { "item": "item_stone", "count": 2 } ], "age_s": 45 }
+		],
 		"villagers": [
 			{ "transform": { "loc": [0, 300, 100], "rot": [0, 0, 0] }, "name": "Astrid", "job": "job_woodcutter", "hunger": 0.7, "sleep": 0.4,
 			  "mood": 0.6, "shelter": true, "tool": "tool_axe_t1", "carry": [ { "item": "item_log", "count": 2 } ], "hunger_empty_days": 0.25, "bed": 0 }

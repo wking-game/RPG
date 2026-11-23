@@ -83,6 +83,11 @@ UGamerAnimInstance::UGamerAnimInstance()
 	// in tools/unreal/import_characters.py). Farm_Harvest only bends with a swing and looked like hacking.
 	ActionClips[static_cast<int32>(EGamerAnimAction::GatherLow)] = GatherLow ? GatherLow : Harvest;
 	ActionClips[static_cast<int32>(EGamerAnimAction::CraftStation)] = Gather;  // standing, hands working in front
+	// Workbench: Kevin MiningOneHand "Wall" without the pick is a one-hand hammer stroke that ends at table height
+	// (stick-figure check 22.11.); Gathering01 reached up to chest height like picking berries off a bush.
+	ActionClips[static_cast<int32>(EGamerAnimAction::CraftBench)] = Mine;
+	// Camp fire on the ground: crouch and work low (Gathering03, the hand goes down to the ground).
+	ActionClips[static_cast<int32>(EGamerAnimAction::CraftLow)] = GatherLow ? GatherLow : Gather;
 }
 
 void UGamerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)

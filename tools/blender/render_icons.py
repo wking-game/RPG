@@ -45,6 +45,8 @@ def material_for(name):
     if name in built:
         return built[name]
     key = name.replace('M_Nature_', '').replace('M_', '')
+    if key.startswith('Bld_') and find_texture(key, 'BC') is None:
+        key = key.replace('_', '')     # building surfaces: M_Bld_Planks -> T_BldPlanks_*
     mat = bpy.data.materials.new(name + '_icon')
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links

@@ -1,4 +1,5 @@
 #include "GamerWorkComponent.h"
+#include "GamerStaminaComponent.h"
 
 #include "Gamer.h"
 #include "GamerDataSubsystem.h"
@@ -6,6 +7,7 @@
 #include "GamerResourceNode.h"
 #include "GamerBuilding.h"
 #include "GamerCharacter.h"
+#include "GamerProgressComponent.h"
 #include "GamerFarmBuilding.h"
 #include "GamerGroundItem.h"
 #include "GamerGameState.h"
@@ -98,7 +100,9 @@ void UGamerWorkComponent::StartWork(EGamerWorkKind Kind, const FString& Label, f
 	Work.Kind = Kind;
 	Work.Label = Label;
 	Work.StartTime = ServerNow();
-	Work.Duration = FMath::Max(0.1f, Duration);
+	// Exhaustion slows down gathering and crafting by hand.
+	const UGamerStaminaComponent* StaminaComponent = GetOwner() ? GetOwner()->FindComponentByClass<UGamerStaminaComponent>() : nullptr;
+	Work.Duration = FMath::Max(0.1f, Duration / (StaminaComponent ? StaminaComponent->GetWorkSpeedFactor() : 1.f));
 	GetWorld()->GetTimerManager().SetTimer(WorkTimer, this, &UGamerWorkComponent::FinishWork, Work.Duration, false);
 	GetOwner()->ForceNetUpdate();
 }
@@ -198,7 +202,10 @@ void UGamerWorkComponent::ServerStrike_Implementation(AGamerResourceNode* Node)
 	}
 
 	const FGamerItemDef* Held = Inventory->GetSelectedItemDef();
-	const float Amount = StrikeInterval * FMath::Max(0.1f, Held->Tool.WorkSpeed) / FMath::Max(0.1f, Def->WorkSeconds);
+	UGamerStaminaComponent* StaminaComponent = GetOwner() ? GetOwner()->FindComponentByClass<UGamerStaminaComponent>() : nullptr;
+	const float StaminaFactor = StaminaComponent ? StaminaComponent->GetStrikeFactor() * StaminaComponent->GetWorkSpeedFactor() : 1.f;
+	const float Amount = StrikeInterval * FMath::Max(0.1f, Held->Tool.WorkSpeed) * StaminaFactor / FMath::Max(0.1f, Def->WorkSeconds);
+	if (StaminaComponent) { StaminaComponent->NoteStrike(); }
 	const bool bDone = Node->AddWork(Amount);
 	UE_LOG(LogGamer, Log, TEXT("Strike: player=%d node=%s tool=%s progress=%.2f"),
 		PlayerIdOf(GetOwner()), *Def->Id.ToString(), *Held->Id.ToString(), Node->GetWorkProgress());
@@ -217,11 +224,13 @@ void UGamerWorkComponent::GiveDrops(AGamerResourceNode* Node, const FGamerResour
 		return;
 	}
 	TArray<FString> Gained;
+	UGamerProgressComponent* Progress = GetOwner() ? GetOwner()->FindComponentByClass<UGamerProgressComponent>() : nullptr;
 	// The node decides what one harvest gives (fruit trees: the next handful of ripe fruit).
 	for (const FGamerItemAmount& Drop : Node->Harvest())
 	{
 		const int32 Lost = Inventory->AddItem(Drop.Item, Drop.Count, Drop.Freshness);
 		const FGamerItemDef* Item = Data->FindItem(Drop.Item);
+		if (Progress && Item) { Progress->NoteGather(Item->Tier, Drop.Count - Lost); }
 		Gained.Add(FString::Printf(TEXT("+%d %s"), Drop.Count - Lost, Item ? *Item->Name : *Drop.Item.ToString()));
 		if (Lost > 0)
 		{
@@ -296,6 +305,14 @@ void UGamerWorkComponent::ServerCraft_Implementation(FName RecipeId)
 	if (!Recipe || !Inventory || Recipe->Outputs.Num() == 0)
 	{
 		return Fail(TEXT("Dieses Rezept gibt es nicht."));
+	}
+	if (Recipe->MinLevel > 1)
+	{
+		const UGamerProgressComponent* Progress = GetOwner() ? GetOwner()->FindComponentByClass<UGamerProgressComponent>() : nullptr;
+		if (Progress && Progress->GetLevel() < Recipe->MinLevel)
+		{
+			return Fail(FString::Printf(TEXT("Dafür brauchst du Level %d (du hast Level %d)."), Recipe->MinLevel, Progress->GetLevel()));
+		}
 	}
 	if (!Recipe->Station.IsNone() && !FindStationNearby(Recipe->Station))
 	{
@@ -459,11 +476,19 @@ void UGamerWorkComponent::FinishWorkInner()
 			return Fail(TEXT("Herstellen fehlgeschlagen: Zutaten fehlen."));
 		}
 		TArray<FString> Made;
+		int32 RecipeTier = 1;
+		int32 MadeCount = 0;
 		for (const FGamerItemAmount& Output : Recipe->Outputs)
 		{
 			Inventory->AddItem(Output.Item, Output.Count);
 			const FGamerItemDef* Item = Data->FindItem(Output.Item);
+			if (Item) { RecipeTier = FMath::Max(RecipeTier, Item->Tier); }
+			MadeCount += Output.Count;
 			Made.Add(FString::Printf(TEXT("+%d %s"), Output.Count, Item ? *Item->Name : *Output.Item.ToString()));
+		}
+		if (UGamerProgressComponent* Progress = GetOwner()->FindComponentByClass<UGamerProgressComponent>())
+		{
+			Progress->NoteCraft(Recipe->Id, RecipeTier, MadeCount);
 		}
 		UE_LOG(LogGamer, Log, TEXT("Craft done: player=%d recipe=%s made [%s] inventory: %s"),
 			PlayerIdOf(GetOwner()), *Recipe->Id.ToString(), *FString::Join(Made, TEXT(" ")), *Inventory->Describe());

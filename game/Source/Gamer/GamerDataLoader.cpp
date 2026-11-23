@@ -1,4 +1,5 @@
 #include "GamerDataLoader.h"
+#include "GamerCreatureData.h"
 
 #include "GamerCharacterData.h"
 #include "Dom/JsonObject.h"
@@ -20,6 +21,8 @@ namespace
 	const TCHAR* const BuildablesFile = TEXT("buildables.json");
 	const TCHAR* const JobsFile = TEXT("jobs.json");
 	const TCHAR* const NeedsFile = TEXT("needs.json");
+	/** Optional second item table: drops of creatures and animals (docs/24_schritt1_daten_und_logik.md). */
+	const TCHAR* const ItemsCreatureFile = TEXT("items_creature.json");
 
 	bool IsSnakeCase(const FString& S)
 	{
@@ -196,14 +199,14 @@ namespace
 	};
 
 	/** One parsed row plus where it came from. */
-	struct FRow
+	struct FLoaderRow
 	{
 		TSharedPtr<FJsonObject> Object;
 		FString Context;
 	};
 
 	/** Reads a file, checks "schema" and "rows", and returns the row objects. */
-	bool ReadTable(const FString& Directory, const TCHAR* FileName, TArray<FRow>& OutRows, uint32& InOutCrc, FGamerDataReport& Report,
+	bool ReadTable(const FString& Directory, const TCHAR* FileName, TArray<FLoaderRow>& OutRows, uint32& InOutCrc, FGamerDataReport& Report,
 		bool bOptional = false)
 	{
 		const FString Path = FPaths::Combine(Directory, FileName);
@@ -444,17 +447,17 @@ namespace
 		}
 	}
 
-	void ParseItems(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
+	void ParseItems(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("category"), TEXT("tier"), TEXT("max_stack"), TEXT("weight_kg"),
 				TEXT("icon"), TEXT("world_mesh"), TEXT("tool"), TEXT("food"), TEXT("spoil_days"), TEXT("spoils_into"), TEXT("plant"),
-				TEXT("weapon"), TEXT("deprecated") });
+				TEXT("weapon"), TEXT("armor"), TEXT("deprecated") });
 
 			FGamerItemDef Def;
-			if (!ReadId(Row, { TEXT("item_"), TEXT("tool_"), TEXT("weapon_") }, Def.Id))
+			if (!ReadId(Row, { TEXT("item_"), TEXT("tool_"), TEXT("weapon_"), TEXT("armor_") }, Def.Id))
 			{
 				continue;
 			}
@@ -468,7 +471,8 @@ namespace
 				else if (Category == TEXT("food")) { Def.Category = EGamerItemCategory::Food; }
 				else if (Category == TEXT("tool")) { Def.Category = EGamerItemCategory::Tool; }
 				else if (Category == TEXT("weapon")) { Def.Category = EGamerItemCategory::Weapon; }
-				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: resource, material, food, tool, weapon)"), *Category)); }
+				else if (Category == TEXT("armor")) { Def.Category = EGamerItemCategory::Armor; }
+				else { Row.Error(FString::Printf(TEXT("category \"%s\" unbekannt (erlaubt: resource, material, food, tool, weapon, armor)"), *Category)); }
 			}
 
 			if (Row.GetInt(TEXT("tier"), Def.Tier, true) && (Def.Tier < 1 || Def.Tier > GamerData::MaxTier))
@@ -577,6 +581,80 @@ namespace
 					Row.Warning(TEXT("Waffen sollten max_stack 1 haben"));
 				}
 			}
+			// Armor: ID armor_... and category "armor" belong together; slot, values and resistances are checked here.
+			const bool bIsArmorId = Def.Id.ToString().StartsWith(TEXT("armor_"));
+			const bool bIsArmorCategory = Def.Category == EGamerItemCategory::Armor;
+			if (bIsArmorId != bIsArmorCategory)
+			{
+				Row.Error(TEXT("Rüstung braucht ID armor_... und category \"armor\" (beides oder keins)"));
+			}
+			const TSharedPtr<FJsonObject> Armor = Row.GetObject(TEXT("armor"), bIsArmorCategory);
+			if (Armor && !bIsArmorCategory)
+			{
+				Row.Error(TEXT("\"armor\" nur bei category \"armor\" erlaubt"));
+			}
+			if (Armor)
+			{
+				FRowReader ArmorRow(Armor, Row.GetContext() + TEXT(", armor"), Report);
+				ArmorRow.CheckKnownFields({ TEXT("slot"), TEXT("armor"), TEXT("poise_resist"), TEXT("resist") });
+				FString Slot;
+				if (ArmorRow.GetString(TEXT("slot"), Slot, true))
+				{
+					if (!GamerData::ArmorSlots().Contains(FName(*Slot)))
+					{
+						ArmorRow.Error(FString::Printf(TEXT("slot \"%s\" unbekannt (erlaubt: %s)"), *Slot, *GamerData::ArmorSlotList()));
+					}
+					Def.Armor.Slot = FName(*Slot);
+				}
+				double Value = 0.0;
+				if (ArmorRow.GetNumber(TEXT("armor"), Value, false))
+				{
+					if (Value < 0.0)
+					{
+						ArmorRow.Error(TEXT("armor darf nicht negativ sein"));
+					}
+					Def.Armor.Armor = static_cast<float>(Value);
+				}
+				if (ArmorRow.GetNumber(TEXT("poise_resist"), Value, false))
+				{
+					if (Value < 0.0)
+					{
+						ArmorRow.Error(TEXT("poise_resist darf nicht negativ sein"));
+					}
+					Def.Armor.PoiseResist = static_cast<float>(Value);
+				}
+				if (const TSharedPtr<FJsonObject> Resist = ArmorRow.GetObject(TEXT("resist"), false))
+				{
+					for (const TPair<FString, TSharedPtr<FJsonValue>>& Pair : Resist->Values)
+					{
+						if (Pair.Key.StartsWith(TEXT("_")))
+						{
+							continue;
+						}
+						double Amount = 0.0;
+						if (!GamerData::ResistKinds().Contains(FName(*Pair.Key)))
+						{
+							ArmorRow.Error(FString::Printf(TEXT("resist \"%s\" unbekannt (erlaubt: heat, cold, storm, poison)"), *Pair.Key));
+						}
+						else if (!Pair.Value.IsValid() || !Pair.Value->TryGetNumber(Amount) || Amount < -0.25 || Amount > 0.6)
+						{
+							ArmorRow.Error(FString::Printf(TEXT("resist.%s muss eine Zahl zwischen -0.25 und 0.6 sein"), *Pair.Key));
+						}
+						else
+						{
+							Def.Armor.Resist.Add(FName(*Pair.Key), static_cast<float>(Amount));
+						}
+					}
+				}
+				if (Def.Armor.Armor <= 0.f && Def.Armor.Resist.Num() == 0 && Def.Armor.PoiseResist <= 0.f)
+				{
+					Row.Warning(TEXT("Rüstung ohne Wirkung (weder Rüstung noch Haltung noch Resistenz)"));
+				}
+				if (Def.MaxStack != 1)
+				{
+					Row.Warning(TEXT("Rüstung sollte max_stack 1 haben"));
+				}
+			}
 			// Spoiling (decision 2026-11-14: in phase 1). Game days while carried; storage and ground scale it.
 			double SpoilDays = 0.0;
 			if (Row.GetNumber(TEXT("spoil_days"), SpoilDays, false))
@@ -623,7 +701,8 @@ namespace
 			if (const TSharedPtr<FJsonObject> Food = Row.GetObject(TEXT("food"), false))
 			{
 				FRowReader FoodRow(Food, Row.GetContext() + TEXT(", food"), Report);
-				FoodRow.CheckKnownFields({ TEXT("minutes"), TEXT("buffs") });
+				FoodRow.CheckKnownFields({ TEXT("minutes"), TEXT("buffs"), TEXT("snack") });
+				FoodRow.GetBool(TEXT("snack"), Def.Food.bSnack);
 				if (Def.Category != EGamerItemCategory::Food)
 				{
 					Row.Error(TEXT("\"food\" nur bei category \"food\""));
@@ -664,9 +743,11 @@ namespace
 							else if (Stat == TEXT("cold_resist")) { Effect.Stat = EGamerBuffStat::ColdResist; }
 							else if (Stat == TEXT("poison_resist")) { Effect.Stat = EGamerBuffStat::PoisonResist; }
 							else if (Stat == TEXT("damage")) { Effect.Stat = EGamerBuffStat::Damage; }
+							else if (Stat == TEXT("stamina_max")) { Effect.Stat = EGamerBuffStat::StaminaMax; }
+							else if (Stat == TEXT("stamina_regen")) { Effect.Stat = EGamerBuffStat::StaminaRegen; }
 							else
 							{
-								BuffRow.Error(FString::Printf(TEXT("stat \"%s\" unbekannt (erlaubt: health, regen, carry, cold_resist, poison_resist, damage)"), *Stat));
+								BuffRow.Error(FString::Printf(TEXT("stat \"%s\" unbekannt (erlaubt: health, regen, carry, cold_resist, poison_resist, damage, stamina_max, stamina_regen)"), *Stat));
 								continue;
 							}
 						}
@@ -760,9 +841,9 @@ namespace
 		}
 	}
 
-	void ParseNodes(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
+	void ParseNodes(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("required_tool"), TEXT("work_seconds"), TEXT("drops"),
@@ -822,12 +903,12 @@ namespace
 		}
 	}
 
-	void ParseRecipes(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
+	void ParseRecipes(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
 	{
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
-			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("station"), TEXT("inputs"), TEXT("outputs"), TEXT("work_seconds"), TEXT("deprecated") });
+			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("station"), TEXT("inputs"), TEXT("outputs"), TEXT("work_seconds"), TEXT("min_level"), TEXT("deprecated") });
 
 			FGamerRecipeDef Def;
 			if (!ReadId(Row, { TEXT("recipe_") }, Def.Id))
@@ -850,6 +931,10 @@ namespace
 					Row.Error(TEXT("work_seconds muss größer als 0 sein"));
 				}
 				Def.WorkSeconds = static_cast<float>(Seconds);
+			}
+			if (Row.GetInt(TEXT("min_level"), Def.MinLevel, false) && (Def.MinLevel < 0 || Def.MinLevel > GamerData::MaxPlayerLevel))
+			{
+				Row.Error(FString::Printf(TEXT("min_level muss zwischen 0 und %d liegen"), GamerData::MaxPlayerLevel));
 			}
 			Row.GetBool(TEXT("deprecated"), Def.bDeprecated);
 
@@ -968,14 +1053,14 @@ namespace
 		}
 	}
 
-	void ParseBuildables(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
+	void ParseBuildables(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report, bool bCheckAssetPaths)
 	{
 		// Where a structure snaps to (sockets in GamerBuildSnapping.cpp). wall_door = wall with a door opening
 		// (also offers a socket for the door), gable/ridge = roof parts that sit differently from roof panels.
 		static const TCHAR* const SnapTypes[] = { TEXT("foundation"), TEXT("floor"), TEXT("wall"), TEXT("wall_door"), TEXT("door"),
 			TEXT("pillar"), TEXT("beam"), TEXT("roof"), TEXT("gable"), TEXT("ridge"), TEXT("stairs") };
 
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("category"), TEXT("snap"), TEXT("mesh"), TEXT("cost"),
@@ -1122,10 +1207,10 @@ namespace
 	}
 
 	/** Second pass: every reference must point to an existing row. */
-	void ParseJobs(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
+	void ParseJobs(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
 	{
 		int32 Fallbacks = 0;
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("kind"), TEXT("station"), TEXT("tool"), TEXT("recipes"),
@@ -1207,9 +1292,9 @@ namespace
 		}
 	}
 
-	void ParseNeeds(const TArray<FRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
+	void ParseNeeds(const TArray<FLoaderRow>& Rows, FGamerDataSet& Out, FGamerDataReport& Report)
 	{
-		for (const FRow& Source : Rows)
+		for (const FLoaderRow& Source : Rows)
 		{
 			FRowReader Row(Source.Object, Source.Context, Report);
 			Row.CheckKnownFields({ TEXT("id"), TEXT("name"), TEXT("kind"), TEXT("decay_per_day"), TEXT("threshold"), TEXT("restore_per_day"),
@@ -1504,7 +1589,7 @@ namespace
 	 * Everything that never becomes reachable is an error (e.g. "axe needs a log, logs need an axe").
 	 */
 	/** StartItems: start equipment of the origins (characters.json); only a warning when that is the only source. */
-	void CheckReachability(const FGamerDataSet& Data, FGamerDataReport& Report, const TSet<FName>& StartItems)
+	void CheckReachability(const FGamerDataSet& Data, FGamerDataReport& Report, const TSet<FName>& StartItems, const TSet<FName>& DropItems)
 	{
 		TSet<FName> Items;
 		TMap<FName, int32> ToolTiers;
@@ -1544,6 +1629,12 @@ namespace
 				}
 			}
 		};
+
+		// Creatures and animals drop items from the start (whether they are beatable is a question for the fight, not for this check).
+		for (const FName Item : DropItems)
+		{
+			Obtain(Item);
+		}
 
 		bool bChanged = true;
 		while (bChanged)
@@ -1712,8 +1803,9 @@ bool GamerData::LoadFromDirectory(const FString& Directory, FGamerDataSet& Out, 
 	const int32 ErrorsBefore = Report.Errors.Num();
 
 	uint32 Crc = 0;
-	TArray<FRow> ItemRows, NodeRows, RecipeRows, BuildableRows, JobRows, NeedRows;
+	TArray<FLoaderRow> ItemRows, NodeRows, RecipeRows, BuildableRows, JobRows, NeedRows;
 	ReadTable(Directory, ItemsFile, ItemRows, Crc, Report);
+	ReadTable(Directory, ItemsCreatureFile, ItemRows, Crc, Report, true);
 	ReadTable(Directory, NodesFile, NodeRows, Crc, Report);
 	ReadTable(Directory, RecipesFile, RecipeRows, Crc, Report);
 	ReadTable(Directory, BuildablesFile, BuildableRows, Crc, Report);
@@ -1731,7 +1823,9 @@ bool GamerData::LoadFromDirectory(const FString& Directory, FGamerDataSet& Out, 
 	CheckVillagerReferences(Out, Report);
 	TSet<FName> StartItems;
 	GamerData::ReadStartItems(Directory, StartItems); // characters.json, if the data set has one
-	CheckReachability(Out, Report, StartItems);
+	TSet<FName> DropItems;
+	GamerData::ReadCreatureLootItems(Directory, DropItems); // creature_loot.json, if the data set has one
+	CheckReachability(Out, Report, StartItems, DropItems);
 
 	return Report.Errors.Num() == ErrorsBefore;
 }

@@ -56,10 +56,21 @@ void UGamerDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	FGamerDataReport Report;
 	bHasLoadErrors = !GamerData::LoadFromDirectory(GamerData::DefaultDirectory(), Data, Report);
 	bHasLoadErrors |= !GamerData::LoadCharacters(GamerData::DefaultDirectory(), Data, Characters, Report);
+	bHasLoadErrors |= !GamerData::LoadDifficulty(GamerData::DefaultDirectory(), Difficulties, Report);
+	bHasLoadErrors |= !GamerData::LoadCreatures(GamerData::DefaultDirectory(), Data, Creatures, Report);
+	bHasLoadErrors |= !GamerData::LoadCombat(GamerData::DefaultDirectory(), Combat, Report);
+	bHasLoadErrors |= !GamerData::LoadProgression(GamerData::DefaultDirectory(), Progression, Report);
 	LogReport(Report);
 	LogSummary(TEXT("loaded"), Data, Report);
+	UE_LOG(LogGamer, Log, TEXT("Creature data: %d creatures and animals, %d spawn rules, %d loot tables, %d biomes"),
+		Creatures.Creatures.Num(), Creatures.Spawns.Num(), Creatures.Loot.Num(), Creatures.Biomes.Num());
 	UE_LOG(LogGamer, Log, TEXT("Character data: %d origins, %d stats, %d abilities, %d appearance slots"),
 		Characters.Origins.Num(), Characters.Stats.Num(), Characters.Abilities.Num(), Characters.LookSlots.Num());
+}
+
+uint32 UGamerDataSubsystem::GetChecksum() const
+{
+	return HashCombineFast(HashCombineFast(HashCombineFast(Data.Checksum, Creatures.Checksum), Combat.Checksum), Progression.Checksum);
 }
 
 bool UGamerDataSubsystem::Reload()
@@ -69,6 +80,14 @@ bool UGamerDataSubsystem::Reload()
 	FGamerCharacterDataSet NewCharacters;
 	bool bOk = GamerData::LoadFromDirectory(GamerData::DefaultDirectory(), NewData, Report);
 	bOk &= GamerData::LoadCharacters(GamerData::DefaultDirectory(), NewData, NewCharacters, Report);
+	TArray<FGamerDifficultyPreset> NewDifficulties;
+	bOk &= GamerData::LoadDifficulty(GamerData::DefaultDirectory(), NewDifficulties, Report);
+	FGamerCreatureDataSet NewCreatures;
+	bOk &= GamerData::LoadCreatures(GamerData::DefaultDirectory(), NewData, NewCreatures, Report);
+	FGamerCombatData NewCombat;
+	bOk &= GamerData::LoadCombat(GamerData::DefaultDirectory(), NewCombat, Report);
+	FGamerProgressionData NewProgression;
+	bOk &= GamerData::LoadProgression(GamerData::DefaultDirectory(), NewProgression, Report);
 	LogReport(Report);
 	if (!bOk)
 	{
@@ -77,6 +96,10 @@ bool UGamerDataSubsystem::Reload()
 	}
 	Data = MoveTemp(NewData);
 	Characters = MoveTemp(NewCharacters);
+	Creatures = MoveTemp(NewCreatures);
+	Combat = MoveTemp(NewCombat);
+	Progression = MoveTemp(NewProgression);
+	Difficulties = MoveTemp(NewDifficulties);
 	bHasLoadErrors = false;
 	LogSummary(TEXT("reloaded"), Data, Report);
 	return true;

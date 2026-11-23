@@ -1,4 +1,5 @@
 #include "GamerInventoryComponent.h"
+#include "GamerGroundItem.h"
 
 #include "Gamer.h"
 #include "GamerDataSubsystem.h"
@@ -151,6 +152,48 @@ void UGamerInventoryComponent::ServerSelectSlot_Implementation(int32 Index)
 	}
 }
 
+void UGamerInventoryComponent::ServerSwapSlots_Implementation(int32 From, int32 To)
+{
+	if (!Slots.IsValidIndex(From) || !Slots.IsValidIndex(To) || From == To || Slots[From].IsEmpty())
+	{
+		return;
+	}
+	FGamerInventorySlot& A = Slots[From];
+	FGamerInventorySlot& B = Slots[To];
+	if (!B.IsEmpty() && B.Item == A.Item && B.Count < MaxStackOf(B.Item))
+	{
+		const int32 Moved = FMath::Min(A.Count, MaxStackOf(B.Item) - B.Count);
+		B.Freshness = UGamerSpoilage::Merge(B.Count, B.Freshness, Moved, A.Freshness);
+		B.Count += Moved;
+		A.Count -= Moved;
+		if (A.Count <= 0) { A = FGamerInventorySlot(); }
+	}
+	else
+	{
+		Swap(A, B);
+	}
+	UE_LOG(LogGamer, Log, TEXT("Inventory: moved slot %d to %d"), From + 1, To + 1);
+	OnInventoryChanged.Broadcast();
+}
+
+void UGamerInventoryComponent::ServerDropSlot_Implementation(int32 Index, int32 Count)
+{
+	if (!Slots.IsValidIndex(Index) || Slots[Index].IsEmpty() || !GetOwner())
+	{
+		return;
+	}
+	FGamerInventorySlot& Slot = Slots[Index];
+	const int32 Amount = FMath::Clamp(Count, 1, Slot.Count);
+	const FName Item = Slot.Item;
+	const float Freshness = Slot.Freshness;
+	Slot.Count -= Amount;
+	if (Slot.Count <= 0) { Slot = FGamerInventorySlot(); }
+	const FVector Ground = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 130.f - FVector(0.f, 0.f, 88.f);
+	AGamerGroundItem::SpawnFallen(GetWorld(), Item, Amount, Freshness, Ground, 40.f);
+	UE_LOG(LogGamer, Log, TEXT("Inventory: dropped %s x%d from slot %d"), *Item.ToString(), Amount, Index + 1);
+	OnInventoryChanged.Broadcast();
+}
+
 bool UGamerInventoryComponent::SelectBestToolInHotbar(FName ToolType, int32 MinTier)
 {
 	const int32 Best = FindToolInHotbar(ToolType, MinTier);
@@ -159,6 +202,25 @@ bool UGamerInventoryComponent::SelectBestToolInHotbar(FName ToolType, int32 MinT
 		SelectedSlot = Best;
 	}
 	return IsHoldingTool(ToolType, MinTier);
+}
+
+TArray<FGamerItemAmount> UGamerInventoryComponent::TakeEverything()
+{
+	TArray<FGamerItemAmount> Result;
+	for (FGamerInventorySlot& Slot : Slots)
+	{
+		if (!Slot.IsEmpty())
+		{
+			FGamerItemAmount Amount;
+			Amount.Item = Slot.Item;
+			Amount.Count = Slot.Count;
+			Amount.Freshness = Slot.Freshness;
+			Result.Add(Amount);
+		}
+		Slot = FGamerInventorySlot();
+	}
+	OnInventoryChanged.Broadcast();
+	return Result;
 }
 
 void UGamerInventoryComponent::OnRep_Slots()

@@ -7,6 +7,9 @@
     { "id": "recipe_pickaxe_t1",
       "inputs": [ { "item": "item_stick", "count": 2 }, { "item": "item_stone", "count": 3 }, { "item": "item_fiber", "count": 2 } ],
       "outputs": [ { "item": "tool_pickaxe_t1", "count": 1 } ], "work_seconds": 6.0 },
+    { "id": "recipe_herb_bandage",
+      "inputs": [ { "item": "item_fiber", "count": 2 }, { "item": "item_berries", "count": 2 } ],
+      "outputs": [ { "item": "item_herb_bandage", "count": 1 } ], "work_seconds": 3.0 },
     { "id": "recipe_hammer_t1",
       "inputs": [ { "item": "item_stick", "count": 1 }, { "item": "item_stone", "count": 1 }, { "item": "item_fiber", "count": 1 } ],
       "outputs": [ { "item": "tool_hammer_t1", "count": 1 } ], "work_seconds": 4.0 },
@@ -39,6 +42,14 @@
     {"id": "recipe_drink_beer", "station": "building_brew_kettle", "inputs": [{"item": "item_barley", "count": 2}, {"item": "item_water", "count": 2}], "outputs": [{"item": "item_drink_beer", "count": 2}], "work_seconds": 25.0},
     {"id": "recipe_drink_mead", "station": "building_brew_kettle", "inputs": [{"item": "item_honey", "count": 2}, {"item": "item_water", "count": 2}], "outputs": [{"item": "item_drink_mead", "count": 2}], "work_seconds": 25.0},
     {"id": "recipe_drink_spiced_sloe_mead", "station": "building_feast_table", "inputs": [{"item": "item_drink_mead", "count": 1}, {"item": "item_sloe", "count": 3}, {"item": "item_elderberry", "count": 2}], "outputs": [{"item": "item_drink_spiced_sloe_mead", "count": 1}], "work_seconds": 30.0},
-    {"id": "recipe_dish_honey_cake", "station": "building_feast_table", "inputs": [{"item": "item_honey", "count": 1}, {"item": "item_barley", "count": 2}, {"item": "item_hazelnuts", "count": 3}, {"item": "item_pear", "count": 2}], "outputs": [{"item": "item_dish_honey_cake", "count": 2}], "work_seconds": 30.0}
+    {"id": "recipe_dish_honey_cake", "station": "building_feast_table", "inputs": [{"item": "item_honey", "count": 1}, {"item": "item_barley", "count": 2}, {"item": "item_hazelnuts", "count": 3}, {"item": "item_pear", "count": 2}], "outputs": [{"item": "item_dish_honey_cake", "count": 2}], "work_seconds": 30.0},
+    { "id": "recipe_armor_helmet_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 2}, {"item": "item_fiber", "count": 1}], "outputs": [{"item": "armor_helmet_leather_t1", "count": 1}], "work_seconds": 8.0 },
+    { "id": "recipe_armor_shoulder_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 2}, {"item": "item_fiber", "count": 1}], "outputs": [{"item": "armor_shoulder_leather_t1", "count": 1}], "work_seconds": 8.0 },
+    { "id": "recipe_armor_chest_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 5}, {"item": "item_fiber", "count": 3}], "outputs": [{"item": "armor_chest_leather_t1", "count": 1}], "work_seconds": 16.0 },
+    { "id": "recipe_armor_hands_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 2}, {"item": "item_fiber", "count": 1}], "outputs": [{"item": "armor_hands_leather_t1", "count": 1}], "work_seconds": 8.0 },
+    { "id": "recipe_armor_legs_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 3}, {"item": "item_fiber", "count": 2}], "outputs": [{"item": "armor_legs_leather_t1", "count": 1}], "work_seconds": 12.0 },
+    { "id": "recipe_armor_feet_leather_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 2}, {"item": "item_fiber", "count": 1}], "outputs": [{"item": "armor_feet_leather_t1", "count": 1}], "work_seconds": 8.0 },
+    { "id": "recipe_armor_cloak_fur_t1", "station": "building_workbench", "inputs": [{"item": "item_hide_t1", "count": 4}, {"item": "item_fiber", "count": 2}], "outputs": [{"item": "armor_cloak_fur_t1", "count": 1}], "work_seconds": 12.0 },
+    { "id": "recipe_armor_ring_knot_t1", "station": "building_workbench", "inputs": [{"item": "item_fiber", "count": 3}, {"item": "item_stick", "count": 1}], "outputs": [{"item": "armor_ring_knot_t1", "count": 1}], "work_seconds": 6.0 }
   ]
 }

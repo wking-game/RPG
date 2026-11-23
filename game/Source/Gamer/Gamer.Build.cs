@@ -16,6 +16,9 @@ public class Gamer : ModuleRules
 		// Json: game data tables in Content/Data/*.json (docs/06_datenformat.md).
 		PrivateDependencyModuleNames.AddRange(new string[] { "Json" });
 
+		// HairStrandsCore: hair, beards and eyebrows (grooms) of the MetaHuman figures (GamerFigures).
+		PrivateDependencyModuleNames.AddRange(new string[] { "HairStrandsCore" });
+
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		

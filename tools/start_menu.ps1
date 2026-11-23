@@ -26,7 +26,11 @@ $Editor   = Join-Path $UeRoot 'Engine\Binaries\Win64\UnrealEditor.exe'
 $LogDir   = Join-Path $RepoRoot ("game\Saved\StartMenu\{0:yyyyMMdd-HHmmss}" -f (Get-Date))
 New-Item -ItemType Directory -Force $LogDir | Out-Null
 
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'start_menu.ps1'
 $started = @()
+try {
 for ($i = 0; $i -lt $Windows; $i++) {
     $x = 40 + ($i % 2) * 980
     $y = 40 + [math]::Floor($i / 2) * 580
@@ -41,3 +45,5 @@ for ($i = 0; $i -lt $Windows; $i++) {
 Write-Host "$Windows window(s) started in the start menu. Logs: $LogDir" -ForegroundColor Green
 Write-Host "Window 1: Welt erstellen. Another window: Beitreten, address 127.0.0.1. Close all windows to end."
 $started | Wait-Process
+}
+finally { Exit-UnrealLock $unrealLock }

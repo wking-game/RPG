@@ -176,6 +176,270 @@
         256
       ],
       "fill_ratio": 0.8
+    },
+    {
+      "id": "building_workbench",
+      "name": "T_Icon_building_workbench",
+      "file": "UI/Icons/T_Icon_building_workbench.png",
+      "model": "Buildings/Stations/SM_Station_Workbench.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_campfire",
+      "name": "T_Icon_building_campfire",
+      "file": "UI/Icons/T_Icon_building_campfire.png",
+      "model": "Buildings/Stations/SM_Station_Campfire.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_bed",
+      "name": "T_Icon_building_bed",
+      "file": "UI/Icons/T_Icon_building_bed.png",
+      "model": "Buildings/Stations/SM_Station_Bed.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_storage",
+      "name": "T_Icon_building_storage",
+      "file": "UI/Icons/T_Icon_building_storage.png",
+      "model": "Buildings/Stations/SM_Station_Storage.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_woodcutter",
+      "name": "T_Icon_building_woodcutter",
+      "file": "UI/Icons/T_Icon_building_woodcutter.png",
+      "model": "Buildings/Stations/SM_Station_Woodcutter.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_stonecutter",
+      "name": "T_Icon_building_stonecutter",
+      "file": "UI/Icons/T_Icon_building_stonecutter.png",
+      "model": "Buildings/Stations/SM_Station_Stonecutter.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_farmstead",
+      "name": "T_Icon_building_farmstead",
+      "file": "UI/Icons/T_Icon_building_farmstead.png",
+      "model": "Buildings/Stations/SM_Station_Farmstead.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_field",
+      "name": "T_Icon_building_field",
+      "file": "UI/Icons/T_Icon_building_field.png",
+      "model": "Buildings/Stations/SM_Station_FieldTile.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.78
+    },
+    {
+      "id": "building_composter",
+      "name": "T_Icon_building_composter",
+      "file": "UI/Icons/T_Icon_building_composter.png",
+      "model": "Buildings/Stations/SM_Station_Composter.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_rain_catcher",
+      "name": "T_Icon_building_rain_catcher",
+      "file": "UI/Icons/T_Icon_building_rain_catcher.png",
+      "model": "Buildings/Stations/SM_Station_RainCatcher.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_tavern",
+      "name": "T_Icon_building_tavern",
+      "file": "UI/Icons/T_Icon_building_tavern.png",
+      "model": "Buildings/Stations/SM_Station_Tavern.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_hearth",
+      "name": "T_Icon_building_hearth",
+      "file": "UI/Icons/T_Icon_building_hearth.png",
+      "model": "Buildings/Stations/SM_Station_Hearth.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_clay_oven",
+      "name": "T_Icon_building_clay_oven",
+      "file": "UI/Icons/T_Icon_building_clay_oven.png",
+      "model": "Buildings/Stations/SM_Station_ClayOven.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_brew_kettle",
+      "name": "T_Icon_building_brew_kettle",
+      "file": "UI/Icons/T_Icon_building_brew_kettle.png",
+      "model": "Buildings/Stations/SM_Station_BrewKettle.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_feast_table",
+      "name": "T_Icon_building_feast_table",
+      "file": "UI/Icons/T_Icon_building_feast_table.png",
+      "model": "Buildings/Stations/SM_Station_FeastTable.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "building_plant_apple",
+      "name": "T_Icon_building_plant_apple",
+      "file": "UI/Icons/T_Icon_building_plant_apple.png",
+      "model": "Nature/Trees/SM_TreeApple_Sapling.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.71
+    },
+    {
+      "id": "building_plant_pear",
+      "name": "T_Icon_building_plant_pear",
+      "file": "UI/Icons/T_Icon_building_plant_pear.png",
+      "model": "Nature/Trees/SM_TreePear_Sapling.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.75
+    },
+    {
+      "id": "tool_axe_t1",
+      "name": "T_Icon_tool_axe_t1",
+      "file": "UI/Icons/T_Icon_tool_axe_t1.png",
+      "model": "Items/KA_T01_Tol_WoodAxe.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "tool_pickaxe_t1",
+      "name": "T_Icon_tool_pickaxe_t1",
+      "file": "UI/Icons/T_Icon_tool_pickaxe_t1.png",
+      "model": "Items/KA_T01_Tol_Pickaxe.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "tool_hammer_t1",
+      "name": "T_Icon_tool_hammer_t1",
+      "file": "UI/Icons/T_Icon_tool_hammer_t1.png",
+      "model": "Items/KA_T01_Tol_Hammer.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "tool_smith_hammer_t1",
+      "name": "T_Icon_tool_smith_hammer_t1",
+      "file": "UI/Icons/T_Icon_tool_smith_hammer_t1.png",
+      "model": "Items/KA_T01_Tol_SmithHammer.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "tool_sickle_t1",
+      "name": "T_Icon_tool_sickle_t1",
+      "file": "UI/Icons/T_Icon_tool_sickle_t1.png",
+      "model": "Items/KA_T01_Tol_Sickle.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "weapon_bearded_axe_t1",
+      "name": "T_Icon_weapon_bearded_axe_t1",
+      "file": "UI/Icons/T_Icon_weapon_bearded_axe_t1.png",
+      "model": "Items/KA_T01_Wep_BeardedAxe_Reference.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
+    },
+    {
+      "id": "weapon_round_shield_t1",
+      "name": "T_Icon_weapon_round_shield_t1",
+      "file": "UI/Icons/T_Icon_weapon_round_shield_t1.png",
+      "model": "Items/KA_T01_Wep_Shield_Round.fbx",
+      "size": [
+        256,
+        256
+      ],
+      "fill_ratio": 0.8
     }
   ]
 }

@@ -32,9 +32,10 @@ $Editor   = Join-Path $UeRoot 'Engine\Binaries\Win64\UnrealEditor.exe'
 $LogDir   = Join-Path $RepoRoot ("game\Saved\MenuTest\{0:yyyyMMdd-HHmmss}" -f (Get-Date))
 New-Item -ItemType Directory -Force $LogDir | Out-Null
 
-if (Get-Process UnrealEditor -ErrorAction SilentlyContinue) {
-    throw 'Unreal Editor / game processes are running. Close them first (they may hold port 7777).'
-}
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'menu_test.ps1'
+$runStart = Get-Date
 
 $rhi = if ($Render) { '-windowed -resx=960 -resy=540' } else { '-nullrhi -nosound' }
 $style = if ($Render) { 'Normal' } else { 'Minimized' }
@@ -75,9 +76,13 @@ finally {
             ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
         if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
     }
+    foreach ($p in $all) { if ($p) { $p.WaitForExit(15000) | Out-Null } }
+    $shotCount = Copy-UnrealScreenshots -Since $runStart -Destination (Join-Path $LogDir 'shots')
+    if ($shotCount -gt 0) { Write-Host "Screenshots: $shotCount in $(Join-Path $LogDir 'shots')" }
+    Exit-UnrealLock $unrealLock
 }
 
-$joins = @(Select-String -Path (Join-Path $LogDir 'host.log') -Pattern 'Join succeeded').Count
+$joins =@(Select-String -Path (Join-Path $LogDir 'host.log') -Pattern 'Join succeeded').Count
 $welcomed = 0
 for ($i = 1; $i -le $Clients; $i++) {
     $log = Join-Path $LogDir "client$i.log"

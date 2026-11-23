@@ -18,7 +18,9 @@ enum class EGamerAnimAction : uint8
 	Water,    // watering
 	Consume,  // eating, drinking
 	GatherLow,    // crouching and grabbing from the ground (hand-gathered things, picking up)
-	CraftStation, // standing work at a workbench, fire or cooking place
+	CraftStation, // standing work with the hands in front (hearth, oven, kettle, feast table)
+	CraftBench,   // standing, hammering/shaping at table height (workbench)
+	CraftLow,     // crouched at a low place (camp fire)
 	Count UMETA(Hidden)
 };
 

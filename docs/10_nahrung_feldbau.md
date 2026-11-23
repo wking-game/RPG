@@ -105,5 +105,5 @@ Alle Zahlen unten sind **Vorschläge von Claude** (⚑), soweit nicht anders ver
 
 ### Grenzen, ehrlich
 - Modelle stammen aus `tools/blender/build_trees.py`. Brombeere, Hundsrose, Walderdbeere und Holunder nutzen den Blattatlas der Himbeere mit; Schlehe und Blaubeere teilen sich einen neuen Atlas mit kleinen Blättern. Das spart Texturspeicher, die Blattformen sind aber nicht artgenau.
-- Feldfrüchte und Fallobst sind einfache Formen in Volltonfarben ohne Blatt-Textur. Für Feld, Komposter, Regenfänger und Hof gibt es noch keine Modelle, sondern Platzhalter-Formen.
+- Feldfrüchte und Fallobst sind einfache Formen in Volltonfarben ohne Blatt-Textur. Feld, Komposter, Regenfänger, Hof und die übrigen Stationen haben seit 2026-11-22 einfache Modelle aus `tools/blender/build_stations.py` (Icons über `tools/blender/icon_map.json`). Ein gezogenes Feld legt die 1-m-Kachel `SM_Station_FieldTile` als Raster aus (`AGamerFarmBuilding::SoilTiles`); die gestreckte Kachel bleibt unsichtbar und gibt nur die Kollision.
 - Das Feld ist eine flache Platte. Am Hang kann sie einsinken oder an einer Ecke frei schweben, denn sie wird nicht an das Gelände angepasst.

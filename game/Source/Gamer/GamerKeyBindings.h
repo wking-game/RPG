@@ -16,6 +16,9 @@ namespace GamerInputActions
 	inline const FName Strike(TEXT("strike"));
 	inline const FName Interact(TEXT("interact"));
 	inline const FName CraftMenu(TEXT("craft_menu"));
+	/** Equipment window: what is worn, armor values, level (docs/25). */
+	inline const FName GearMenu(TEXT("gear_menu"));
+	inline const FName InventoryMenu(TEXT("inventory_menu"));
 	inline const FName BuildMenu(TEXT("build_menu"));
 	inline const FName Rotate(TEXT("rotate"));
 	inline const FName Demolish(TEXT("demolish"));

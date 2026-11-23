@@ -19,10 +19,12 @@ enum class EGamerMenuPage : uint8
 	Join,         // type the host's address, then connect
 	Village,      // village management: villagers, jobs, needs (key V)
 	Storage,      // settlement storage: take and put (E at a storage building)
+	Inventory,    // inventory window (key I): click a slot, click another to move or swap, "Wegwerfen" throws it away
 	Graphics,     // graphics settings (GamerGraphicsSettings.h), from the Esc menu and the start menu
 	Character,    // start menu: origin, name, values, equipment (before CreateWorld / Join)
 	CharacterLook, // start menu: appearance editor of the character
-	LoadWorld     // start menu: saved worlds (GamerPlayerControllerSave.cpp, GamerHUDSave.cpp)
+	LoadWorld,    // start menu: saved worlds (GamerPlayerControllerSave.cpp, GamerHUDSave.cpp)
+	WorldAdvanced // start menu: "Erweiterte Einstellungen" of "Welt erstellen" (GamerPlayerControllerWorld.cpp, GamerHUDWorld.cpp)
 };
 
 /**
@@ -47,6 +49,8 @@ public:
 	void GamerTestWalk(float Seconds = 3.f);
 
 	EGamerMenuPage GetMenuPage() const { return MenuPage; }
+	/** Inventory window: the slot picked up with the first click (INDEX_NONE = none). */
+	int32 GetInventorySelected() const { return InventorySelected; }
 	bool IsMenuOpen() const { return MenuPage != EGamerMenuPage::None; }
 
 	/** Controls page: the action waiting for its new key, or NAME_None. */
@@ -147,6 +151,8 @@ private:
 	// char:look:<slot>, char:lookreset, char:edit, char:lookdone, char:next.
 	void OpenCharacterPage(EGamerMenuPage Next);
 	void HandleCharacterButton(const FString& Id);
+	/** Buttons opt:* of "Welt erstellen" and "Erweiterte Einstellungen" (GamerPlayerControllerWorld.cpp). */
+	void HandleWorldOptionButton(const FString& Id);
 	bool TypeIntoCharacterName(const FKey& Key);
 	EGamerMenuPage CharacterNext = EGamerMenuPage::CreateWorld;
 	void LeaveWorld();
@@ -166,6 +172,7 @@ private:
 	FString JoinAddress;
 
 	EGamerMenuPage MenuPage = EGamerMenuPage::None;
+	int32 InventorySelected = INDEX_NONE;
 	FName ListeningAction;
 	FString MenuNote;
 

@@ -37,6 +37,10 @@ public:
 	UPROPERTY(Config)
 	FGamerWorldOptions WorldOptions;
 
+	/** Quest hints (decision 2026-11-16: a player setting, not per world). Effect comes with the saga. */
+	UPROPERTY(Config)
+	bool bQuestHints = true;
+
 	UPROPERTY(Config)
 	FString JoinAddress = TEXT("127.0.0.1");
 

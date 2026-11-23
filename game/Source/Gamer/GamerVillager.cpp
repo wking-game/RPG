@@ -1,5 +1,6 @@
 #include "GamerVillager.h"
 #include "GamerAnimInstance.h"
+#include "GamerFigures.h"
 #include "Engine/SkeletalMesh.h"
 #include "GamerTavern.h"
 
@@ -105,6 +106,10 @@ AGamerVillager::AGamerVillager()
 	Figure->SetAnimInstanceClass(UGamerAnimInstance::StaticClass());
 	Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Figure->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+	FaceMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FaceMesh"));
+	FaceMesh->SetupAttachment(Figure);
+	FaceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FaceMesh->SetLeaderPoseComponent(Figure);
 
 	Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Label"));
 	Label->SetupAttachment(GetCapsuleComponent());
@@ -206,13 +211,44 @@ void AGamerVillager::ApplyLook()
 	if (GetNetMode() != NM_DedicatedServer)
 	{
 		USkeletalMeshComponent* Figure = GetMesh();
-		USkeletalMesh* Wanted = (GetTypeHash(VillagerName) & 1) && BodyB ? BodyB.Get() : BodyA.Get();
+		const uint32 Hash = GetTypeHash(VillagerName);
+		const bool bSlim = (Hash & 1) != 0;
+		// Villagers: the seeress (job_seer, docs/14_saga_quests.md) has her own figure; others a villager variant
+		// (hair, beard, skin), else the simplified MetaHuman ("*_low", Low pipeline); else the player figure
+		// with its finest LODs skipped; else the interim Manny/Quinn (LOD plan, docs/16_metahuman_anmeldung.md).
+		GamerFigures::FFigure MetaHuman;
+		const bool bLow = (JobId == TEXT("job_seer") && GamerFigures::Find(TEXT("npc_seeress"), MetaHuman))
+			|| GamerFigures::FindVariant(bSlim ? TEXT("villager_slim_") : TEXT("villager_strong_"), Hash >> 1, MetaHuman)
+			|| GamerFigures::Find(bSlim ? TEXT("slim_low") : TEXT("strong_low"), MetaHuman);
+		const bool bMetaHuman = bLow || GamerFigures::Find(bSlim ? TEXT("slim") : TEXT("strong"), MetaHuman);
+		USkeletalMesh* Wanted = bMetaHuman ? MetaHuman.Body : (bSlim && BodyB ? BodyB.Get() : BodyA.Get());
 		if (Wanted && Figure->GetSkeletalMeshAsset() != Wanted)
 		{
 			Figure->SetSkeletalMesh(Wanted);
 		}
-		// Job colour on the painted panels of the interim figure.
-		for (int32 i = 0; i < Figure->GetNumMaterials(); ++i)
+		Figure->SetMinLOD(bMetaHuman && !bLow ? 2 : 0);
+		FaceMesh->SetSkeletalMesh(bMetaHuman ? MetaHuman.Face : nullptr);
+		FaceMesh->SetLeaderPoseComponent(Figure);
+		FaceMesh->SetMinLOD(bMetaHuman && !bLow ? 2 : 0);
+		GamerFigures::ApplyGrooms(FaceMesh, GroomComponents, MetaHuman);
+		if (MetaHuman.Face && MetaHuman.Face != LoggedFace)
+		{
+			LoggedFace = MetaHuman.Face;
+			UE_LOG(LogGamer, Log, TEXT("Villager %s: figure %s, grooms %d"), *VillagerName, *MetaHuman.Face->GetPathName(), MetaHuman.Grooms.Num());
+		}
+		// Own Norse clothing, by name: slim figures half in long dresses (half of those with apron and brooches),
+		// a third of all wear a cloak; the seeress always a dress with apron and a cloak. Colours: style palette.
+		const bool bSeer = JobId == TEXT("job_seer");
+		const uint32 Pick = Hash >> 3;
+		const TCHAR* Outfit = bSeer ? TEXT("Schuerzenkleid")
+			: (bSlim && (Pick & 1)) ? ((Pick & 2) ? TEXT("Schuerzenkleid") : TEXT("Kleid")) : TEXT("Tunika");
+		const bool bCloak = bSeer || (Pick >> 2) % 3 == 0;
+		GamerFigures::ApplyClothing(Figure, ClothMesh, bMetaHuman, bSlim, Outfit,
+			GamerFigures::ClothPalette(int32(Hash >> 6)), GamerFigures::ClothPalette(int32(Hash >> 10) + 3));
+		GamerFigures::ApplyClothing(Figure, CloakMesh, bMetaHuman && bCloak, bSlim, TEXT("Umhang"),
+			GamerFigures::ClothPalette(int32(Hash >> 13) + 1), GamerFigures::ClothPalette(4));
+		// Job colour on the painted panels of the interim figure (not on MetaHumans).
+		for (int32 i = 0; !bMetaHuman && i < Figure->GetNumMaterials(); ++i)
 		{
 			if (UMaterialInstanceDynamic* Material = Figure->CreateAndSetMaterialInstanceDynamic(i))
 			{

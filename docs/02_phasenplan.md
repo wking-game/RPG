@@ -230,7 +230,23 @@ Nicht geprüft / offen:
 - **Paket-Test (2026-11-15):** `build.ps1 Package` und `PackageServer` ohne Fehler (Cook: 0 Fehler, 1 fremde Warnung). Spielpaket 3,81 GB, davon 2,47 GB Debug-Symbole (`Gamer.pdb`, wird nicht ausgeliefert), Spielinhalte (`Gamer-Windows.ucas`) ca. 1,0 GB; Serverpaket 3,37 GB inkl. Symbole. Paketierter Server + paketiertes Spiel: Beitritt ok, Figur (Quinn, Körperbau schmal aus dem Profil, Kleidungstönung sichtbar) geht und sprintet im Bild, 7 Schläge am Baum laut Log; der Moment des Schlags ist im Paket-Lauf nicht im Bild (Bilder lagen vor dem Teleport zum Baum).
 - **Nachtrag (Nutzerwunsch über die Gameplay-Session):** Von Hand sammeln und Gegenstände aufheben = Hocken und Greifen (`GatherLow`, Quaternius Farm_Harvest), Anfangswerkzeuge ohne Station herstellen = knieendes Werkeln (`Craft`), Herstellen an Stationen = stehende Arbeit (`CraftStation`); Grundlage `FGamerWorkState::bLowOrStation`. Knien beim Herstellen der Steinaxt im Bild geprüft.
 - **Korrektur Sammeln (Nutzer: „immer noch keine greifende Bewegung“, „zu viel Abstand“):** Ursache: Hock-Greifen nutzte Quaternius Farm_Harvest (nur Bücken mit Schwung, Becken 75 cm) bzw. davor Kevin Gathering01 (stehend, Hand nie unter 105 cm). Jetzt Kevin Gathering03 (`A_Gather3`: Becken 49 cm, Hand bis 41 cm), ausgewählt per Posen-Messung in `tools/unreal/import_characters.py` (Zeilen „POSE“ im Log). Abstand: Bei E auf etwas von Hand Sammelbares oder einen liegenden Gegenstand läuft der eigene Spieler erst bis `GrabDistance` = 70 cm heran (höchstens `GrabApproachSeconds` = 1,5 s, bricht ab, wenn er nicht näher kommt), dreht sich hin und greift; der Server prüft die Reichweite wie bisher. Im Bild geprüft (Äste: Heranlaufen, Hocken mit der Hand am Boden, Aufstehen). Neuer Testbefehl `grab:<vorkommen>`; Log-Zeile „Anim …: clip …“ zeigt, welcher Clip spielt.
+- **Korrektur Werkbank-Animation (2026-11-22; Nutzer: „Animation bei der Werkbank ist nicht passend“):**
+  - **Ursache:** An allen Stationen lief Kevin Gathering01. Dabei greifen die Hände nach vorn in Brusthöhe, wie beim Pflücken am Busch. Außerdem drehte sich die Figur nicht zur Station, obwohl bis 5 m Abstand erlaubt sind.
+  - **Clip je Station** (`AGamerCharacter::StationAnim`, nach der Station des Rezepts):
+    - Werkbank: `CraftBench`, Kevin MiningOneHand „Wall“ (`A_Mine`), ein einhändiger Schlag, der auf Tischhöhe endet.
+    - Lagerfeuer: `CraftLow`, Hocken (`A_Gather3`).
+    - Herd, Lehmofen, Braukessel, Festtafel: weiter `CraftStation` (Gathering01).
+  - **Ausrichtung:** `RequestCraft` dreht die Figur vor dem Herstellen zur Station. Tasten und der Testbefehl `craft:` nutzen denselben Weg.
+  - **Auswahl:** Strichfiguren aus den Original-FBX/GLB, gerendert in Blender.
+  - **Im Bild geprüft** (`game/Saved/MpTest/stationen_animation.png`): An der Werkbank dreht sich die Figur hin und schlägt (Log „clip A_Mine“), am Lagerfeuer hockt sie (Log „clip A_Gather3“).
+  - **Offen:**
+    - ~~Die Figur läuft nicht an die Station heran~~ (erledigt, siehe unten).
+    - Es gibt kein Werkzeug in der Hand.
+    - Dorfbewohner nutzen weiter `CraftStation`.
+    - Für Kessel und Herd fehlt ein Rühr-Clip; die freien Pakete haben keinen.
+  - **Hinlaufen (2026-11-22):** `RequestCraft` lässt die Figur bei Stationsrezepten zuerst bis `StationWorkDistance` = 55 cm an den Umriss der Station laufen (höchstens `StationApproachSeconds` = 3 s; bricht ab, wenn sie nicht näher kommt), dreht sie hin und startet dann das Herstellen. Ohne Station (von Hand) beginnt es sofort. Gebaut; im Test (`craft:` an einer Werkbank) lief das Herstellen mit „clip A_Mine“ durch (Bild `game/Saved/MpTest/hinlaufen_werkbank.png`). Im Bild stand die Figur schon neben der Bank, das eigentliche Heranlaufen aus Entfernung ist damit noch nicht sichtbar belegt.
 - **MetaHuman-Stand:** Projekteinstellungen für MetaHuman (16-Bit-Knochenindex, unbegrenzte Knocheneinflüsse, Skin Cache) vom Nutzer im Editor übernommen; stehen nur in der nicht versionierten `DefaultEngine.ini`. `MHC_Grundfigur` angelegt; Epic-Anmeldung im Creator noch nicht gelungen (`EOS_InvalidAuth`), daher noch kein Rig und keine Texturen.
+- **MetaHuman bis zur Anmeldung vorbereitet (2026-11-16):** `tools/metahuman.ps1 Prepare` legt `MHC_Kraeftig` (182 cm) und `MHC_Schmal` (170 cm) in `/Game/Gamer/Characters/MetaHuman` an und belegt Körpermaße und Haut vor (gespeichert, nach erneutem Lauf geprüft). `tools/metahuman.ps1 Link` sucht nach dem Zusammenbau Körper/Kopf, macht das Skelett mit SK_Mannequin verträglich und schreibt `Content/Data/figures.json`; `GamerFigures.*` liest sie, `AGamerCharacter`/`AGamerVillager` nutzen dann MetaHuman (Kopf folgt dem Körper), sonst Manny/Quinn. Bewohner: „Low“-Zusammenbau, sonst Spielerfigur ohne die zwei feinsten LODs. Rückfall mit Grafik geprüft (Spieler + Bewohnerin), Datentests grün. Anleitung für den Nutzer: `docs/16_metahuman_anmeldung.md`.
 - **Noch nicht / offen:** MetaHuman-Figuren (Login des Nutzers), Bewohner mit Figur nicht im Bild geprüft, Feldarbeit/Aufheben/Essen nur im Code, nicht im Bild; Fußgleiten und Sprunghöhe nicht feinjustiert (Tempowerte in `GamerAnimInstance.h`); Lizenz Kevin Iglesias außerhalb Unity nicht schriftlich belegt (siehe Asset-Log).
 
 ## Umriss statt Rechteck, Scan-Welle, Animations-Hinweise (2026-11-15)
@@ -277,6 +293,93 @@ Ausführlich in `docs/13_magie_gespuer.md`. Gebaut und getestet (Build ohne Fehl
 - **Einmal pro Fund:** EP zählen pro Fund und Spieler nur einmal (`counted_targets`, serverseitig und gespeichert); getestet: derselbe Fund zweimal ergibt nur einmal EP, auch nach Speichern und Laden („find_a was already counted“). Der frühere „+1 je Scan“-Vorschlag ist gestrichen.
 - **Offen:** echte magische Objekte, Amulett, Beruf Seherin und Quest, Seidr-Blick lernen, D mit Nacht/Nebel/Steinkreis (braucht Tag/Nacht und Wetter), Markieren und gespeicherte Markierungen, Summen (Audio) und Flimmern in der Welt; die Sinus-Welle des Umschauens ist auf hellem Sand dezent (Alpha und Amplitude in `scan.json`/HUD einstellbar).
 
+### Nachtrag 2026-11-16: Lebenspunkte, Spielertod, Heilung
+Gebaut (Build ohne Fehler) und getestet (Host + 2 Spieler ohne Grafik, Solo mit Grafik):
+- **Komponente `UGamerHealthComponent`** an der Spielfigur: LP serverseitig, an den Besitzer repliziert, Totzustand an alle, gespeichert (`health`: LP, Startpunkt, Bett-Respawnpunkt). Maximum = 100 + Buff „Gesundheit“. Allgemeine Schadenstür (`TakeDamage(FGamerDamageInfo)`), Fallschaden über `AGamerCharacter::Landed`, Haken `IGamerDamageable` für Tiere und Bewohner (Bewohner haben noch keine LP).
+- **Heilung:** hungrig keine, satt 0,5/s, Eintopf mit Regenerations-Buff schneller. Gemessen: hungrig 70 → 70 nach 7 s; satt (Maximum 110) 71,8 → 76,0 in ca. 8 s; mit Eintopf (Maximum 124, +0,7/s) 82,2 → 92,7 in ca. 8 s. Fallschaden: 300 cm nichts, 800 cm = 48 LP.
+- **Tod und Weltoption „Tod“:** drei Modi getestet: `none` (Inventar bleibt), `grave` (27 Teile ins Grab, Inventar leer, Abholen bringt alles zurück), `hardcore` (27 Teile verloren). Die Option steht unter „Welt erstellen“ und wird mit der Welt gespeichert. Grab-Schutzzeit: Mitspieler wird vor 120 s abgewiesen, öffnet nach 124 s. Wiedereinstieg am zuletzt gebauten Strohlager getestet („got up again at the bed“), sonst Startpunkt. Speichern und Laden: 60 LP kehrten zurück, das Grab (27 Teile) wurde wiederhergestellt und vom Besitzer geöffnet.
+- **HUD:** Lebensleiste links unten (Symbol „L“ und Leiste in Rostrot als Fläche, Zahlen in hellem Text), kurzer rostroter Randschimmer bei Schaden, Hinweis am Grab, Todesbildschirm mit „Aufstehen: E“. Im Bild gesehen. Die Schaltfläche reagiert auf E, nicht auf die Maus (kein Menü-Cursor im Todesbildschirm).
+- **Testschritte:** `damage:<n>[|<Art>]`, `fall:<cm>`, `hp`, `inv`, `getup` (wie die Taste E, mit Mindestwartezeit), `getupnow`, `gotograve`, `opengrave`.
+- **Offen / Hinweise:** Ausrüstungsplätze gibt es nicht, das ganze Inventar geht ins Grab; Bewohner und Tiere haben noch keine LP (Haken ist da); der Mausklick auf „Aufstehen“; die Client-Anzeige „darf das Grab öffnen“ erkennt den Besitzer in gespeicherten Welten am Namen der Figur, der Server prüft streng mit der Spieler-ID; Schadensarten für Kälte und Tiere kommen mit Wetter und Tieren.
+
+## „Welt erstellen“: Spielmodus, Schwierigkeit, Erweiterte Einstellungen (2026-11-16)
+
+Entscheidung „Spielmodus und Schwierigkeit“ (`docs/01_entscheidungen.md`). Die Zahlen sind ein Vorschlag von Claude und stehen in `game/Content/Data/difficulty.json`:
+
+| | Einfach | Mittel | Schwer | Hardcore |
+|---|---|---|---|---|
+| Tod | nichts verlieren | Grab | Grab | alles verlieren |
+| Hunger/Durst/Erschöpfung | ×0,7 | ×1 | ×1,3 | ×1,3 |
+| Erlittener Schaden | ×0,6 | ×1 | ×1,4 | ×1,8 |
+| Ertrag beim Abbauen | ×1,5 | ×1 | ×0,8 | ×0,7 |
+| Horden | aus | aus | an | an |
+| Bewohner unsterblich | ja | nein | nein | nein |
+| Abreißen | voll | voll | halb | halb |
+| Gespür-Tempo | schnell | normal | normal | langsam |
+
+- **Seite 1 „Welt erstellen“** (nach der Charakterseite): Spielmodus Saga/Freies Spiel (`?Mode=`, Saga-Inhalte gibt es noch nicht), Schwierigkeit (Klick = nächste Stufe, mit Beschreibung und Werten), „Welt starten“, „Erweiterte Einstellungen“. Code: `GamerHUDWorld.cpp`, `GamerPlayerControllerWorld.cpp`.
+- **Seite 2 „Erweiterte Einstellungen“** nach Bereichen: Bauen (Bauablauf, Platzierung, Abreißen, Freies Bauen), Überleben (Tod, Inventar, Raten-, Schadens-, Ertragsfaktor), Welt (Jahreszeit-Dauer, Gespür-Tempo, Horden), Dorf (Bewohner unsterblich), Koop (Friendly Fire, Höchstzahl Spieler 1–8). Ausgegraut mit „kommt später“: Freies Bauen, Horden, Bewohner unsterblich, Friendly Fire – ihr Wert (aus der Stufe) wird trotzdem gespeichert. Die Zeile „Sagenwelt“ ist am 2026-11-22 entfallen (Entscheidung „Bosse: Sagen-Fassung als Standard“); ältere Spielstände mit `?Sagenwelt=` und alte Menü-Einstellungen mit `bSagaWorld` laden weiter, der Wert wird übergangen (Test `Gamer.Data.WorldOptionsOldSaves`).
+- **Benutzerdefiniert:** Weicht ein Wert nach einer Änderung auf Seite 2 von der Stufe ab, steht die Schwierigkeit auf „Benutzerdefiniert“; passt die Zusammenstellung wieder genau zu einer Stufe, gilt diese. Deutung von Claude: Optionen, die keine Stufe festlegt (Bauablauf, Platzierung, Inventar, Jahreszeit, Spielerzahl), machen die Welt nicht „Benutzerdefiniert“.
+- **Server-autoritativ:** alle Felder in `FGamerWorldOptions` (Karten-URL, Replikation, Spielstand). Bei einer Stufe nimmt der Server die Werte aus seiner eigenen `difficulty.json`. Die Schwierigkeit hat nach dem Erstellen keinen Schalter mehr; geladene Welten nehmen sie aus dem Spielstand. „Welt laden“ zeigt Modus und Schwierigkeit in der Optionszeile (nur für Welten, die ab heute gespeichert wurden).
+- **Höchstzahl Spieler:** `?MaxPlayers=` liest auch die Engine (`AGameSession`), die Grenze wirkt also sofort; höchstens 8.
+- **Getestet (2026-11-16/21):** Build grün, Datentests 8/8 (neu: `Gamer.Data.DifficultyPresets` prüft u. a. „Mittel = Standardwerte“, Übertragung jeder Stufe über die Karten-URL und dass der Server manipulierte Stufenwerte korrigiert; `Gamer.Data.DifficultyValidatorFindsErrors`). Menütests über das Startmenü: Einfach, Mittel, Schwer, Hardcore und Benutzerdefiniert gestartet, der Server übernimmt jeweils die Werte (Protokoll „World options: … Difficulty=…“); Seite 1, Seite 2, „Benutzerdefiniert“ nach Änderung, „Welt laden“ und Esc-Menü mit Grafik angesehen; gespeicherte Welten „Hardcore“ und „Benutzerdefiniert“ geladen, Modus und Schwierigkeit kommen aus dem Spielstand; Host lädt „Benutzerdefiniert“, ein Mitspieler tritt bei. Nachtrag 2026-11-22: Host lädt „Hardcore“, der Mitspieler sieht im eigenen Esc-Menü „Freies Spiel · Hardcore“ mit allen Werten (Screenshot geprüft).
+- **Wirkung noch offen:** Raten-, Schadens- und Ertragsfaktor sind gespeichert, die Wirkung baut die Gameplay-Session (Lebenspunkte, Ausdauer). Questhilfen sind eine Spieler-Einstellung (`UGamerMenuSettings::bQuestHints`, Schalter auf der Seite „Grafik“), Wirkung mit der Saga.
+
+### Nachtrag 2026-11-21: Niedergeschlagen, Wiederbeleben, Letzter Atem
+- **Niedergeschlagen (nur Koop):** bei 0 LP 15 s am Boden, wenn ein anderer lebender Spieler da ist; sonst (solo) direkt Tod (gleicher Code). Ein Mitspieler hält E 3 s (Fortschrittsbalken), Wiederbelebter hat 30 % LP (Vorschlag); läuft die Zeit ab, gilt die Weltoption „Tod“. Niedergeschlagen: grauer Bildschirm mit türkisem Rand und Zähler; Mitspieler sehen „Niedergeschlagen N s“ über der Figur.
+- **Heilende Hände** (`ability_healing_hands`): belebt sofort, 1× pro Spieltag (1800 s). Nur Datenhaken, Testschritt `hands:on`.
+- **Letzter Atem:** Kräuterverband (`item_herb_bandage`, 2 Fasern + 2 Beeren, Vorschlag; Kategorie „food“, damit er in die Schnellleiste kommt) in der Schnellleiste wird bei 0 LP verbraucht, man bleibt mit 25 % LP stehen; 1× pro Spieltag. Werte in `health.json`.
+- **Grabmarkierung** „Mein Grab N m“ im HUD für den Besitzer.
+- Getestet (Host + 2, Logs): Niedergeschlagen → Wiederbeleben nach ca. 3 s mit 30 LP; Ablauf der 15 s → Tod; Heilende Hände sofort; Letzter Atem (25 LP), zweiter Treffer am selben Tag → Tod, `newday` setzt zurück; Solo kein Niedergeschlagensein. **Nicht getestet:** Bilder der Niedergeschlagen-Anzeige und der Balken mit Grafik, Rezept im Spiel, Speichern der Tageszähler (nicht gespeichert).
+- Testschritte: `hands:on|off`, `newday`, `revive:start|stop`, `gotodowned`.
+
+## Leistungsmessung Phase 1 (2026-11-21)
+Gemessen mit `tools/perf_measure.ps1` (neu; nutzt die Unreal-Sperre): paketiertes Development-Spiel vom 15.11. (`game/Build/Packages/Development/Windows`), Karte World, Fenster 1920×1080, ohne Bildratengrenze und V-Sync, Unreals CSV-Profiler, je 60–200 s Messzeit nach 15–50 s Einlauf. RAM und Grafikspeicher von außen (Windows-Zähler „GPU Process Memory“) alle 2 s. Rohdaten: `game/Saved/Perf/<Zeit>_<Szenario>_q<Qualität>/` (`profile.csv`, `memory.csv`, `result.json`).
+
+| Szenario | Qualität | FPS Mittel | FPS 1 % tief | Bild ms | Game ms | GPU ms | RAM (privat) | Grafikspeicher |
+|---|---|--:|--:|--:|--:|--:|--:|--:|
+| Solo, Startgebiet | Mittel | 184 | 156 | 5,4 | 1,9 | 5,0 | 2,44 GB | 0,88 GB |
+| Solo, Startgebiet | Hoch | 127 | 109 | 7,9 | 2,2 | 7,5 | 2,68 GB | 1,11 GB |
+| Solo + 8 Bewohner | Mittel | 172 | 147 | 5,8 | 2,2 | 5,4 | 2,42 GB | 0,85 GB |
+| Solo + 8 Bewohner | Hoch | 124 | 106 | 8,1 | 2,8 | 7,6 | 2,70 GB | 1,14 GB |
+| Gastgeber + Mitspieler, ein PC | Mittel | 76 | 62 | 13,1 | 2,6 | 12,5 | 2,40 GB | 0,82 GB |
+| Gastgeber + Mitspieler, ein PC | Hoch | 53 | 44 | 18,9 | 3,5 | 16,8 | 2,66 GB | 1,09 GB |
+| Vergleich: Solo ohne Instanzen (Gras, Farne, Felswände) | Hoch | 139 | 119 | 7,2 | 2,0 | 6,8 | 2,66 GB | 1,12 GB |
+
+RAM = höchster Wert „Private Bytes“ des Spielprozesses (Arbeitssatz 1,4–1,6 GB). Gemessen am Gastgeber-Prozess; der Mitspieler lief als zweites Fenster auf dem zweiten Bildschirm.
+
+**Einordnung gegen die Budgets** (`CLAUDE.md` Regel 11, `docs/04_technische_ziele.md`):
+- **RAM:** höchstens 2,7 GB im Spiel, weit unter „mindestens 8 GB“ (Windows und andere Programme brauchen zusätzlich ca. 3–4 GB). Erfüllt, mit Reserve.
+- **Installationsgröße:** Paket 4,25 GB, davon 2,45 GB Debug-Symbole (`.pdb`, werden nicht ausgeliefert) → **ca. 1,8 GB** echte Spielgröße bei 20 GB Budget. Erfüllt.
+- **Grafikspeicher:** 0,8–1,1 GB, auf der RTX 3070 (8 GB) unkritisch. Eine Mindest-Grafikkarte ist noch nicht entschieden.
+- **Bildrate:** auf diesem PC überall über 100 FPS solo und über 44 FPS mit zwei Spielen auf einer Grafikkarte.
+
+**Was am meisten kostet:**
+- **Grafikkarte begrenzt** in allen Szenarien (GPU-Zeit ≈ Bildzeit; die Render-Thread-Zeit ist so hoch, weil er auf die Grafikkarte wartet). Spiel-Logik nur 2–3,5 ms.
+- **Qualität Hoch statt Mittel:** +2,5 ms GPU (+45 %), +0,25 GB Grafikspeicher.
+- **Gras, Farne, Felswände (≈ 87 000 Instanzen):** etwa 0,7 ms GPU bei Hoch (≈ 9 %) in dieser Ansicht; kleiner als befürchtet. Boden-Shader nicht getrennt gemessen.
+- **8 Bewohner:** +0,3–0,6 ms Spiel-Logik und +0,1–0,4 ms GPU (Figuren ohne eigene LOD-Stufen). Hochgerechnet auf 20–30 Bewohner noch tragbar, aber nicht gemessen.
+- **Zwei Spiele auf einem PC** teilen sich eine Grafikkarte: Bildrate etwa halbiert. Das ist ein Test-Sonderfall, kein Koop über zwei PCs.
+
+**Grenzen der Messung (ehrlich):** stehende Kamera am Startpunkt (kein Laufen, kein Kameradrehen); nur der Entwicklungs-PC (RTX 3070, 16 GB RAM), kein schwächerer Rechner; vor den Läufen waren nur 2,8–4,3 GB RAM frei (andere Programme offen); je Szenario ein Lauf; Spielfiguren noch Manny/Quinn, **keine MetaHumans** (die werden Grafikspeicher und GPU-Zeit deutlich erhöhen); Welt nur 250 m × 250 m; kein Unreal Insights.
+
+**Empfehlungen (noch nichts optimiert):**
+1. **Nach den MetaHumans neu messen** (größter erwarteter Sprung bei Grafikspeicher und GPU). Aufwand klein (Skript vorhanden).
+2. **Messlauf mit Bewegung:** Testschritte `walk` und Kameradrehen in `perf_measure.ps1` einbauen, damit Nachladen und Sichtweite mitzählen. Aufwand klein.
+3. **Mindest-Hardware festlegen** (offen in `docs/01_entscheidungen.md`) und auf einem schwächeren PC oder mit gedrosselter Auflösung messen. Aufwand mittel (Hardware nötig).
+4. **LOD-Stufen** für Bäume, Sträucher und Figuren, bevor die Welt größer wird bzw. die MetaHumans kommen. Aufwand mittel.
+5. **Bewohner-Skalierung:** Messung mit 20–30 Bewohnern (Testschritt `spawnvillager`). Aufwand klein.
+6. **Auslieferung ohne Debug-Symbole** (Shipping-Build oder `.pdb` ausschließen). Aufwand klein.
+7. Gras und Boden-Shader erst angehen, wenn eine schwächere Grafikkarte zu langsam ist; derzeit nicht nötig.
+
+### Nachtrag 2026-11-22: Ausdauer und Erschöpfung
+- **Komponente `UGamerStaminaComponent`**, Werte in `game/Content/Data/stamina.json` (alles Vorschläge): Maximum 100, Erholung 14/s nach 1,2 s Pause (ohne Mahlzeit ×0,7), Sprint 14/s, Sprung 8, Schlag 5. **Leer sperrt nichts:** Tempo ×0,65, Schlagstärke ×0,7 (Regel 5), Hysterese bis 15 %.
+- **Erschöpfung** steigt um 0,7 pro Spieltag (Weltoption `NeedsRate` skaliert), senkt das Maximum um bis zu 40 % und das Handarbeitstempo (Sammeln/Herstellen) um bis zu 30 %. **Schlaf:** E am eigenen Bett (zuletzt gebautes Bett), ab 10 % Erschöpfung, setzt sie auf 0 und füllt die Ausdauer, 60 s Abklingzeit; einfache Lösung ohne Zeitsprung.
+- **Buff-Arten** `stamina_max`, `stamina_regen` (Prüfer und Anzeige kennen sie); Ausrüstungsregel greift erst mit Ausrüstungsplätzen; Tavernen-Gerichte haben noch keine Werte. Erlittener Schaden: Faktor `DamageTaken` der Weltoption ist in `TakeDamage` eingebunden.
+- **HUD:** Ausdauerleiste (Ocker) neben der Lebensleiste, dunkles Ende = was die Erschöpfung nimmt, dünner Streifen = Erschöpfung; Hinweis „schlafen“ am Bett.
+- Getestet (1 Spieler, Logs): Sprint ca. −14/s, Erholung ca. +14/s, leer → Tempo ×0,65, Zeitraffer (`lapse:`) hebt Erschöpfung (0,49 → Maximum 80, Arbeitstempo ×0,85), Schlaf setzt auf 0, zweiter Schlaf wird abgewiesen. **Nicht getestet:** Speichern/Laden der Werte, Koop mit 2 Spielern, Bilder der Leisten, spürbare Verlangsamung beim Gehen (nur Faktor im Log).
+- Testschritte: `stam[:<A>|<E>]`, `lapse:<f>`, `sleep`.
+
 ## Hinweis zum Dedicated-Server-Target (Phase 0)
 Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es einen Source-Build der Engine (Epic-Doku „Setting Up Dedicated Servers“). Das „Dedicated-Server-Target“ in Phase 0 geht deshalb erst mit Source-Build. Bis dahin kann mit dem Launcher-Build entwickelt und mit Listen-Server getestet werden. Die Entscheidung ist offen (siehe `docs/01_entscheidungen.md`).
 
@@ -288,3 +391,20 @@ Der Launcher-Build von Unreal kann keine Server-Targets bauen, dafür braucht es
 ## Ehrliche Einschätzung
 Das Dorfbewohner-System ist der aufwendigste Teil (KI, Bedürfnisse, Speichern/Laden, Koop-Replikation). Zum Vergleich: Askas Entwickler
 haben es über Jahre im Early Access nachgebessert. Phase 1 deshalb bewusst klein halten.
+
+## Stand Schritt 1 Kreaturen/Kampf/Fortschritt: Daten und Logik (2026-11-22)
+- Plan: `docs/24_schritt1_daten_und_logik.md`. Gebaut: JSON-Tabellen (`items_creature`, `creatures`, `animals`, `spawns`, `creature_loot`, `progression`, `combat`), Lader mit Prüfung (`GamerCreatureData`, `GamerCombatMath`, `GamerProgression`, gemeinsame Helfer `GamerJsonTable.h`), reine Rechenfunktionen für Rüstung, Resistenz, Standhaftigkeit, Zonen, Spieler-HP, Rang- und Beutewürfel, Level/Erfahrung; Rezepte kennen `min_level`; `UGamerDataSubsystem` hält die neuen Daten und die Prüfsumme umfasst sie.
+- Geprüft: Editor-Build grün, `test_data.ps1 -Filter Gamer`: 36 Tests, 0 fehlgeschlagen.
+- Danach geprüft: Server-Build grün, `mp_test.ps1` (Server + 2 Spieler) bestanden. Nicht geprüft: Spieltest von Hand. Im Spiel war nach Schritt 1 noch nichts sichtbar; Schritt 2a (unten) macht Ausrüstung und Level sichtbar.
+
+
+## Stand Schritt 2a: Ausrüstung und Spielerwerte (2026-11-22)
+- Plan: `docs/25_schritt2a_ausruestung_und_spielerwerte.md`. Gebaut: Gegenstände der Kategorie `armor` (T1: Lederkappe, -schulterstücke, -wams, -handschuhe, -hose, -schuhe, Fellumhang, Knotenring, je mit Rezept an der Werkbank), `UGamerEquipmentComponent` (neun Plätze, Server-RPCs, repliziert, gespeichert), reine Rechnung `GamerEquipmentMath`, Rüstung/Resistenz in `UGamerHealthComponent::TakeDamage` (Zone und Art optional), Lebenspunkte nach Zähigkeit, `UGamerProgressComponent` (Level, Erfahrung aus Sammeln/Herstellen/Bauen, Koop-Anteil, gespeichert), `min_level` beim Herstellen erzwungen, HUD: Levelbalken und Ausrüstungsfenster (Taste C, Zahlen 1–8).
+- Geprüft: Editor-Build grün; `test_data.ps1 -Filter Gamer`: 40 Tests, 0 fehlgeschlagen (neu u. a. `Gamer.Equipment.*`, `Gamer.Progression.WorkXp`). Lauf mit Server + Client (ohne Grafik): neun Stücke angelegt, Treffer mit Rüstung rechnen exakt wie die Formeln (Kopf 25,9 / Körper 17,2 / Gliedmaßen 12,0 bei Roh 20; Kälte 9,5 bei Roh 10), Erfahrung 150 → Level 2, 550 → Level 4, Ablegen geht; Speichern, Server-Neustart und Wiedereinstieg bringen Ausrüstung und Erfahrung zurück. Mit Grafik: Screenshot des Fensters und des Levelbalkens angesehen.
+- Nicht geprüft: Lebenspunkte mit echtem Charakter (der Testspieler hatte keinen, also neutrale Zähigkeit 5 = 100 LP; die Formel ist nur im Einzeltest geprüft), Spiel von Hand mit Tastatur (Taste C, Zahlen im Fenster), Erfahrung durch Bauen und Sammeln im Lauf (nur Rechnung getestet), Tod mit Ausrüstung im Grab.
+- Offen: Rüstung erscheint nicht am Körper (keine Modelle), kein Fähigkeitenbaum (Punkte werden nur gezählt), Erfahrung aus Entdecken und Kampf fehlt (kein System), Bauen zählt beim Platzieren (nicht erst beim Fertigstellen).
+
+## Stand: zwei kleine Ideen aus dem Gemini-GDD v3 (2026-11-22)
+- **Abriss mit etwa 80 % Material:** neue Weltoption „Abreißen“: `partial` (Menü: „Etwa 80 % Material“), zwischen „voll“ und „halb“; unfertige Pläne geben weiter alles zurück. Der neue Wert steht hinten im Aufzählungstyp, alte Spielstände behalten ihre Bedeutung. Gemini wollte zusätzlich eine Staffelung nach Zustand: Bauten haben bei uns noch keine Lebenspunkte, das entfällt vorerst (die Stufe steckt schon im Material, das beim Abriss zurückgeht).
+- **Nachwachsen mit Abstandsregel:** ein abgeerntetes wildes Vorkommen wächst nicht nach, solange ein Spieler oder Bewohner näher als 3 m steht (Konsolenwert `gamer.RegrowClearanceCm`, 0 = aus); alle 5 s neuer Versuch. Gepflanzte Bäume sind ausgenommen. „In Höhlen länger“ entfällt, es gibt noch keine Höhlen.
+- Geprüft: Editor-Build grün, 41 Tests ohne Fehler (neu `Gamer.Build.DemolishRefund`), Lauf mit Server und Client: Möhre blieb 3 Versuche lang abgeerntet, solange der Spieler daneben stand, und wuchs nach seinem Weggang nach. Nicht geprüft: Abriss im Spiel von Hand, Menüpunkt „Etwa 80 % Material“ auf dem Bildschirm.

@@ -1,0 +1,52 @@
+{
+  "schema": "health_1",
+  "_comment": "Lebenspunkte, Schaden, Heilung und Tod des Spielers (Entscheidungen 2026-11-16: Spielertod, Heilung). Alle Zahlen sind Startwerte zum Justieren. Max. LP = base_hp plus der Buff „Gesundheit“ aus den Mahlzeiten. Heilung: langsam, solange man satt ist (mindestens eine Mahlzeit aktiv, siehe Buff-System), der Buff „Regeneration“ addiert sich dazu; hungrig regeneriert man nicht (keine Strafe, nur Stillstand, Regel 5). Fallschaden ab einer Fallhöhe. Tod: die Weltoption „Tod“ (none, grave, hardcore) steht in den Weltoptionen, nicht hier.",
+  "base_hp": 100,
+  "regen": {
+    "base_per_s": 0.5,
+    "needs_fed": true,
+    "tick_s": 0.25
+  },
+  "fall": {
+    "min_height_cm": 400,
+    "damage_per_100cm": 12,
+    "_comment": "400 cm sind etwa der freie Fall von einem Dach; ab 1,6 m mehr als 400 cm lang wird es spürbar, ca. 12 LP je weiteren Meter."
+  },
+  "respawn": {
+    "min_delay_s": 2.5,
+    "heal_fraction": 1.0
+  },
+  "grave": {
+    "others_after_s": 120,
+    "reach_cm": 300,
+    "_comment": "Der Besitzer kann sein Grab sofort öffnen, Mitspieler erst nach others_after_s (Schutzzeit, danach dürfen sie es für den Toten bergen; die Dinge gehen an den, der öffnet)."
+  },
+  "spawn": {
+    "bed_building": "building_bed",
+    "bed_check_cm": 300
+  },
+  "game_day_s": 1800,
+  "_game_day": "Ein Spieltag dauert 30 Minuten (Entscheidung „Tag und Nacht“); „einmal pro Spieltag“ zählt in diesen Abschnitten der Serverzeit.",
+  "downed": {
+    "enabled": true,
+    "duration_s": 15,
+    "revive_hold_s": 3,
+    "revive_hp_fraction": 0.3,
+    "reach_cm": 250,
+    "_comment": "Koop: bei 0 LP 15 s niedergeschlagen; ein Mitspieler hält E 3 s und belebt wieder; sonst Tod nach der Weltoption „Tod“. Solo (kein anderer lebender Spieler): kein Niedergeschlagensein, direkt Tod. Vorschlag: Wiederbelebter hat 30 % LP."
+  },
+  "last_breath": {
+    "items": [
+      "item_herb_bandage"
+    ],
+    "hotbar_only": true,
+    "hp_fraction": 0.25,
+    "once_per_day": true,
+    "_comment": "Fallen die LP auf 0 und liegt ein Heilmittel (diese Liste) in der Schnellleiste, wird es verbraucht und man bleibt mit 25 % LP stehen; 1× pro Spieltag, solo und Koop gleich."
+  },
+  "healing_hands": {
+    "ability": "ability_healing_hands",
+    "once_per_day": true,
+    "_comment": "Fähigkeit: belebt einen Niedergeschlagenen sofort wieder, 1× pro Spieltag. Nur Datenhaken, das Lernsystem fehlt; getestet über einen Testschritt."
+  }
+}

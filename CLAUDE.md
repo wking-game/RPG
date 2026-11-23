@@ -48,7 +48,7 @@ Regeln 1, 3, 4, 7 sind Vorschläge von Claude; ihr Status steht in `docs/01_ents
 
 ## Aktueller Stand (2026-11-13)
 - Projekt „Gamer“ liegt in `game/` (C++, Vorlage TP_Blank). Projektordner: `D:\gamer\gamer`. Phase 0 abgeschlossen, Phase 1 (Vertical Slice „Siedlung“) beginnt mit der Spielfigur im Koop.
-- Engine: **Source-Build 5.8.4** in `E:\UE58` (Tag 5.8.4-release, ohne Mac/Android/Linux; iOS-Teil nachgeladen, weil UAT ihn braucht). `Gamer.uproject` zeigt per GUID darauf. Der Launcher-Build in `D:\gamer\unreal\UE_5.8` wird nicht mehr benutzt.
+- Engine: **Source-Build 5.8.4** in `E:\UE58` (Tag 5.8.4-release, ohne Mac/Android/Linux; iOS-Teil nachgeladen, weil UAT ihn braucht). `Gamer.uproject` zeigt per GUID darauf. Der frühere Launcher-Build `D:\gamer\unreal\UE_5.8` ist gelöscht (2026-11-16). Projekt nie über den Epic Launcher öffnen, sondern über `Gamer.uproject` oder `E:\UE58\Engine\Binaries\Win64\UnrealEditor.exe`.
 - Dedicated Server: Target `GamerServer`, Bauen mit `tools/build.ps1 Server`, Paketieren mit `tools/build.ps1 PackageServer`. Mehrspieler-Test mit `tools/mp_test.ps1` (Server + N Spieler ohne Grafik).
 - Höchstens 8 Spieler pro Welt (`MaxPlayers=8` in `game/Config/DefaultGame.ini`).
 - `game/Config/DefaultEngine.ini` enthält lokal ein Token und wird bewusst nicht committet.

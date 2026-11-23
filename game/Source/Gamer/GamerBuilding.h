@@ -47,6 +47,8 @@ public:
 	static TArray<FGamerItemAmount> CostFor(const FGamerBuildableDef& Def, const FVector& Scale);
 	/** Drawn fields: clamps a requested scale (1 = 100 cm per side) to the allowed size. Other pieces: 1. */
 	static FVector ClampScale(const FGamerBuildableDef& Def, const FVector& Scale);
+	/** Local bounds of the piece in cm at scale 1 (model, or placeholder shape; pivot as placed). For overlap checks. */
+	static FBox LocalBounds(const FGamerBuildableDef& Def);
 
 	/** Upgrade level (1 = as built). Decision 2026-11-14: work buildings can be upgraded for more work places. */
 	int32 GetLevel() const { return Level; }

@@ -41,6 +41,8 @@ private:
 	void DrawStartMenu(const class AGamerPlayerController& PC);
 	/** Start menu pages "Charakter" and "Aussehen" (GamerHUDCharacter.cpp). */
 	void DrawCharacterMenu(const class AGamerPlayerController& PC);
+	/** "Welt erstellen" page 1 (mode, difficulty) and "Erweiterte Einstellungen" (GamerHUDWorld.cpp). */
+	void DrawWorldMenu(const class AGamerPlayerController& PC);
 	/** Start menu page "Welt laden" (GamerHUDSave.cpp). */
 	void DrawLoadWorldMenu(const class AGamerPlayerController& PC);
 	/** "Charakter: Ragnar, Krieger · STÄ 8 ..." of the own player, or empty (GamerHUDCharacter.cpp). */
@@ -49,6 +51,7 @@ private:
 	TArray<FString> WrapText(const FString& Text, float MaxWidth, float Scale);
 	void DrawVillageMenu(const class AGamerPlayerController& PC);
 	void DrawStorageMenu(const class AGamerPlayerController& PC);
+	void DrawInventoryMenu(const class AGamerPlayerController& PC);   // GamerHUDInventory.cpp
 	/** Graphics page: one row per setting (click the value for the next one), measured frame rate, buttons. */
 	void DrawGraphicsMenu(const class AGamerPlayerController& PC);
 	/** Bird's-eye view: name tags over villagers, help line, info panel of the selection. */
@@ -56,6 +59,10 @@ private:
 	void DrawBar(float X, float Y, float W, float H, float Value);
 	/** Listening for magic: passive edge shimmer, turquoise sine ring, labels of the finds (GamerHUDListen.cpp). */
 	void DrawListen(const class AGamerCharacter* Character);
+	/** Level bar, equipment window and messages about level and gear (GamerHUDEquipment.cpp). */
+	void DrawEquipment(const class AGamerCharacter* Character);
+	/** Hit point bar, damage flash, grave hint and the death screen (GamerHUDHealth.cpp). */
+	void DrawHealth(const class AGamerCharacter* Character);
 
 	/** Icon tile: the rendered icon of the item/piece if it has one, else a named placeholder (first letters of the name). */
 	void DrawIconTile(FName Id, const FString& Name, float X, float Y, float Size);

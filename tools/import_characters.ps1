@@ -18,10 +18,10 @@ $EditorCmd = Join-Path $UeRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
 $Script   = Join-Path $RepoRoot 'tools\unreal\import_characters.py'
 $LogFile  = Join-Path $RepoRoot ("game\Saved\Logs\import_characters_{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 
-if (Get-Process UnrealEditor*, UnrealBuildTool -ErrorAction SilentlyContinue) {
-    throw 'Unreal Editor, a game started from it or UnrealBuildTool is running. Close it / wait first.'
-}
-
+# One Unreal at a time (tools/unreal_lock.ps1): waits while another run or an open editor uses Unreal.
+. (Join-Path $PSScriptRoot 'unreal_lock.ps1')
+$unrealLock = Enter-UnrealLock -Owner 'import_characters.ps1'
+try {
 $Template = Join-Path $UeRoot 'Templates\TemplateResources\High\Characters\Content\Mannequins'
 $Target   = Join-Path $RepoRoot 'game\Content\Characters\Mannequins'
 if (-not (Test-Path $Target)) {
@@ -44,3 +44,5 @@ $code = $LASTEXITCODE
 Select-String -Path $LogFile -Pattern 'GAMER_CHAR' | ForEach-Object { ($_.Line -replace '^\[[^\]]*\]\[[^\]]*\]', '') }
 Write-Host ("<< exit {0} after {1:N0} s. Log: {2}" -f $code, ((Get-Date) - $start).TotalSeconds, $LogFile)
 if (-not (Select-String -Path $LogFile -Pattern 'GAMER_CHAR: done, 0 error' -Quiet)) { throw 'Character import failed, see log.' }
+}
+finally { Exit-UnrealLock $unrealLock }

@@ -1,0 +1,19 @@
+{
+  "_comment": "Ausdauer und Erschöpfung (Entscheidung 2026-11-16). Leere Ausdauer sperrt nichts: nur langsamer und schwächer (Regel 5). Erschöpfung ist langfristig: sinkt maximale Ausdauer und Arbeitstempo, steigt mit der Zeit, sinkt durch Schlaf am eigenen Bett. Alle Zahlen sind Vorschläge zum Justieren.",
+  "base_max": 100,
+  "regen_per_s": 14,
+  "regen_delay_s": 1.2,
+  "not_fed_regen_factor": 0.7,
+  "sprint_cost_per_s": 14,
+  "jump_cost": 8,
+  "strike_cost": 5,
+  "empty": { "speed_factor": 0.65, "strike_factor": 0.7, "recover_fraction": 0.15 },
+  "exhaustion": {
+    "rise_per_game_day": 0.7,
+    "max_penalty": 0.4,
+    "work_speed_penalty": 0.3,
+    "sleep_recovery": 1.0,
+    "sleep_min_exhaustion": 0.1,
+    "sleep_cooldown_s": 60
+  }
+}

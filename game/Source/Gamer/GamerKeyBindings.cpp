@@ -23,6 +23,8 @@ const TArray<FGamerBindableAction>& UGamerKeyBindings::GetActions()
 			{ GamerInputActions::FocusNext, TEXT("Im Haufen wechseln"), EKeys::F },
 			{ GamerInputActions::PickSame, TEXT("Alles gleicher Art (mit Sammeln)"), EKeys::LeftShift },
 			{ GamerInputActions::CraftMenu, TEXT("Herstellen-Menü"), EKeys::Tab },
+			{ GamerInputActions::GearMenu, TEXT("Ausrüstung"), EKeys::C },
+			{ GamerInputActions::InventoryMenu, TEXT("Inventar"), EKeys::I },
 			{ GamerInputActions::BuildMenu, TEXT("Baumenü (mit Hammer)"), EKeys::RightMouseButton },
 			{ GamerInputActions::Rotate, TEXT("Bauteil drehen"), EKeys::R },
 			{ GamerInputActions::BuildMulti, TEXT("Mehrfach bauen (halten)"), EKeys::LeftShift },

@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "_comment": "Kampf-Konstanten (docs/21). Alle Zahlen sind Startwerte; creature_hp_scale regelt alle Kreaturen auf einmal.",
+  "armor": {
+    "k": 160.0,
+    "max_reduction": 0.75,
+    "min_damage": 1.0
+  },
+  "resist": {
+    "min": -0.25,
+    "max": 0.6
+  },
+  "poise": {
+    "k_player": 90.0,
+    "stagger_s": 2.5,
+    "boss_stagger_s": 3.0,
+    "stagger_damage_mult": 1.5,
+    "decay_delay_s": 3.0,
+    "decay_fraction_per_s": 0.25,
+    "player_max": 100.0,
+    "player_stagger_s": 0.8,
+    "player_regen_delay_s": 2.0,
+    "player_regen_per_s": 30.0
+  },
+  "slots": {
+    "helmet": 0.2,
+    "shoulder": 0.1,
+    "chest": 0.4,
+    "hands": 0.1,
+    "legs": 0.15,
+    "feet": 0.05
+  },
+  "zones": {
+    "head": {
+      "slots": [
+        "helmet"
+      ],
+      "damage_factor": 1.5
+    },
+    "body": {
+      "slots": [
+        "shoulder",
+        "chest"
+      ],
+      "damage_factor": 1.0
+    },
+    "limbs": {
+      "slots": [
+        "hands",
+        "legs",
+        "feet"
+      ],
+      "damage_factor": 0.7
+    }
+  },
+  "attacks": [
+    {
+      "id": "light",
+      "damage": 1.0,
+      "poise": 1.0
+    },
+    {
+      "id": "thrust",
+      "damage": 0.9,
+      "poise": 0.8
+    },
+    {
+      "id": "heavy",
+      "damage": 1.4,
+      "poise": 1.6
+    },
+    {
+      "id": "shield_bash",
+      "damage": 0.0,
+      "poise": 2.0
+    },
+    {
+      "id": "riposte",
+      "damage": 1.2,
+      "poise": 1.5
+    }
+  ],
+  "weak_point_poise_mult": 1.5,
+  "spread": {
+    "min": 0.85,
+    "max": 1.15,
+    "size_follow": 0.5
+  },
+  "leaders": [
+    {
+      "id": "experienced",
+      "min_rank": 2,
+      "chance": 0.05,
+      "place_chance": 0.1,
+      "hp": 1.13,
+      "poise": 1.07,
+      "dmg": 1.09,
+      "size": 1.05,
+      "extra_base_rolls": 1,
+      "extra_rank_rolls": 0,
+      "rank_roll_mult": 1
+    },
+    {
+      "id": "veteran",
+      "min_rank": 4,
+      "chance": 0.03,
+      "place_chance": 0.06,
+      "hp": 1.25,
+      "poise": 1.14,
+      "dmg": 1.18,
+      "size": 1.1,
+      "extra_base_rolls": 1,
+      "extra_rank_rolls": 1,
+      "rank_roll_mult": 1
+    },
+    {
+      "id": "leader",
+      "min_rank": 6,
+      "chance": 0.02,
+      "place_chance": 0.04,
+      "hp": 1.35,
+      "poise": 1.2,
+      "dmg": 1.25,
+      "size": 1.15,
+      "extra_base_rolls": 1,
+      "extra_rank_rolls": 1,
+      "rank_roll_mult": 2
+    }
+  ],
+  "loot": {
+    "count_bonus_cap": 2,
+    "downscale": {
+      "delta1": 0.85,
+      "delta2": 0.7,
+      "delta3": 0.55
+    }
+  },
+  "creature_hp_scale": 1.0,
+  "player_hp": {
+    "base": 100.0,
+    "per_toughness": 5.0,
+    "toughness_neutral": 5
+  }
+}

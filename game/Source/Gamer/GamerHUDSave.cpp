@@ -64,8 +64,12 @@ void AGamerHUD::DrawLoadWorldMenu(const AGamerPlayerController& PC)
 			Y += LineHeight(S * 0.7f) * 1.05f;
 			if (!Info.OptionsText.IsEmpty())
 			{
-				DrawShadowText(Info.OptionsText, X, Y, SaveDim, S * 0.6f);
-				Y += LineHeight(S * 0.6f) * 1.05f;
+				// Wrapped: with mode and difficulty (2026-11-16) the line is wider than small windows.
+				for (const FString& OptionsLine : WrapText(Info.OptionsText, Width - X - 16.f * S, S * 0.6f))
+				{
+					DrawShadowText(OptionsLine, X, Y, SaveDim, S * 0.6f);
+					Y += LineHeight(S * 0.6f) * 1.05f;
+				}
 			}
 			Y += 8.f * S;
 		}

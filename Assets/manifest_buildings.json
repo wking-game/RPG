@@ -5,6 +5,36 @@
   "orm": "R=AO, G=Roughness, B=Metallic",
   "textures": [
     {
+      "name": "T_BldAsh_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldAsh_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldAsh_N",
+      "file": "Buildings/StyleTest/Textures/T_BldAsh_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldAsh_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldAsh_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
       "name": "T_BldCloth_BC",
       "file": "Buildings/StyleTest/Textures/T_BldCloth_BC.png",
       "size": [
@@ -335,6 +365,66 @@
       "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
     },
     {
+      "name": "T_BldSod_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldSod_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldSod_N",
+      "file": "Buildings/StyleTest/Textures/T_BldSod_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldSod_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldSod_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldSoil_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldSoil_BC.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldSoil_N",
+      "file": "Buildings/StyleTest/Textures/T_BldSoil_N.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldSoil_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldSoil_ORM.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
       "name": "T_BldStone_BC",
       "file": "Buildings/StyleTest/Textures/T_BldStone_BC.png",
       "size": [
@@ -390,6 +480,36 @@
       "size": [
         2048,
         2048
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWater_BC",
+      "file": "Buildings/StyleTest/Textures/T_BldWater_BC.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": true,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWater_N",
+      "file": "Buildings/StyleTest/Textures/T_BldWater_N.png",
+      "size": [
+        512,
+        512
+      ],
+      "srgb": false,
+      "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
+    },
+    {
+      "name": "T_BldWater_ORM",
+      "file": "Buildings/StyleTest/Textures/T_BldWater_ORM.png",
+      "size": [
+        512,
+        512
       ],
       "srgb": false,
       "folder": "/Game/Gamer/Buildings/StyleTest/Textures"
@@ -483,6 +603,20 @@
       "parent": "base"
     },
     {
+      "name": "M_Bld_Ash",
+      "BaseColor": "T_BldAsh_BC",
+      "Normal": "T_BldAsh_N",
+      "ORM": "T_BldAsh_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.0,
+        "MossHeight": 1.0,
+        "UpMoss": 0.0,
+        "DampHeight": 1.0,
+        "Weathering": 0.0
+      }
+    },
+    {
       "name": "M_Bld_Cloth",
       "BaseColor": "T_BldCloth_BC",
       "Normal": "T_BldCloth_N",
@@ -525,6 +659,34 @@
       }
     },
     {
+      "name": "M_Bld_Sod",
+      "BaseColor": "T_BldSod_BC",
+      "Normal": "T_BldSod_N",
+      "ORM": "T_BldSod_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.6,
+        "MossHeight": 400.0,
+        "UpMoss": 0.6,
+        "DampHeight": 20.0,
+        "Weathering": 0.0
+      }
+    },
+    {
+      "name": "M_Bld_Soil",
+      "BaseColor": "T_BldSoil_BC",
+      "Normal": "T_BldSoil_N",
+      "ORM": "T_BldSoil_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.15,
+        "MossHeight": 10.0,
+        "UpMoss": 0.1,
+        "DampHeight": 20.0,
+        "Weathering": 0.0
+      }
+    },
+    {
       "name": "M_Bld_Stone",
       "BaseColor": "T_BldStone_BC",
       "Normal": "T_BldStone_N",
@@ -545,11 +707,25 @@
       "ORM": "T_BldThatch_ORM",
       "parent": "building",
       "params": {
-        "MossAmount": 0.55,
-        "MossHeight": 60.0,
-        "UpMoss": 0.55,
+        "MossAmount": 0.24,
+        "MossHeight": 92.0,
+        "UpMoss": 0.22,
         "DampHeight": 40.0,
         "Weathering": 0.15
+      }
+    },
+    {
+      "name": "M_Bld_Water",
+      "BaseColor": "T_BldWater_BC",
+      "Normal": "T_BldWater_N",
+      "ORM": "T_BldWater_ORM",
+      "parent": "building",
+      "params": {
+        "MossAmount": 0.0,
+        "MossHeight": 1.0,
+        "UpMoss": 0.0,
+        "DampHeight": 1.0,
+        "Weathering": 0.0
       }
     },
     {
@@ -614,6 +790,391 @@
       ],
       "collision": "ucx",
       "source": "CC0 Highlands (Visions Mind) original"
+    },
+    {
+      "id": "sm_station_bed",
+      "unreal_name": "SM_Station_Bed",
+      "file": "Buildings/Stations/SM_Station_Bed.fbx",
+      "group": "Buildings/Stations",
+      "tris": 292,
+      "bbox_min_cm": [
+        -103.0,
+        -55.0,
+        0.0
+      ],
+      "bbox_max_cm": [
+        103.0,
+        58.6,
+        30.9
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Thatch",
+        "M_Bld_Cloth"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_brewkettle",
+      "unreal_name": "SM_Station_BrewKettle",
+      "file": "Buildings/Stations/SM_Station_BrewKettle.fbx",
+      "group": "Buildings/Stations",
+      "tris": 356,
+      "bbox_min_cm": [
+        -58.1,
+        -61.6,
+        -4.2
+      ],
+      "bbox_max_cm": [
+        64.5,
+        60.8,
+        101.2
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Ash",
+        "M_Bld_Water"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_campfire",
+      "unreal_name": "SM_Station_Campfire",
+      "file": "Buildings/Stations/SM_Station_Campfire.fbx",
+      "group": "Buildings/Stations",
+      "tris": 294,
+      "bbox_min_cm": [
+        -60.7,
+        -65.3,
+        -4.9
+      ],
+      "bbox_max_cm": [
+        66.3,
+        63.8,
+        31.7
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Ash"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_clayoven",
+      "unreal_name": "SM_Station_ClayOven",
+      "file": "Buildings/Stations/SM_Station_ClayOven.fbx",
+      "group": "Buildings/Stations",
+      "tris": 338,
+      "bbox_min_cm": [
+        -81.9,
+        -74.5,
+        -1.4
+      ],
+      "bbox_max_cm": [
+        95.0,
+        70.9,
+        118.0
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Plaster",
+        "M_Bld_Ash"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_composter",
+      "unreal_name": "SM_Station_Composter",
+      "file": "Buildings/Stations/SM_Station_Composter.fbx",
+      "group": "Buildings/Stations",
+      "tris": 408,
+      "bbox_min_cm": [
+        -60.0,
+        -101.3,
+        0.0
+      ],
+      "bbox_max_cm": [
+        60.0,
+        60.0,
+        90.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Thatch",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_farmstead",
+      "unreal_name": "SM_Station_Farmstead",
+      "file": "Buildings/Stations/SM_Station_Farmstead.fbx",
+      "group": "Buildings/Stations",
+      "tris": 460,
+      "bbox_min_cm": [
+        -295.0,
+        -212.8,
+        -2.4
+      ],
+      "bbox_max_cm": [
+        295.0,
+        205.0,
+        285.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Thatch",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_feasttable",
+      "unreal_name": "SM_Station_FeastTable",
+      "file": "Buildings/Stations/SM_Station_FeastTable.fbx",
+      "group": "Buildings/Stations",
+      "tris": 282,
+      "bbox_min_cm": [
+        -220.0,
+        -85.6,
+        -0.5
+      ],
+      "bbox_max_cm": [
+        220.0,
+        85.6,
+        102.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Plaster",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_fieldtile",
+      "unreal_name": "SM_Station_FieldTile",
+      "file": "Buildings/Stations/SM_Station_FieldTile.fbx",
+      "group": "Buildings/Stations",
+      "tris": 16,
+      "bbox_min_cm": [
+        -50.0,
+        -50.0,
+        0.0
+      ],
+      "bbox_max_cm": [
+        50.0,
+        50.0,
+        14.0
+      ],
+      "materials": [
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_hearth",
+      "unreal_name": "SM_Station_Hearth",
+      "file": "Buildings/Stations/SM_Station_Hearth.fbx",
+      "group": "Buildings/Stations",
+      "tris": 296,
+      "bbox_min_cm": [
+        -71.4,
+        -58.1,
+        -4.6
+      ],
+      "bbox_max_cm": [
+        72.0,
+        56.2,
+        60.5
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Ash"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_raincatcher",
+      "unreal_name": "SM_Station_RainCatcher",
+      "file": "Buildings/Stations/SM_Station_RainCatcher.fbx",
+      "group": "Buildings/Stations",
+      "tris": 204,
+      "bbox_min_cm": [
+        -47.1,
+        -46.5,
+        -10.5
+      ],
+      "bbox_max_cm": [
+        46.5,
+        41.2,
+        71.2
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Water"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_stonecutter",
+      "unreal_name": "SM_Station_Stonecutter",
+      "file": "Buildings/Stations/SM_Station_Stonecutter.fbx",
+      "group": "Buildings/Stations",
+      "tris": 584,
+      "bbox_min_cm": [
+        -110.0,
+        -119.2,
+        -2.1
+      ],
+      "bbox_max_cm": [
+        118.0,
+        66.6,
+        94.3
+      ],
+      "materials": [
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_storage",
+      "unreal_name": "SM_Station_Storage",
+      "file": "Buildings/Stations/SM_Station_Storage.fbx",
+      "group": "Buildings/Stations",
+      "tris": 364,
+      "bbox_min_cm": [
+        -300.0,
+        -208.8,
+        -0.5
+      ],
+      "bbox_max_cm": [
+        300.0,
+        150.0,
+        305.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Soil",
+        "M_Bld_Sod"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_tavern",
+      "unreal_name": "SM_Station_Tavern",
+      "file": "Buildings/Stations/SM_Station_Tavern.fbx",
+      "group": "Buildings/Stations",
+      "tris": 356,
+      "bbox_min_cm": [
+        -410.0,
+        -291.6,
+        -0.7
+      ],
+      "bbox_max_cm": [
+        410.0,
+        260.0,
+        336.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Stone",
+        "M_Bld_Thatch",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_woodcutter",
+      "unreal_name": "SM_Station_Woodcutter",
+      "file": "Buildings/Stations/SM_Station_Woodcutter.fbx",
+      "group": "Buildings/Stations",
+      "tris": 576,
+      "bbox_min_cm": [
+        -135.4,
+        -70.8,
+        -0.5
+      ],
+      "bbox_max_cm": [
+        130.0,
+        66.6,
+        93.2
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Soil",
+        "M_Bld_Ash"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
+    },
+    {
+      "id": "sm_station_workbench",
+      "unreal_name": "SM_Station_Workbench",
+      "file": "Buildings/Stations/SM_Station_Workbench.fbx",
+      "group": "Buildings/Stations",
+      "tris": 412,
+      "bbox_min_cm": [
+        -95.0,
+        -98.0,
+        -0.5
+      ],
+      "bbox_max_cm": [
+        95.0,
+        57.1,
+        102.0
+      ],
+      "materials": [
+        "M_Bld_Planks",
+        "M_Bld_Wood",
+        "M_Bld_Soil"
+      ],
+      "collision": "ucx",
+      "pivot": "Mitte unten, Boden bei Z = 0",
+      "source": "tools/blender/build_stations.py (eigene Geometrie, CC0-Texturen)"
     },
     {
       "id": "sm_villagehouse",
